@@ -5,6 +5,20 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataMappings", "DataMappings\DataMappings.csproj", "{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessLogic", "BusinessLogic\BusinessLogic.csproj", "{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{98CC7F9E-1B9C-4515-972D-311287A9576D}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{2A573FF7-0CC6-4DE5-BAD0-9573D9439D4C}"
+	ProjectSection(SolutionItems) = preProject
+		Database\Holonet.sqlite = Database\Holonet.sqlite
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +29,10 @@ Global
 		{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
