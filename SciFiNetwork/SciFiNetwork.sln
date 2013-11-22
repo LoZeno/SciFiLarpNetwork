@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataMappings", "DataMappings\DataMappings.csproj", "{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessLogic", "BusinessLogic\BusinessLogic.csproj", "{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}"
@@ -18,6 +20,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{2A
 		Database\gamedata2.sqlite = Database\gamedata2.sqlite
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{B6026144-0D07-46F6-B88A-D63759ED1A7E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTests", "IntegrationTests", "{D20C24C5-85C6-426B-B756-761F3BAA7695}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{77CAFD6E-DAAE-4051-B85E-467C6C15D377}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaseTestUtilities", "BaseTestUtilities\BaseTestUtilities.csproj", "{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRCodeLib", "QRCodeLib\QRCodeLib.csproj", "{2F5B0DAD-FE93-479E-8498-A8568E1DDA0F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QRCodeLib.Test", "QRCodeLib.Test\QRCodeLib.Test.csproj", "{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,8 +46,26 @@ Global
 		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F5B0DAD-FE93-479E-8498-A8568E1DDA0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F5B0DAD-FE93-479E-8498-A8568E1DDA0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F5B0DAD-FE93-479E-8498-A8568E1DDA0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F5B0DAD-FE93-479E-8498-A8568E1DDA0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D20C24C5-85C6-426B-B756-761F3BAA7695} = {B6026144-0D07-46F6-B88A-D63759ED1A7E}
+		{77CAFD6E-DAAE-4051-B85E-467C6C15D377} = {B6026144-0D07-46F6-B88A-D63759ED1A7E}
+		{9739C0DF-6AF8-42A7-BA13-F5C3AF68654C} = {B6026144-0D07-46F6-B88A-D63759ED1A7E}
+		{4D3453AC-2E0F-4AD9-B764-43B8C28FAD4F} = {D20C24C5-85C6-426B-B756-761F3BAA7695}
 	EndGlobalSection
 EndGlobal
