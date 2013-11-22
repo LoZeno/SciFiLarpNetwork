@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataMappings", "DataMappings\DataMappings.csproj", "{FB7FF8C5-7438-49F5-AA4D-F3C7C69C624C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessLogic", "BusinessLogic\BusinessLogic.csproj", "{2209FC3F-F43D-47AA-84EF-68BA5B5E5D72}"
@@ -16,7 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{98CC7F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{2A573FF7-0CC6-4DE5-BAD0-9573D9439D4C}"
 	ProjectSection(SolutionItems) = preProject
-		Database\Holonet.sqlite = Database\Holonet.sqlite
+		Database\databaseSchema.sql = Database\databaseSchema.sql
+		Database\gamedata2.sqlite = Database\gamedata2.sqlite
 	EndProjectSection
 EndProject
 Global

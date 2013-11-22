@@ -1,595 +1,588 @@
 
--- Table: Rete
-CREATE TABLE Rete ( 
-    NumeroRete  INTEGER        PRIMARY KEY
+-- Table: Network
+CREATE TABLE Network ( 
+    NetworkID  INTEGER        PRIMARY KEY AUTOINCREMENT
                                NOT NULL
                                DEFAULT 0,
-    NomeRete    VARCHAR( 60 )  NOT NULL,
-    Descrizione TEXT,
-    Fazione     VARCHAR( 30 ) 
+    NetworkName    VARCHAR( 60 )  NOT NULL,
+    Description TEXT,
+    Faction     VARCHAR( 60 ) 
 );
 
 
--- Table: Specie
-CREATE TABLE Specie ( 
-    Specie      INTEGER        PRIMARY KEY AUTOINCREMENT
-                               NOT NULL,
-    Nome        VARCHAR( 50 ),
-    Descrizione TEXT 
+-- Table: Species
+CREATE TABLE Species ( 
+    SpeciesID      INTEGER        PRIMARY KEY AUTOINCREMENT
+                               NOT NULL
+							   DEFAULT 0,
+    Name        VARCHAR( 60 )	NOT NULL,
+    Description TEXT 
 );
 
 
--- Table: Giocatore
-CREATE TABLE Giocatore ( 
-    NumeroSW       INTEGER        PRIMARY KEY AUTOINCREMENT
-                                  NOT NULL
-                                  DEFAULT '0',
-    Cognome        VARCHAR( 30 )  NOT NULL,
-    Nome           VARCHAR( 20 )  NOT NULL,
-    DataNascita    DATETIME       NOT NULL
+-- Table: Player
+CREATE TABLE Player ( 
+    PlayerID       	INTEGER			PRIMARY KEY AUTOINCREMENT
+									NOT NULL
+									DEFAULT '0',
+    MainName        VARCHAR( 60 )  	NOT NULL,
+    FirstName		VARCHAR( 30 ),
+    DateOfBirth    	DATETIME       	NOT NULL
+									DEFAULT 'CURRENT_DATE',
+    Address			VARCHAR( 60 ),
+    City          	VARCHAR( 60 ),
+    CountyOrArea	VARCHAR( 60 ),
+    PostCode		VARCHAR( 10 ),
+    PhoneNumber     VARCHAR( 20 ),
+    DateOfSubscription DATETIME       NOT NULL
                                   DEFAULT 'CURRENT_DATE',
-    Indirizzo      VARCHAR( 50 ),
-    Citta          VARCHAR( 20 ),
-    Provincia      VARCHAR( 2 ),
-    CAP            VARCHAR( 6 ),
-    Telefono       VARCHAR( 15 ),
-    DataIscrizione DATETIME       NOT NULL
-                                  DEFAULT 'CURRENT_DATE',
-    Sesso          CHAR           NOT NULL,
-    TipoGiocatore  VARCHAR( 6 )   NOT NULL
-                                  DEFAULT 'PG',
-    Email          VARCHAR( 50 ),
-    Password       VARCHAR( 50 ) 
+    Sex          CHAR           NOT NULL,
+    PlayerCathegory  VARCHAR( 10 )   NOT NULL
+                                  DEFAULT 'PC',
+    Email          VARCHAR( 60 ),
+    Password       VARCHAR( 60 ) 
 );
 
 
--- Table: PostaInUscita
-CREATE TABLE PostaInUscita ( 
-    NumeroMissione    INTEGER  NOT NULL
+-- Table: MailOutBox
+CREATE TABLE MailOutBox ( 
+    MessageID    INTEGER  NOT NULL
                                DEFAULT '0',
-    NumeroPG          INTEGER  NOT NULL
+    CharacterID          INTEGER  NOT NULL
                                DEFAULT '0',
-    Cancellata        BOOLEAN  DEFAULT '0',
-    Letta             BOOLEAN  DEFAULT '0',
-    DataCancellazione DATETIME,
-    CONSTRAINT [PK_PostaInUscita] PRIMARY KEY ( NumeroMissione, NumeroPG ),
-    CONSTRAINT [FK_PostaInUscita_0] FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ),
-    CONSTRAINT [FK_PostaInUscita_1] FOREIGN KEY ( NumeroMissione ) REFERENCES Missione ( NumeroMissione ) 
+    IsDeleted        BOOLEAN 
+						NOT NULL 
+						DEFAULT '0',
+    IsRead             BOOLEAN 
+						NOT NULL 
+						DEFAULT '0',
+    DateOfDeletion DATETIME,
+    CONSTRAINT [PK_MailOutBox] PRIMARY KEY ( MessageID, CharacterID ),
+    CONSTRAINT [FK_MailOutBox_0] FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ),
+    CONSTRAINT [FK_MailOutBox_1] FOREIGN KEY ( MessageID ) REFERENCES Message ( MessageID ) 
 );
 
 
--- Table: PostaInArrivo
-CREATE TABLE PostaInArrivo ( 
-    NumeroMissione    INTEGER  NOT NULL
+-- Table: MailInBox
+CREATE TABLE MailInBox ( 
+    MessageID    INTEGER  NOT NULL
                                DEFAULT '0',
-    NumeroPG          INTEGER  NOT NULL
+    CharacterID          INTEGER  NOT NULL
                                DEFAULT '0',
-    Cancellata        BOOLEAN  DEFAULT '0',
-    Letta             BOOLEAN  DEFAULT '0',
-    DataCancellazione DATETIME,
-    CONSTRAINT [PK_PostaInArrivo] PRIMARY KEY ( NumeroMissione, NumeroPG ),
-    CONSTRAINT [FK_PostaInArrivo_0] FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ),
-    CONSTRAINT [FK_PostaInArrivo_1] FOREIGN KEY ( NumeroMissione ) REFERENCES Missione ( NumeroMissione ) 
+    IsDeleted        BOOLEAN  DEFAULT '0',
+    IsRead             BOOLEAN  DEFAULT '0',
+    DateOfDeletion DATETIME,
+    CONSTRAINT [PK_MailInBox] PRIMARY KEY ( MessageID, CharacterID ),
+    CONSTRAINT [FK_MailInBox_0] FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ),
+    CONSTRAINT [FK_MailInBox_1] FOREIGN KEY ( MessageID ) REFERENCES Message ( MessageID ) 
 );
 
 
 -- Table: AccountHacking
 CREATE TABLE AccountHacking ( 
-    NumeroPGAccount INTEGER  REFERENCES Personaggio ( NumeroPG ),
-    NumeroPGHacker  INTEGER  REFERENCES Personaggio ( NumeroPG ),
-    NumeroTentativo INTEGER,
-    Riuscito        INTEGER  DEFAULT '0',
-    DataTentativo   DATETIME DEFAULT 'CURRENT_TIME',
-    PRIMARY KEY ( NumeroPGAccount, NumeroPGHacker, NumeroTentativo ) 
+    HackedCharacterID INTEGER  REFERENCES HeroCharacter ( CharacterID ),
+    HackingCharacterID  INTEGER  REFERENCES HeroCharacter ( CharacterID ),
+    AttemptNumber INTEGER NOT NULL DEFAULT 0,
+    Success        BOOLEAN  DEFAULT '0',
+    DateOfAttempt   DATETIME DEFAULT 'CURRENT_TIME',
+    PRIMARY KEY ( HackedCharacterID, HackingCharacterID, AttemptNumber ) 
 );
 
 
--- Table: Rubrica
-CREATE TABLE Rubrica ( 
-    NumeroPG         INTEGER NOT NULL
+-- Table: AddressBook
+CREATE TABLE AddressBook ( 
+    CharacterID         INTEGER NOT NULL
                              DEFAULT '0',
-    NumeroSalvato    INTEGER NOT NULL,
-    NomeVisualizzato TEXT,
-    CONSTRAINT [PK_Rubrica] PRIMARY KEY ( NumeroPG, NumeroSalvato ),
-    CONSTRAINT [FK_Rubrica_NumeroPG_Personaggio_NumeroPG] FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ) 
+    SavedCharacterID    INTEGER NOT NULL,
+    SavedCharacterName TEXT,
+    CONSTRAINT [PK_AddressBook] PRIMARY KEY ( CharacterID, SavedCharacterID ),
+    CONSTRAINT [FK_AddressBook_CharacterID_HeroCharacter_CharacterID] FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ) 
 );
 
 
--- Table: Personaggio
-CREATE TABLE Personaggio ( 
-    NumeroPG           INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: HeroCharacter
+CREATE TABLE HeroCharacter ( 
+    CharacterID           INTEGER        PRIMARY KEY AUTOINCREMENT
                                       NOT NULL
                                       DEFAULT '0',
-    NumeroSW           INTEGER        NOT NULL
-                                      DEFAULT '0',
-    Nome               VARCHAR( 50 )  NOT NULL,
-    Specie             INTEGER        NOT NULL,
-    Tipo               INTEGER        NOT NULL,
-    Punti              INTEGER        NOT NULL
+    PlayerID           INTEGER        NOT NULL
+                                      DEFAULT '0'
+									  REFERENCES Player ( PlayerID ),
+    Name               VARCHAR( 60 )  NOT NULL,
+    SpeciesID             INTEGER        NOT NULL
+										 REFERENCES Species ( SpeciesID ),
+    Type               INTEGER        NOT NULL,
+    ExperiencePoints              INTEGER        NOT NULL
                                       DEFAULT '30',
-    Sesso              CHAR           NOT NULL,
-    LatoOscuro         INTEGER        NOT NULL
+    Sex              CHAR           NOT NULL,
+    DarkSidePoints         INTEGER        NOT NULL
                                       DEFAULT '5',
-    DataCreazione      DATETIME       NOT NULL
+    DateOfCreation      DATETIME       NOT NULL
                                       DEFAULT 'CURRENT_DATE',
-    Titolo             VARCHAR( 50 ),
-    Vivo               INTEGER        NOT NULL
-                                      DEFAULT '1',
-    DataMorte          DATETIME,
-    PasswordHolonet    VARCHAR( 50 ),
-    Hacker             INTEGER        DEFAULT '0',
-    Enzima             VARCHAR( 20 )  DEFAULT '0',
-    Fazione            INTEGER        DEFAULT '0'
-                                      REFERENCES Rete ( NumeroRete ),
-    UltimaCrittazione  DATETIME,
-    LivelloCrittazione INTEGER        NOT NULL
+    HonorificTitle             VARCHAR( 60 ),
+    IsAlive               BOOL        NOT NULL
+                                      DEFAULT 1,
+    DateOfDeath          DATETIME,
+    LarpNetworkPassword    	VARCHAR( 50 ),
+    BloodFormula			VARCHAR( 20 )  DEFAULT '0',
+    NetworkID            INTEGER        DEFAULT '0'
+                                      REFERENCES Network ( NetworkID ),
+    LastAccountEncryption  DATETIME,
+    EncryptionLevel INTEGER        NOT NULL
                                       DEFAULT '0',
-    CodicePg           GUID,
-    CONSTRAINT 'FK_Personaggio_0' FOREIGN KEY ( NumeroPG ) REFERENCES Rubrica ( NumeroPG ),
-    CONSTRAINT 'FK_Personaggio_1' FOREIGN KEY ( NumeroPG ) REFERENCES AccountHacking ( NumeroPGAccount ),
-    CONSTRAINT 'FK_Personaggio_2' FOREIGN KEY ( NumeroPG ) REFERENCES PostaInArrivo ( NumeroPG ),
-    CONSTRAINT 'FK_Personaggio_3' FOREIGN KEY ( NumeroPG ) REFERENCES PostaInUscita ( NumeroPG ),
-    CONSTRAINT 'FK_Personaggio_4' FOREIGN KEY ( NumeroSW ) REFERENCES Giocatore ( NumeroSW ),
-    CONSTRAINT 'FK_Personaggio_5' FOREIGN KEY ( Specie ) REFERENCES Specie ( Specie ) 
+    QRCode           GUID,
+    CONSTRAINT 'FK_HeroCharacter_0' FOREIGN KEY ( CharacterID ) REFERENCES AddressBook ( CharacterID ),
+    CONSTRAINT 'FK_HeroCharacter_1' FOREIGN KEY ( CharacterID ) REFERENCES AccountHacking ( HackedCharacterID ),
+    CONSTRAINT 'FK_HeroCharacter_2' FOREIGN KEY ( CharacterID ) REFERENCES MailInBox ( CharacterID ),
+    CONSTRAINT 'FK_HeroCharacter_3' FOREIGN KEY ( CharacterID ) REFERENCES MailOutBox ( CharacterID )
 );
 
 
--- Table: Missione
-CREATE TABLE Missione ( 
-    NumeroMissione INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: Message
+CREATE TABLE Message ( 
+    MessageID INTEGER        PRIMARY KEY AUTOINCREMENT
                                   NOT NULL
                                   DEFAULT 0,
-    Mandante       INTEGER        NOT NULL
+    SenderCharacter       INTEGER        NOT NULL
                                   DEFAULT 0,
-    Titolo         VARCHAR( 60 ),
-    Testo          TEXT           NOT NULL,
-    LivelloHacking INTEGER        NOT NULL
+    Subject         VARCHAR( 60 ),
+    Message          TEXT           NOT NULL,
+    HackingLevel INTEGER        NOT NULL
                                   DEFAULT 0,
-    Attiva         INTEGER        NOT NULL
+    IsActive         BOOLEAN        NOT NULL
                                   DEFAULT 0,
-    DataCreazione  DATETIME       NOT NULL
+    DateOfCreation  DATETIME       NOT NULL
                                   DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT [FK_Missione_0] FOREIGN KEY ( NumeroMissione ) REFERENCES PostaInArrivo ( NumeroMissione ),
-    CONSTRAINT [FK_Missione_1] FOREIGN KEY ( Mandante ) REFERENCES Personaggio ( NumeroPG ) 
+    CONSTRAINT [FK_Message_0] FOREIGN KEY ( MessageID ) REFERENCES MailInBox ( MessageID ),
+    CONSTRAINT [FK_Message_1] FOREIGN KEY ( SenderCharacter ) REFERENCES HeroCharacter ( CharacterID ) 
 );
 
 
--- Table: NewElementiDisponibilita
-CREATE TABLE NewElementiDisponibilita ( 
-    Progressivo INTEGER PRIMARY KEY AUTOINCREMENT,
-    Descrizione TEXT 
+-- Table: ElementAvailability
+CREATE TABLE ElementAvailability ( 
+    AvailabilityID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Description TEXT 
 );
 
 
--- Table: NewElementi
-CREATE TABLE NewElementi ( 
-    Progressivo   INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: Element
+CREATE TABLE Element ( 
+    ElementID   INTEGER        PRIMARY KEY AUTOINCREMENT
                                  NOT NULL,
-    Nome          VARCHAR( 30 ),
-    Descrizione   TEXT,
-    Effetto       TEXT,
-    Costo         REAL           NOT NULL
+    Name          VARCHAR( 60 ),
+    Description   TEXT,
+    Effect       TEXT,
+    Price         REAL           NOT NULL
                                  DEFAULT 0,
-    Immagine      TEXT,
-    Disponibilita INTEGER        NOT NULL,
-    DataScadenza  DATE,
+    Picture      TEXT,
+    AvailabilityID INTEGER        NOT NULL,
+    ExpirationDate  DATE,
     Discriminator INTEGER        NOT NULL
                                  DEFAULT 0,
-    CONSTRAINT [FK_NewElementi_0] FOREIGN KEY ( Disponibilita ) REFERENCES NewElementiDisponibilita ( Progressivo ) 
+    CONSTRAINT [FK_Element_0] FOREIGN KEY ( AvailabilityID ) REFERENCES ElementAvailability ( AvailabilityID ) 
 );
 
 
--- Table: Attitudine
-CREATE TABLE Attitudine ( 
-    CdAttitudine VARCHAR( 10 )  PRIMARY KEY
+-- Table: Talent
+CREATE TABLE Talent ( 
+    TalentID VARCHAR( 10 )  PRIMARY KEY
                                 NOT NULL,
-    Nome         VARCHAR( 50 )  NOT NULL,
-    Descrizione  TEXT,
-    Tipo         INTEGER        NOT NULL
+    Name         VARCHAR( 60 )  NOT NULL,
+    Description  TEXT,
+    TalentType         INTEGER        NOT NULL
                                 DEFAULT 0 
 );
 
 
--- Table: Abilita
-CREATE TABLE Abilita ( 
-    CdAbilita     INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: Skill
+CREATE TABLE Skill ( 
+    SkillID     INTEGER        PRIMARY KEY AUTOINCREMENT
                                  NOT NULL,
-    Nome          VARCHAR( 50 )  NOT NULL,
-    Descrizione   TEXT,
-    Multiacquisto INTEGER        NOT NULL
+    Name          VARCHAR( 60 )  NOT NULL,
+    Description   TEXT,
+    AcquireManyTimes BOOLEAN        NOT NULL
                                  DEFAULT 0,
-    Costo         INTEGER        NOT NULL
+    ExperiencePointsCost         INTEGER        NOT NULL
                                  DEFAULT 0,
-    BaseAvanzato  INTEGER        NOT NULL
+    IsAdvanced  BOOLEAN        NOT NULL
                                  DEFAULT 0 
 );
 
 
--- Table: Evento
-CREATE TABLE Evento ( 
-    CdEvento       INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: Event
+CREATE TABLE Event ( 
+    EventID       INTEGER        PRIMARY KEY AUTOINCREMENT
                                   NOT NULL,
-    TitoloEvento   VARCHAR( 50 )  NOT NULL,
-    DataEvento     DATETIME       NOT NULL,
-    PuntiAssegnati INTEGER        NOT NULL
+    Title   		VARCHAR( 60 )  NOT NULL,
+    StartDate     DATETIME       NOT NULL,
+    TotalExperiencePoints INTEGER        NOT NULL
                                   DEFAULT 1,
-    Descrizione    TEXT,
-    Costo          FLOAT          NOT NULL
-                                  DEFAULT '10,00',
-    Incasso        FLOAT,
-    Chiuso         BOOLEAN        NOT NULL
+    Description    TEXT,
+    FullEventPrice          FLOAT          NOT NULL
+                                  DEFAULT '1,00',
+    Collection        FLOAT,
+    IsClosed         BOOLEAN        NOT NULL
                                   DEFAULT 0 
 );
 
 
--- Table: HoloDisk
-CREATE TABLE HoloDisk ( 
-    Progressivo INTEGER PRIMARY KEY AUTOINCREMENT
+-- Table: Datapad
+CREATE TABLE Datapad ( 
+    DatapadID INTEGER PRIMARY KEY AUTOINCREMENT
                         NOT NULL,
-    Codice      TEXT    NOT NULL
-                        UNIQUE,
-    Contenuto   TEXT,
-    Hacking     INTEGER NOT NULL
+    Content   TEXT,
+    HackingLevel     INTEGER NOT NULL
                         DEFAULT 0,
-    CodiceQr    GUID 
+    QRCode    GUID 
 );
 
 
--- Table: Infezione
-CREATE TABLE Infezione ( 
-    Progressivo INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: Infection
+CREATE TABLE Infection ( 
+    InfectionID INTEGER        PRIMARY KEY AUTOINCREMENT
                                NOT NULL
                                DEFAULT 0,
-    Nome        VARCHAR( 20 )  NOT NULL,
-    Descrizione TEXT 
+    Name        VARCHAR( 60 )  NOT NULL,
+    Description TEXT 
 );
 
 
--- Table: Banca
-CREATE TABLE Banca ( 
-    NumeroBanca  INTEGER        PRIMARY KEY
+-- Table: Bank
+CREATE TABLE Bank ( 
+    BankID  INTEGER        PRIMARY KEY AUTOINCREMENT
                                 NOT NULL
                                 DEFAULT 0,
-    NomeBanca    VARCHAR( 60 )  NOT NULL,
-    Tasso        INTEGER,
-    PeriodoTasso INTEGER,
-    Costo        INTEGER,
-    PeriodoCosto INTEGER 
+    Name    VARCHAR( 60 )  NOT NULL,
+    BaseInterestRate        INTEGER,
+    InterestTimeInterval INTEGER,
+    Price        INTEGER,
+    PriceTimeInterval INTEGER 
 );
 
 
--- Table: CodiciHacking
-CREATE TABLE CodiciHacking ( 
-    Progressivo INTEGER PRIMARY KEY
+-- Table: HackingTool
+CREATE TABLE HackingTool ( 
+    HackingToolID INTEGER PRIMARY KEY AUTOINCREMENT
                         NOT NULL,
-    Codice      TEXT    NOT NULL,
-    Livello     INTEGER NOT NULL
+    QRCode		GUID NOT NULL,
+    HackerLevel     INTEGER NOT NULL
                         DEFAULT 1 
 );
 
 
--- Table: Porta
-CREATE TABLE Porta ( 
-    Progressivo    INTEGER        PRIMARY KEY
+-- Table: Door
+CREATE TABLE Door ( 
+    DoorID    INTEGER        PRIMARY KEY AUTOINCREMENT
                                   NOT NULL,
-    CodicePorta    VARCHAR( 20 )  NOT NULL,
-    LivelloHacking INTEGER        NOT NULL
+	Reference		VARCHAR( 60 ),
+    QRCode		GUID NOT NULL,
+    HackingLevel INTEGER        NOT NULL
                                   DEFAULT 1 
 );
 
 
--- Table: ContoBancario
-CREATE TABLE ContoBancario ( 
-    NumeroConto        INTEGER  PRIMARY KEY
+-- Table: BankAccount
+CREATE TABLE BankAccount ( 
+    AccountID        INTEGER  PRIMARY KEY AUTOINCREMENT
                                 NOT NULL
                                 DEFAULT 0,
-    NumeroBanca        INTEGER  NOT NULL,
-    NumeroPG           INTEGER  NOT NULL,
-    PeriodoTasso       INTEGER,
-    Costo              INTEGER,
-    PeriodoCosto       INTEGER,
-    Tasso              INTEGER,
-    DataSottoscrizione DATETIME,
-    Totale             DOUBLE   NOT NULL
+    BankID        INTEGER  NOT NULL,
+    CharacterID           INTEGER  NOT NULL,
+    InterestTimeInterval       INTEGER,
+    Price              INTEGER,
+    PriceTimeInterval       INTEGER,
+    InterestRate              INTEGER,
+    SubscriptionDate DATETIME,
+    Amount             DOUBLE   NOT NULL
                                 DEFAULT 0,
-    CONSTRAINT [FK_ContoBancario_0] FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ),
-    CONSTRAINT [FK_ContoBancario_NumeroBanca_Banca_NumeroBanca] FOREIGN KEY ( NumeroBanca ) REFERENCES Banca ( NumeroBanca ) 
+    CONSTRAINT [FK_BankAccount_0] FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ),
+    CONSTRAINT [FK_BankAccount_BankID_Bank_BankID] FOREIGN KEY ( BankID ) REFERENCES Bank ( BankID ) 
 );
 
-
--- Table: EnzimaInfezione
-CREATE TABLE EnzimaInfezione ( 
-    Progressivo INTEGER        PRIMARY KEY
-                               NOT NULL
-                               DEFAULT 0,
-    Enzima      VARCHAR( 20 )  NOT NULL,
-    Infezione   INTEGER        NOT NULL
-                               DEFAULT 0,
-    CONSTRAINT [FK_EnzimaInfezione_Infezione_Infezione_Progressivo] FOREIGN KEY ( Infezione ) REFERENCES Infezione ( Progressivo ) 
-);
-
-
--- Table: MessaggioSalvato
-CREATE TABLE MessaggioSalvato ( 
-    Progressivo INTEGER        PRIMARY KEY AUTOINCREMENT
+-- Table: SavedMessage
+CREATE TABLE SavedMessage ( 
+    MessageID INTEGER        PRIMARY KEY AUTOINCREMENT
                                NOT NULL,
-    NumeroPG    INTEGER        NOT NULL
+    CharacterID    INTEGER        NOT NULL
                                DEFAULT 0,
-    Titolo      TEXT           NOT NULL,
-    Provenienza VARCHAR( 50 ),
-    Contenuto   TEXT,
-    Hacking     INTEGER        NOT NULL
-                               DEFAULT 4,
-    CONSTRAINT [FK_MessaggioSalvato_NumeroPG_Personaggio_NumeroPG] FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ) 
+    Subject      TEXT           NOT NULL,
+    Source VARCHAR( 60 ),
+    Message   TEXT,
+    HackingLevel     INTEGER        NOT NULL
+                               DEFAULT 0,
+    CONSTRAINT [FK_SavedMessage_CharacterID_HeroCharacter_CharacterID] FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ) 
 );
 
 
--- Table: HoloDiskFiles
-CREATE TABLE HoloDiskFiles ( 
-    Progressivo  INTEGER        NOT NULL,
-    NumeroFile   INTEGER        NOT NULL,
-    NomeFile     VARCHAR( 30 ),
-    Contenuto    TEXT,
-    LivelloCrypt INTEGER        DEFAULT '0',
-    CONSTRAINT [PK_HoloDiskFiles] PRIMARY KEY ( Progressivo, NumeroFile ),
-    CONSTRAINT [FK_HoloDiskFiles_Progressivo_HoloDisk_Progressivo] FOREIGN KEY ( Progressivo ) REFERENCES HoloDisk ( Progressivo ) 
+-- Table: DatapadFiles
+CREATE TABLE DatapadFiles ( 
+    DatapadID  INTEGER        NOT NULL,
+    FileNumber   INTEGER        NOT NULL,
+    FileName     VARCHAR( 60 ),
+    Content    TEXT,
+    EncryptionLevel INTEGER        DEFAULT '0',
+    CONSTRAINT [PK_DatapadFiles] PRIMARY KEY ( DatapadID, FileNumber ),
+    CONSTRAINT [FK_DatapadFiles_DatapadID_Datapad_DatapadID] FOREIGN KEY ( DatapadID ) REFERENCES Datapad ( DatapadID ) 
 );
 
 
--- Table: HoloDiskHacking
-CREATE TABLE HoloDiskHacking ( 
-    ProgressivoDisco INTEGER  NOT NULL,
-    NumeroPGHacker   INTEGER  NOT NULL,
-    NumeroTentativo  INTEGER  NOT NULL,
-    Riuscito         INTEGER  DEFAULT '0',
-    DataTentativo    DATETIME DEFAULT 'CURRENT_TIME',
-    CONSTRAINT [PK_HoloDiskHacking] PRIMARY KEY ( ProgressivoDisco, NumeroPGHacker, NumeroTentativo ),
-    CONSTRAINT [FK_HoloDiskHacking_0] FOREIGN KEY ( NumeroPGHacker ) REFERENCES Personaggio ( NumeroPG ),
-    CONSTRAINT [FK_HoloDiskHacking_ProgressivoDisco_HoloDisk_Progressivo] FOREIGN KEY ( ProgressivoDisco ) REFERENCES HoloDisk ( Progressivo ) 
+-- Table: DatapadHacking
+CREATE TABLE DatapadHacking ( 
+    DatapadID INTEGER  NOT NULL,
+    HackingCharacterID   INTEGER  NOT NULL,
+    AttemptNumber  INTEGER  NOT NULL,
+    Success         BOOLEAN  DEFAULT '0',
+    DateOfAttempt    DATETIME DEFAULT 'CURRENT_TIME',
+    CONSTRAINT [PK_DatapadHacking] PRIMARY KEY ( DatapadID, HackingCharacterID, AttemptNumber ),
+    CONSTRAINT [FK_DatapadHacking_0] FOREIGN KEY ( HackingCharacterID ) REFERENCES HeroCharacter ( CharacterID ),
+    CONSTRAINT [FK_DatapadHacking_DatapadID_Datapad_DatapadID] FOREIGN KEY ( DatapadID ) REFERENCES Datapad ( DatapadID ) 
 );
 
 
--- Table: EventoGiorni
-CREATE TABLE EventoGiorni ( 
-    CdEvento       INTEGER  REFERENCES Evento ( CdEvento ),
-    DataGiorno     DATE,
-    PuntiAssegnati INTEGER,
-    OraInGioco     DATETIME NOT NULL,
-    OraFuoriGioco  DATETIME NOT NULL,
-    CostoGiorno    FLOAT    NULL,
-    PRIMARY KEY ( CdEvento, DataGiorno ) 
+-- Table: EventDays
+CREATE TABLE EventDays ( 
+    EventID       INTEGER  REFERENCES Event ( EventID ),
+    IndividualDay     DATE,
+    ExperiencePoints INTEGER,
+    InGameTime     DATETIME NOT NULL,
+    OffGameTime  DATETIME NOT NULL,
+    PricePerDay    FLOAT    NULL,
+    PRIMARY KEY ( EventID, IndividualDay ) 
 );
 
 
--- Table: EventoGiorniPersonaggio
-CREATE TABLE EventoGiorniPersonaggio ( 
-    CdEvento      INTEGER  NOT NULL,
-    DataGiorno    DATE     NOT NULL,
-    NumeroPg      INTEGER  NOT NULL
-                           REFERENCES Personaggio ( NumeroPG ),
-    Pagato        BOOLEAN  NOT NULL
+-- Table: CharacterEventDay
+CREATE TABLE CharacterEventDay ( 
+    EventID      INTEGER  NOT NULL,
+    IndividualDay    DATE     NOT NULL,
+    CharacterID      INTEGER  NOT NULL
+                           REFERENCES HeroCharacter ( CharacterID ),
+    HasPaid        BOOLEAN  NOT NULL
                            DEFAULT ( 0 ),
-    DataPagamento DATETIME,
-    Partecipato   BOOLEAN  NOT NULL
+    PaymentDate DATETIME,
+    TookPart   BOOLEAN  NOT NULL
                            DEFAULT ( 0 ),
-    PRIMARY KEY ( CdEvento, DataGiorno, NumeroPg ),
-    FOREIGN KEY ( CdEvento, DataGiorno ) REFERENCES EventoGiorni ( CdEvento, DataGiorno ) ON DELETE CASCADE 
+    PRIMARY KEY ( EventID, IndividualDay, CharacterID ),
+    FOREIGN KEY ( EventID, IndividualDay ) REFERENCES EventDays ( EventID, IndividualDay ) ON DELETE CASCADE 
 );
 
 
--- Table: AbilitaAttitudine
-CREATE TABLE AbilitaAttitudine ( 
-    CdAbilita    INTEGER        NOT NULL
-                                REFERENCES Abilita ( CdAbilita ),
-    CdAttitudine VARCHAR( 10 )  NOT NULL
-                                REFERENCES Attitudine ( CdAttitudine ),
-    PRIMARY KEY ( CdAbilita, CdAttitudine ) 
+-- Table: TalentSkill
+CREATE TABLE TalentSkill ( 
+    SkillID    INTEGER        NOT NULL
+                                REFERENCES Skill ( SkillID ),
+    TalentID VARCHAR( 10 )  NOT NULL
+                                REFERENCES Talent ( TalentID ),
+    PRIMARY KEY ( SkillID, TalentID ) 
 );
 
 
--- Table: ListePersonaggio
-CREATE TABLE ListePersonaggio ( 
-    NumeroPG     INTEGER        REFERENCES Personaggio ( NumeroPG ),
-    CdAttitudine VARCHAR( 20 )  REFERENCES Attitudine ( CdAttitudine ),
-    PRIMARY KEY ( NumeroPG, CdAttitudine ) 
+-- Table: CharacterTalent
+CREATE TABLE CharacterTalent ( 
+    CharacterID     INTEGER        REFERENCES HeroCharacter ( CharacterID ),
+    TalentID VARCHAR( 10 )  REFERENCES Talent ( TalentID ),
+    PRIMARY KEY ( CharacterID, TalentID ) 
 );
 
 
--- Table: CodiciQr
-CREATE TABLE CodiciQr ( 
-    Progressivo INTEGER REFERENCES NewElementi ( Progressivo ),
-    Codice      GUID    UNIQUE ON CONFLICT ROLLBACK,
-    PRIMARY KEY ( Progressivo, Codice ) 
+-- Table: ElementQRCode
+CREATE TABLE ElementQRCode ( 
+    ElementID INTEGER REFERENCES Element ( ElementID ),
+    QRCode      GUID    UNIQUE ON CONFLICT ROLLBACK,
+    PRIMARY KEY ( ElementID, QRCode ) 
 );
 
 
--- Table: NewFormule
-CREATE TABLE NewFormule ( 
-    Risultato         INTEGER REFERENCES NewElementi ( Progressivo ),
-    NumeroIngrediente INTEGER DEFAULT ( 0 ),
-    Ingrediente       INTEGER REFERENCES NewElementi ( Progressivo ),
-    PRIMARY KEY ( Risultato ASC, NumeroIngrediente ASC ) 
+-- Table: ElementCompound
+CREATE TABLE ElementCompound ( 
+    CompoundElementID         INTEGER REFERENCES Element ( ElementID ),
+    ComponentNumber INTEGER DEFAULT ( 0 ),
+    ComponentElementID       INTEGER REFERENCES Element ( ElementID ),
+    PRIMARY KEY ( CompoundElementID ASC, ComponentNumber ASC ) 
 );
 
 
--- Table: TipoSostanze
-CREATE TABLE TipoSostanze ( 
-    Progressivo INTEGER        PRIMARY KEY AUTOINCREMENT,
-    Descrizione VARCHAR( 30 )  NOT NULL 
+-- Table: SubstanceType
+CREATE TABLE SubstanceType ( 
+    SubstanceTypeID INTEGER        PRIMARY KEY AUTOINCREMENT,
+    Description VARCHAR( 60 )  NOT NULL 
 );
 
 
--- Table: NewSostanze
-CREATE TABLE NewSostanze ( 
-    ProgressivoSostanza INTEGER        PRIMARY KEY
-                                       REFERENCES NewElementi ( Progressivo ),
-    ModoUso             VARCHAR( 10 )  NOT NULL,
-    ValoreEfficacia     INTEGER        NOT NULL
+-- Table: Substance
+CREATE TABLE Substance ( 
+    ElementID INTEGER        PRIMARY KEY
+                                       REFERENCES Element ( ElementID ),
+    ApplicationMode             VARCHAR( 10 )  NOT NULL,
+    StrengthValue     INTEGER        NOT NULL
                                        DEFAULT ( 1 ),
-    Tipo                INTEGER        NOT NULL
+    SubstanceTypeID                INTEGER        NOT NULL
                                        DEFAULT ( 0 ) 
-                                       REFERENCES TipoSostanze ( Progressivo ) 
+                                       REFERENCES SubstanceType ( SubstanceTypeID ) 
 );
 
 
--- Table: TipoOggetti
-CREATE TABLE TipoOggetti ( 
-    Progressivo INTEGER        PRIMARY KEY AUTOINCREMENT,
-    Descrizione VARCHAR( 60 ) 
+-- Table: ItemType
+CREATE TABLE ItemType ( 
+    ItemTypeID INTEGER        PRIMARY KEY AUTOINCREMENT,
+    Description VARCHAR( 60 ) 
 );
 
 
--- Table: NewOggetti
-CREATE TABLE NewOggetti ( 
-    ProgressivoOggetto INTEGER PRIMARY KEY
-                               REFERENCES NewElementi ( Progressivo ),
-    NumeroCariche      INTEGER,
-    Tipo               INTEGER REFERENCES TipoOggetti ( Progressivo ) 
+-- Table: Item
+CREATE TABLE Item ( 
+    ElementID INTEGER PRIMARY KEY
+                               REFERENCES Element ( ElementID ),
+    NumberOfCharges      INTEGER,
+    ItemTypeID               INTEGER REFERENCES ItemType ( ItemTypeID ),
+	Rechargeable			BOOLEAN
+							NOT NULL
+							DEFAULT 0
 );
 
 
--- Table: InfezionePersonaggio
-CREATE TABLE InfezionePersonaggio ( 
-    NumeroPG  INTEGER REFERENCES Personaggio ( NumeroPG ),
-    Infezione INTEGER REFERENCES Infezione ( Progressivo ),
-    PRIMARY KEY ( NumeroPG ASC, Infezione ASC ) 
+-- Table: CharacterInfection
+CREATE TABLE CharacterInfection ( 
+    CharacterID  INTEGER REFERENCES HeroCharacter ( CharacterID ),
+    InfectionID INTEGER REFERENCES Infection ( InfectionID ),
+    PRIMARY KEY ( CharacterID ASC, InfectionID ASC ) 
 );
 
 
--- Table: AbilitaPersonaggio
-CREATE TABLE AbilitaPersonaggio ( 
-    NumeroPG       INTEGER        NOT NULL
+-- Table: CharacterSkill
+CREATE TABLE CharacterSkill ( 
+    CharacterID       INTEGER        NOT NULL
                                   DEFAULT '0',
-    CdAbilita      INTEGER        NOT NULL
+    SkillID      INTEGER        NOT NULL
                                   DEFAULT '0'
-                                  REFERENCES Abilita ( CdAbilita ),
-    NumeroAcquisti INTEGER,
-    CdAttitudine   VARCHAR( 10 )  NOT NULL
-                                  REFERENCES Attitudine ( CdAttitudine ),
-    Specifiche     VARCHAR( 50 ),
-    PRIMARY KEY ( NumeroPG, CdAbilita ),
-    CONSTRAINT 'FK_AbilitaPersonaggio_NumeroPG_Personaggio_NumeroPG' FOREIGN KEY ( NumeroPG ) REFERENCES Personaggio ( NumeroPG ) 
+                                  REFERENCES Skill ( SkillID ),
+    AcquiredManyTimes INTEGER,
+    TalentID   VARCHAR( 10 )  NOT NULL
+                                  REFERENCES Talent ( TalentID ),
+    AdditionalDetails     TEXT,
+    PRIMARY KEY ( CharacterID, SkillID ),
+    CONSTRAINT 'FK_CharacterSkill_CharacterID_HeroCharacter_CharacterID' FOREIGN KEY ( CharacterID ) REFERENCES HeroCharacter ( CharacterID ) 
 );
 
 
--- Table: EventoElementi
-CREATE TABLE EventoElementi ( 
-    CdEvento            INTEGER NOT NULL
-                                REFERENCES Evento ( CdEvento ),
-    ProgressivoElemento INTEGER NOT NULL
-                                REFERENCES NewElementi ( Progressivo ),
-    NumeroCopie         INTEGER,
-    PRIMARY KEY ( CdEvento, ProgressivoElemento ) 
+-- Table: EventElement
+CREATE TABLE EventElement ( 
+    EventID            INTEGER NOT NULL
+                                REFERENCES Event ( EventID ),
+    ElementID INTEGER NOT NULL
+                                REFERENCES Element ( ElementID ),
+    NumberOfCopies         INTEGER DEFAULT ( 1 ),
+    PRIMARY KEY ( EventID, ElementID ) 
 );
 
 
--- Table: EventoHolodischi
-CREATE TABLE EventoHolodischi ( 
-    CdEvento         INTEGER NOT NULL
-                             REFERENCES Evento ( CdEvento ),
-    ProgressivoDisco INTEGER NOT NULL
-                             REFERENCES HoloDisk ( Progressivo ),
-    NumeroCopie      INTEGER DEFAULT ( 1 ),
-    PRIMARY KEY ( CdEvento, ProgressivoDisco ) 
+-- Table: EventDatapad
+CREATE TABLE EventDatapad ( 
+    EventID         INTEGER NOT NULL
+                             REFERENCES Event ( EventID ),
+    DatapadID INTEGER NOT NULL
+                             REFERENCES Datapad ( DatapadID ),
+    NumberOfCopies      INTEGER DEFAULT ( 1 ),
+    PRIMARY KEY ( EventID, DatapadID ) 
 );
 
 
--- Table: AbilitaSbloccate
-CREATE TABLE AbilitaSbloccate ( 
-    NumeroPG     INTEGER         NOT NULL
-                                 REFERENCES Personaggio ( NumeroPG ),
-    CdAbilita    INTEGER         NOT NULL
-                                 REFERENCES Abilita ( CdAbilita ),
-    CdAttitudine VARCHAR( 10 )   REFERENCES Attitudine ( CdAttitudine ),
-    Note         VARCHAR( 100 ),
-    PRIMARY KEY ( NumeroPG, CdAbilita ) 
+-- Table: CharacterUnlockedSkill
+CREATE TABLE CharacterUnlockedSkill ( 
+    CharacterID     INTEGER         NOT NULL
+                                 REFERENCES HeroCharacter ( CharacterID ),
+    SkillID    INTEGER         NOT NULL
+                                 REFERENCES Skill ( SkillID ),
+    TalentID VARCHAR( 10 )   REFERENCES Talent ( TalentID ),
+    Notes         TEXT,
+    PRIMARY KEY ( CharacterID, SkillID ) 
 );
 
 
--- Table: EffettiAbilita
-CREATE TABLE EffettiAbilita ( 
-    CdAbilita INTEGER        REFERENCES Abilita ( CdAbilita ),
-    CdEffetto VARCHAR( 12 )  NOT NULL,
-    Valore    VARCHAR( 6 )   NOT NULL,
-    PRIMARY KEY ( CdAbilita, CdEffetto ) 
+-- Table: SkillEffect
+CREATE TABLE SkillEffect ( 
+    SkillID INTEGER        REFERENCES Skill ( SkillID ),
+    EffectID VARCHAR( 12 )  NOT NULL,
+    Value    VARCHAR( 6 )   NOT NULL,
+    PRIMARY KEY ( SkillID, EffectID ) 
 );
 
 
--- Table: MissioneHacking
-CREATE TABLE MissioneHacking ( 
-    NumeroMissione  INTEGER  NOT NULL
-                             REFERENCES Missione ( NumeroMissione ),
-    NumeroPG        INTEGER  NOT NULL
-                             REFERENCES Personaggio ( NumeroPG ),
-    NumeroTentativo INTEGER  NOT NULL
+-- Table: MessageHacking
+CREATE TABLE MessageHacking ( 
+    MessageID  INTEGER  NOT NULL
+                             REFERENCES Message ( MessageID ),
+    CharacterID        INTEGER  NOT NULL
+                             REFERENCES HeroCharacter ( CharacterID ),
+    AttemptNumber INTEGER  NOT NULL
                              DEFAULT ( 0 ),
-    Riuscito        INTEGER  NOT NULL
+    Success        BOOLEAN  NOT NULL
                              DEFAULT '0',
-    DataTentativo   DATETIME NOT NULL
+    DateOfAttempt   DATETIME NOT NULL
                              DEFAULT 'CURRENT_DATE',
-    PRIMARY KEY ( NumeroMissione, NumeroPG, NumeroTentativo ) 
+    PRIMARY KEY ( MessageID, CharacterID, AttemptNumber ) 
 );
 
 
--- Table: Notizia
-CREATE TABLE Notizia ( 
-    NumeroNotizia  INTEGER        PRIMARY KEY
+-- Table: NewsStory
+CREATE TABLE NewsStory ( 
+    NewsID  INTEGER        PRIMARY KEY
                                   NOT NULL
                                   DEFAULT '0',
-    DataCreazione  DATETIME       NOT NULL
+    DateOfCreation  DATETIME       NOT NULL
                                   DEFAULT 'CURRENT_DATE',
-    DataFine       DATETIME       NOT NULL
+    ExpirationDate       DATETIME       NOT NULL
                                   DEFAULT 'CURRENT_DATE',
-    Titolo         VARCHAR( 60 ),
-    Testo          TEXT           NOT NULL,
-    Rete           INTEGER        NOT NULL
+    Subject         VARCHAR( 60 ),
+    Message          TEXT           NOT NULL,
+    NetworkID           INTEGER        NOT NULL
                                   DEFAULT '0'
-                                  REFERENCES Rete ( NumeroRete ),
-    Autore         INTEGER        REFERENCES Personaggio ( NumeroPG ),
-    LivelloHacking INTEGER        NOT NULL
+                                  REFERENCES Network ( NetworkID ),
+    AuthorCharacterID         INTEGER        REFERENCES HeroCharacter ( CharacterID ),
+    HackingLevel INTEGER        NOT NULL
                                   DEFAULT '0' 
 );
 
 
--- Table: RegistroIP
-CREATE TABLE RegistroIP ( 
-    IndirizzoIP VARCHAR( 20 )  PRIMARY KEY,
-    Rete        INTEGER        NOT NULL
-                               REFERENCES Rete ( NumeroRete ) 
+-- Table: DeviceNetwork
+CREATE TABLE DeviceNetwork ( 
+    IPv4Address VARCHAR( 20 )  PRIMARY KEY,
+    NetworkID        INTEGER        NOT NULL
+                               REFERENCES Network ( NetworkID ) 
 );
 
 
--- Table: NotiziaHacking
-CREATE TABLE NotiziaHacking ( 
-    NumeroNotizia   INTEGER  NOT NULL
-                             REFERENCES Notizia ( NumeroNotizia ),
-    NumeroPG        INTEGER  NOT NULL
-                             REFERENCES Personaggio ( NumeroPG ),
-    NumeroTentativo INTEGER  NOT NULL
+-- Table: NewsHacking
+CREATE TABLE NewsHacking ( 
+    NewsID   INTEGER  NOT NULL
+                             REFERENCES NewsStory ( NewsID ),
+    CharacterID        INTEGER  NOT NULL
+                             REFERENCES HeroCharacter ( CharacterID ),
+    AttemptNumber INTEGER  NOT NULL
                              DEFAULT ( 0 ),
-    Riuscito        INTEGER  NOT NULL
+    Success        BOOLEAN  NOT NULL
                              DEFAULT '0',
-    DataTentativo   DATETIME NOT NULL
+    DateOfAttempt   DATETIME NOT NULL
                              DEFAULT 'CURRENT_DATE',
-    PRIMARY KEY ( NumeroNotizia, NumeroPG, NumeroTentativo ) 
+    PRIMARY KEY ( NewsID, CharacterID, AttemptNumber ) 
 );
 
 
--- Table: RequisitiAbilita
-CREATE TABLE RequisitiAbilita ( 
-    CdAbilita   INTEGER NOT NULL
-                        REFERENCES Abilita ( CdAbilita ),
-    CdRequisito INTEGER NOT NULL
-                        REFERENCES Abilita ( CdAbilita ),
-    PRIMARY KEY ( CdAbilita, CdRequisito ) 
+-- Table: SkillPrerequisite
+CREATE TABLE SkillPrerequisite ( 
+    SkillID   INTEGER NOT NULL
+                        REFERENCES Skill ( SkillID ),
+    RequiredSkillID INTEGER NOT NULL
+                        REFERENCES Skill ( SkillID ),
+    PRIMARY KEY ( SkillID, RequiredSkillID ) 
 );
 
 
--- Table: Parametri
-CREATE TABLE Parametri ( 
-    Rete      INTEGER        REFERENCES Rete ( NumeroRete ),
-    Parametro VARCHAR( 30 ),
-    Valore    TEXT,
-    PRIMARY KEY ( Rete, Parametro ) 
+-- Table: Parameter
+CREATE TABLE Parameter ( 
+    NetworkID      INTEGER        REFERENCES Network ( NetworkID ),
+    Parameter VARCHAR( 30 ),
+    Value    TEXT,
+    PRIMARY KEY ( NetworkID, Parameter ) 
 );
 

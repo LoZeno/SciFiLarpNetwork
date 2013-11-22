@@ -1,0 +1,3270 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="gamedataModel.Store" Alias="Self" Provider="System.Data.SQLite" ProviderManifestToken="ISO8601" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityContainer Name="gamedataModelStoreContainer">
+          <EntitySet Name="AccountHacking" EntityType="gamedataModel.Store.AccountHacking" store:Type="Tables" />
+          <EntitySet Name="AddressBook" EntityType="gamedataModel.Store.AddressBook" store:Type="Tables" />
+          <EntitySet Name="Bank" EntityType="gamedataModel.Store.Bank" store:Type="Tables" />
+          <EntitySet Name="BankAccount" EntityType="gamedataModel.Store.BankAccount" store:Type="Tables" />
+          <EntitySet Name="CharacterEventDay" EntityType="gamedataModel.Store.CharacterEventDay" store:Type="Tables" />
+          <EntitySet Name="CharacterInfection" EntityType="gamedataModel.Store.CharacterInfection" store:Type="Tables" />
+          <EntitySet Name="CharacterSkill" EntityType="gamedataModel.Store.CharacterSkill" store:Type="Tables" />
+          <EntitySet Name="CharacterTalent" EntityType="gamedataModel.Store.CharacterTalent" store:Type="Tables" />
+          <EntitySet Name="CharacterUnlockedSkill" EntityType="gamedataModel.Store.CharacterUnlockedSkill" store:Type="Tables" />
+          <EntitySet Name="Datapad" EntityType="gamedataModel.Store.Datapad" store:Type="Tables" />
+          <EntitySet Name="DatapadFiles" EntityType="gamedataModel.Store.DatapadFiles" store:Type="Tables" />
+          <EntitySet Name="DatapadHacking" EntityType="gamedataModel.Store.DatapadHacking" store:Type="Tables" />
+          <EntitySet Name="DeviceNetwork" EntityType="gamedataModel.Store.DeviceNetwork" store:Type="Tables" />
+          <EntitySet Name="Door" EntityType="gamedataModel.Store.Door" store:Type="Tables" />
+          <EntitySet Name="Element" EntityType="gamedataModel.Store.Element" store:Type="Tables" />
+          <EntitySet Name="ElementAvailability" EntityType="gamedataModel.Store.ElementAvailability" store:Type="Tables" />
+          <EntitySet Name="ElementCompound" EntityType="gamedataModel.Store.ElementCompound" store:Type="Tables" />
+          <EntitySet Name="ElementQRCode" EntityType="gamedataModel.Store.ElementQRCode" store:Type="Tables" />
+          <EntitySet Name="Event" EntityType="gamedataModel.Store.Event" store:Type="Tables" />
+          <EntitySet Name="EventDatapad" EntityType="gamedataModel.Store.EventDatapad" store:Type="Tables" />
+          <EntitySet Name="EventDays" EntityType="gamedataModel.Store.EventDays" store:Type="Tables" />
+          <EntitySet Name="EventElement" EntityType="gamedataModel.Store.EventElement" store:Type="Tables" />
+          <EntitySet Name="HackingTool" EntityType="gamedataModel.Store.HackingTool" store:Type="Tables" />
+          <EntitySet Name="HeroCharacter" EntityType="gamedataModel.Store.HeroCharacter" store:Type="Tables" />
+          <EntitySet Name="Infection" EntityType="gamedataModel.Store.Infection" store:Type="Tables" />
+          <EntitySet Name="Item" EntityType="gamedataModel.Store.Item" store:Type="Tables" />
+          <EntitySet Name="ItemType" EntityType="gamedataModel.Store.ItemType" store:Type="Tables" />
+          <EntitySet Name="MailInBox" EntityType="gamedataModel.Store.MailInBox" store:Type="Tables" />
+          <EntitySet Name="MailOutBox" EntityType="gamedataModel.Store.MailOutBox" store:Type="Tables" />
+          <EntitySet Name="Message" EntityType="gamedataModel.Store.Message" store:Type="Tables" />
+          <EntitySet Name="MessageHacking" EntityType="gamedataModel.Store.MessageHacking" store:Type="Tables" />
+          <EntitySet Name="Network" EntityType="gamedataModel.Store.Network" store:Type="Tables" />
+          <EntitySet Name="NewsHacking" EntityType="gamedataModel.Store.NewsHacking" store:Type="Tables" />
+          <EntitySet Name="NewsStory" EntityType="gamedataModel.Store.NewsStory" store:Type="Tables" />
+          <EntitySet Name="Parameter" EntityType="gamedataModel.Store.Parameter" store:Type="Tables" />
+          <EntitySet Name="Player" EntityType="gamedataModel.Store.Player" store:Type="Tables" />
+          <EntitySet Name="SavedMessage" EntityType="gamedataModel.Store.SavedMessage" store:Type="Tables" />
+          <EntitySet Name="Skill" EntityType="gamedataModel.Store.Skill" store:Type="Tables" />
+          <EntitySet Name="SkillEffect" EntityType="gamedataModel.Store.SkillEffect" store:Type="Tables" />
+          <EntitySet Name="SkillPrerequisite" EntityType="gamedataModel.Store.SkillPrerequisite" store:Type="Tables" />
+          <EntitySet Name="Species" EntityType="gamedataModel.Store.Species" store:Type="Tables" />
+          <EntitySet Name="Substance" EntityType="gamedataModel.Store.Substance" store:Type="Tables" />
+          <EntitySet Name="SubstanceType" EntityType="gamedataModel.Store.SubstanceType" store:Type="Tables" />
+          <EntitySet Name="Talent" EntityType="gamedataModel.Store.Talent" store:Type="Tables" />
+          <EntitySet Name="TalentSkill" EntityType="gamedataModel.Store.TalentSkill" store:Type="Tables" />
+          <AssociationSet Name="FK_AccountHacking_0_0" Association="gamedataModel.Store.FK_AccountHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="AccountHacking" EntitySet="AccountHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AccountHacking_1_0" Association="gamedataModel.Store.FK_AccountHacking_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="AccountHacking" EntitySet="AccountHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AddressBook_0_0" Association="gamedataModel.Store.FK_AddressBook_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="AddressBook" EntitySet="AddressBook" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BankAccount_0_0" Association="gamedataModel.Store.FK_BankAccount_0_0">
+            <End Role="Bank" EntitySet="Bank" />
+            <End Role="BankAccount" EntitySet="BankAccount" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BankAccount_1_0" Association="gamedataModel.Store.FK_BankAccount_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="BankAccount" EntitySet="BankAccount" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterEventDay_1_0" Association="gamedataModel.Store.FK_CharacterEventDay_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="CharacterEventDay" EntitySet="CharacterEventDay" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterInfection_0_0" Association="gamedataModel.Store.FK_CharacterInfection_0_0">
+            <End Role="Infection" EntitySet="Infection" />
+            <End Role="CharacterInfection" EntitySet="CharacterInfection" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterInfection_1_0" Association="gamedataModel.Store.FK_CharacterInfection_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="CharacterInfection" EntitySet="CharacterInfection" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_0_0" Association="gamedataModel.Store.FK_CharacterSkill_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_1_0" Association="gamedataModel.Store.FK_CharacterSkill_1_0">
+            <End Role="Talent" EntitySet="Talent" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_2_0" Association="gamedataModel.Store.FK_CharacterSkill_2_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterTalent_0_0" Association="gamedataModel.Store.FK_CharacterTalent_0_0">
+            <End Role="Talent" EntitySet="Talent" />
+            <End Role="CharacterTalent" EntitySet="CharacterTalent" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterTalent_1_0" Association="gamedataModel.Store.FK_CharacterTalent_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="CharacterTalent" EntitySet="CharacterTalent" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_0_0" Association="gamedataModel.Store.FK_CharacterUnlockedSkill_0_0">
+            <End Role="Talent" EntitySet="Talent" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_1_0" Association="gamedataModel.Store.FK_CharacterUnlockedSkill_1_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_2_0" Association="gamedataModel.Store.FK_CharacterUnlockedSkill_2_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadFiles_0_0" Association="gamedataModel.Store.FK_DatapadFiles_0_0">
+            <End Role="Datapad" EntitySet="Datapad" />
+            <End Role="DatapadFiles" EntitySet="DatapadFiles" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadHacking_0_0" Association="gamedataModel.Store.FK_DatapadHacking_0_0">
+            <End Role="Datapad" EntitySet="Datapad" />
+            <End Role="DatapadHacking" EntitySet="DatapadHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadHacking_1_0" Association="gamedataModel.Store.FK_DatapadHacking_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="DatapadHacking" EntitySet="DatapadHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DeviceNetwork_0_0" Association="gamedataModel.Store.FK_DeviceNetwork_0_0">
+            <End Role="Network" EntitySet="Network" />
+            <End Role="DeviceNetwork" EntitySet="DeviceNetwork" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Element_0_0" Association="gamedataModel.Store.FK_Element_0_0">
+            <End Role="ElementAvailability" EntitySet="ElementAvailability" />
+            <End Role="Element" EntitySet="Element" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementCompound_0_0" Association="gamedataModel.Store.FK_ElementCompound_0_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="ElementCompound" EntitySet="ElementCompound" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementCompound_1_0" Association="gamedataModel.Store.FK_ElementCompound_1_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="ElementCompound" EntitySet="ElementCompound" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementQRCode_0_0" Association="gamedataModel.Store.FK_ElementQRCode_0_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="ElementQRCode" EntitySet="ElementQRCode" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDatapad_0_0" Association="gamedataModel.Store.FK_EventDatapad_0_0">
+            <End Role="Datapad" EntitySet="Datapad" />
+            <End Role="EventDatapad" EntitySet="EventDatapad" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDatapad_1_0" Association="gamedataModel.Store.FK_EventDatapad_1_0">
+            <End Role="Event" EntitySet="Event" />
+            <End Role="EventDatapad" EntitySet="EventDatapad" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDays_0_0" Association="gamedataModel.Store.FK_EventDays_0_0">
+            <End Role="Event" EntitySet="Event" />
+            <End Role="EventDays" EntitySet="EventDays" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventElement_0_0" Association="gamedataModel.Store.FK_EventElement_0_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="EventElement" EntitySet="EventElement" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventElement_1_0" Association="gamedataModel.Store.FK_EventElement_1_0">
+            <End Role="Event" EntitySet="Event" />
+            <End Role="EventElement" EntitySet="EventElement" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_4_0" Association="gamedataModel.Store.FK_HeroCharacter_4_0">
+            <End Role="Network" EntitySet="Network" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_5_0" Association="gamedataModel.Store.FK_HeroCharacter_5_0">
+            <End Role="Species" EntitySet="Species" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_6_0" Association="gamedataModel.Store.FK_HeroCharacter_6_0">
+            <End Role="Player" EntitySet="Player" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Item_0_0" Association="gamedataModel.Store.FK_Item_0_0">
+            <End Role="ItemType" EntitySet="ItemType" />
+            <End Role="Item" EntitySet="Item" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Item_1_0" Association="gamedataModel.Store.FK_Item_1_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="Item" EntitySet="Item" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailInBox_0_0" Association="gamedataModel.Store.FK_MailInBox_0_0">
+            <End Role="Message" EntitySet="Message" />
+            <End Role="MailInBox" EntitySet="MailInBox" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailInBox_1_0" Association="gamedataModel.Store.FK_MailInBox_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="MailInBox" EntitySet="MailInBox" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailOutBox_0_0" Association="gamedataModel.Store.FK_MailOutBox_0_0">
+            <End Role="Message" EntitySet="Message" />
+            <End Role="MailOutBox" EntitySet="MailOutBox" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailOutBox_1_0" Association="gamedataModel.Store.FK_MailOutBox_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="MailOutBox" EntitySet="MailOutBox" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Message_0_0" Association="gamedataModel.Store.FK_Message_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="Message" EntitySet="Message" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MessageHacking_0_0" Association="gamedataModel.Store.FK_MessageHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="MessageHacking" EntitySet="MessageHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MessageHacking_1_0" Association="gamedataModel.Store.FK_MessageHacking_1_0">
+            <End Role="Message" EntitySet="Message" />
+            <End Role="MessageHacking" EntitySet="MessageHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsHacking_0_0" Association="gamedataModel.Store.FK_NewsHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="NewsHacking" EntitySet="NewsHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsHacking_1_0" Association="gamedataModel.Store.FK_NewsHacking_1_0">
+            <End Role="NewsStory" EntitySet="NewsStory" />
+            <End Role="NewsHacking" EntitySet="NewsHacking" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsStory_0_0" Association="gamedataModel.Store.FK_NewsStory_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="NewsStory" EntitySet="NewsStory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsStory_1_0" Association="gamedataModel.Store.FK_NewsStory_1_0">
+            <End Role="Network" EntitySet="Network" />
+            <End Role="NewsStory" EntitySet="NewsStory" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Parameter_0_0" Association="gamedataModel.Store.FK_Parameter_0_0">
+            <End Role="Network" EntitySet="Network" />
+            <End Role="Parameter" EntitySet="Parameter" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SavedMessage_0_0" Association="gamedataModel.Store.FK_SavedMessage_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacter" />
+            <End Role="SavedMessage" EntitySet="SavedMessage" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SkillEffect_0_0" Association="gamedataModel.Store.FK_SkillEffect_0_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="SkillEffect" EntitySet="SkillEffect" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SkillPrerequisite_0_0" Association="gamedataModel.Store.FK_SkillPrerequisite_0_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="SkillPrerequisite" EntitySet="SkillPrerequisite" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SkillPrerequisite_1_0" Association="gamedataModel.Store.FK_SkillPrerequisite_1_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="SkillPrerequisite" EntitySet="SkillPrerequisite" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Substance_0_0" Association="gamedataModel.Store.FK_Substance_0_0">
+            <End Role="SubstanceType" EntitySet="SubstanceType" />
+            <End Role="Substance" EntitySet="Substance" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Substance_1_0" Association="gamedataModel.Store.FK_Substance_1_0">
+            <End Role="Element" EntitySet="Element" />
+            <End Role="Substance" EntitySet="Substance" />
+          </AssociationSet>
+          <AssociationSet Name="FK_TalentSkill_0_0" Association="gamedataModel.Store.FK_TalentSkill_0_0">
+            <End Role="Talent" EntitySet="Talent" />
+            <End Role="TalentSkill" EntitySet="TalentSkill" />
+          </AssociationSet>
+          <AssociationSet Name="FK_TalentSkill_1_0" Association="gamedataModel.Store.FK_TalentSkill_1_0">
+            <End Role="Skill" EntitySet="Skill" />
+            <End Role="TalentSkill" EntitySet="TalentSkill" />
+          </AssociationSet>
+        </EntityContainer>
+        <!--Errors Found During Generation:
+      warning 6035: The relationship 'FK_HeroCharacter_2_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      -->
+        <EntityType Name="AccountHacking">
+          <Key>
+            <PropertyRef Name="HackedCharacterID" />
+            <PropertyRef Name="HackingCharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="HackedCharacterID" Type="integer" Nullable="false" />
+          <Property Name="HackingCharacterID" Type="integer" Nullable="false" />
+          <Property Name="AttemptNumber" Type="integer" Nullable="false" />
+          <Property Name="Success" Type="bit" />
+          <Property Name="DateOfAttempt" Type="datetime" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6035: The relationship 'FK_HeroCharacter_3_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      -->
+        <EntityType Name="AddressBook">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SavedCharacterID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="SavedCharacterID" Type="integer" Nullable="false" />
+          <Property Name="SavedCharacterName" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="Bank">
+          <Key>
+            <PropertyRef Name="BankID" />
+          </Key>
+          <Property Name="BankID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="BaseInterestRate" Type="integer" />
+          <Property Name="InterestTimeInterval" Type="integer" />
+          <Property Name="Price" Type="integer" />
+          <Property Name="PriceTimeInterval" Type="integer" />
+        </EntityType>
+        <EntityType Name="BankAccount">
+          <Key>
+            <PropertyRef Name="AccountID" />
+          </Key>
+          <Property Name="AccountID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="BankID" Type="integer" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="InterestTimeInterval" Type="integer" />
+          <Property Name="Price" Type="integer" />
+          <Property Name="PriceTimeInterval" Type="integer" />
+          <Property Name="InterestRate" Type="integer" />
+          <Property Name="SubscriptionDate" Type="datetime" />
+          <Property Name="Amount" Type="real" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CharacterEventDay">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="IndividualDay" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="EventID" Type="integer" Nullable="false" />
+          <Property Name="IndividualDay" Type="datetime" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="HasPaid" Type="bit" Nullable="false" />
+          <Property Name="PaymentDate" Type="datetime" />
+          <Property Name="TookPart" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CharacterInfection">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="InfectionID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="InfectionID" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CharacterSkill">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="SkillID" Type="integer" Nullable="false" />
+          <Property Name="AcquiredManyTimes" Type="integer" />
+          <Property Name="TalentID" Type="varchar" Nullable="false" />
+          <Property Name="AdditionalDetails" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="CharacterTalent">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="TalentID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="TalentID" Type="varchar" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CharacterUnlockedSkill">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="SkillID" Type="integer" Nullable="false" />
+          <Property Name="TalentID" Type="varchar" />
+          <Property Name="Notes" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="Datapad">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+          </Key>
+          <Property Name="DatapadID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Content" Type="nvarchar" />
+          <Property Name="HackingLevel" Type="integer" Nullable="false" />
+          <Property Name="QRCode" Type="uniqueidentifier" />
+        </EntityType>
+        <EntityType Name="DatapadFiles">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+            <PropertyRef Name="FileNumber" />
+          </Key>
+          <Property Name="DatapadID" Type="integer" Nullable="false" />
+          <Property Name="FileNumber" Type="integer" Nullable="false" />
+          <Property Name="FileName" Type="varchar" />
+          <Property Name="Content" Type="nvarchar" />
+          <Property Name="EncryptionLevel" Type="integer" />
+        </EntityType>
+        <EntityType Name="DatapadHacking">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+            <PropertyRef Name="HackingCharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="DatapadID" Type="integer" Nullable="false" />
+          <Property Name="HackingCharacterID" Type="integer" Nullable="false" />
+          <Property Name="AttemptNumber" Type="integer" Nullable="false" />
+          <Property Name="Success" Type="bit" />
+          <Property Name="DateOfAttempt" Type="datetime" />
+        </EntityType>
+        <EntityType Name="DeviceNetwork">
+          <Key>
+            <PropertyRef Name="IPv4Address" />
+          </Key>
+          <Property Name="IPv4Address" Type="varchar" Nullable="false" />
+          <Property Name="NetworkID" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Door">
+          <Key>
+            <PropertyRef Name="DoorID" />
+          </Key>
+          <Property Name="DoorID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Reference" Type="varchar" />
+          <Property Name="QRCode" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="HackingLevel" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Element">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="varchar" />
+          <Property Name="Description" Type="nvarchar" />
+          <Property Name="Effect" Type="nvarchar" />
+          <Property Name="Price" Type="real" Nullable="false" />
+          <Property Name="Picture" Type="nvarchar" />
+          <Property Name="AvailabilityID" Type="integer" Nullable="false" />
+          <Property Name="ExpirationDate" Type="datetime" />
+          <Property Name="Discriminator" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ElementAvailability">
+          <Key>
+            <PropertyRef Name="AvailabilityID" />
+          </Key>
+          <Property Name="AvailabilityID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="ElementCompound">
+          <Key>
+            <PropertyRef Name="CompoundElementID" />
+            <PropertyRef Name="ComponentNumber" />
+          </Key>
+          <Property Name="CompoundElementID" Type="integer" Nullable="false" />
+          <Property Name="ComponentNumber" Type="integer" Nullable="false" />
+          <Property Name="ComponentElementID" Type="integer" />
+        </EntityType>
+        <EntityType Name="ElementQRCode">
+          <Key>
+            <PropertyRef Name="ElementID" />
+            <PropertyRef Name="QRCode" />
+          </Key>
+          <Property Name="ElementID" Type="integer" Nullable="false" />
+          <Property Name="QRCode" Type="uniqueidentifier" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Event">
+          <Key>
+            <PropertyRef Name="EventID" />
+          </Key>
+          <Property Name="EventID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Title" Type="varchar" Nullable="false" />
+          <Property Name="StartDate" Type="datetime" Nullable="false" />
+          <Property Name="TotalExperiencePoints" Type="integer" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+          <Property Name="FullEventPrice" Type="real" Nullable="false" />
+          <Property Name="Collection" Type="real" />
+          <Property Name="IsClosed" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="EventDatapad">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="DatapadID" />
+          </Key>
+          <Property Name="EventID" Type="integer" Nullable="false" />
+          <Property Name="DatapadID" Type="integer" Nullable="false" />
+          <Property Name="NumberOfCopies" Type="integer" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6035: The relationship 'FK_CharacterEventDay_0_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      warning 6035: The relationship 'FK_CharacterEventDay_0_1' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      -->
+        <EntityType Name="EventDays">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="IndividualDay" />
+          </Key>
+          <Property Name="EventID" Type="integer" Nullable="false" />
+          <Property Name="IndividualDay" Type="datetime" Nullable="false" />
+          <Property Name="ExperiencePoints" Type="integer" />
+          <Property Name="InGameTime" Type="datetime" Nullable="false" />
+          <Property Name="OffGameTime" Type="datetime" Nullable="false" />
+          <Property Name="PricePerDay" Type="real" />
+        </EntityType>
+        <EntityType Name="EventElement">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="EventID" Type="integer" Nullable="false" />
+          <Property Name="ElementID" Type="integer" Nullable="false" />
+          <Property Name="NumberOfCopies" Type="integer" />
+        </EntityType>
+        <EntityType Name="HackingTool">
+          <Key>
+            <PropertyRef Name="HackingToolID" />
+          </Key>
+          <Property Name="HackingToolID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="QRCode" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="HackerLevel" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="HeroCharacter">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="CharacterID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="PlayerID" Type="integer" Nullable="false" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="SpeciesID" Type="integer" Nullable="false" />
+          <Property Name="Type" Type="integer" Nullable="false" />
+          <Property Name="ExperiencePoints" Type="integer" Nullable="false" />
+          <Property Name="Sex" Type="char" Nullable="false" />
+          <Property Name="DarkSidePoints" Type="integer" Nullable="false" />
+          <Property Name="DateOfCreation" Type="datetime" Nullable="false" />
+          <Property Name="HonorificTitle" Type="varchar" />
+          <Property Name="IsAlive" Type="bit" Nullable="false" />
+          <Property Name="DateOfDeath" Type="datetime" />
+          <Property Name="LarpNetworkPassword" Type="varchar" />
+          <Property Name="BloodFormula" Type="varchar" />
+          <Property Name="NetworkID" Type="integer" />
+          <Property Name="LastAccountEncryption" Type="datetime" />
+          <Property Name="EncryptionLevel" Type="integer" Nullable="false" />
+          <Property Name="QRCode" Type="uniqueidentifier" />
+        </EntityType>
+        <EntityType Name="Infection">
+          <Key>
+            <PropertyRef Name="InfectionID" />
+          </Key>
+          <Property Name="InfectionID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="Item">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="integer" Nullable="false" />
+          <Property Name="NumberOfCharges" Type="integer" />
+          <Property Name="ItemTypeID" Type="integer" />
+          <Property Name="Rechargeable" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ItemType">
+          <Key>
+            <PropertyRef Name="ItemTypeID" />
+          </Key>
+          <Property Name="ItemTypeID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="varchar" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6035: The relationship 'FK_HeroCharacter_1_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      warning 6035: The relationship 'FK_Message_1_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      -->
+        <EntityType Name="MailInBox">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="MessageID" Type="integer" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="IsDeleted" Type="bit" />
+          <Property Name="IsRead" Type="bit" />
+          <Property Name="DateOfDeletion" Type="datetime" />
+        </EntityType>
+        <!--Errors Found During Generation:
+      warning 6035: The relationship 'FK_HeroCharacter_0_0' has columns that are not part of the key of the table on the primary side of the relationship. The relationship was excluded.
+      -->
+        <EntityType Name="MailOutBox">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="MessageID" Type="integer" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="IsDeleted" Type="bit" Nullable="false" />
+          <Property Name="IsRead" Type="bit" Nullable="false" />
+          <Property Name="DateOfDeletion" Type="datetime" />
+        </EntityType>
+        <EntityType Name="Message">
+          <Key>
+            <PropertyRef Name="MessageID" />
+          </Key>
+          <Property Name="MessageID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="SenderCharacter" Type="integer" Nullable="false" />
+          <Property Name="Subject" Type="varchar" />
+          <Property Name="Message" Type="nvarchar" Nullable="false" />
+          <Property Name="HackingLevel" Type="integer" Nullable="false" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="DateOfCreation" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="MessageHacking">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="MessageID" Type="integer" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="AttemptNumber" Type="integer" Nullable="false" />
+          <Property Name="Success" Type="bit" Nullable="false" />
+          <Property Name="DateOfAttempt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Network">
+          <Key>
+            <PropertyRef Name="NetworkID" />
+          </Key>
+          <Property Name="NetworkID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="NetworkName" Type="varchar" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+          <Property Name="Faction" Type="varchar" />
+        </EntityType>
+        <EntityType Name="NewsHacking">
+          <Key>
+            <PropertyRef Name="NewsID" />
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="NewsID" Type="integer" Nullable="false" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="AttemptNumber" Type="integer" Nullable="false" />
+          <Property Name="Success" Type="bit" Nullable="false" />
+          <Property Name="DateOfAttempt" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="NewsStory">
+          <Key>
+            <PropertyRef Name="NewsID" />
+          </Key>
+          <Property Name="NewsID" Type="integer" Nullable="false" />
+          <Property Name="DateOfCreation" Type="datetime" Nullable="false" />
+          <Property Name="ExpirationDate" Type="datetime" Nullable="false" />
+          <Property Name="Subject" Type="varchar" />
+          <Property Name="Message" Type="nvarchar" Nullable="false" />
+          <Property Name="NetworkID" Type="integer" Nullable="false" />
+          <Property Name="AuthorCharacterID" Type="integer" />
+          <Property Name="HackingLevel" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Parameter">
+          <Key>
+            <PropertyRef Name="NetworkID" />
+            <PropertyRef Name="Parameter" />
+          </Key>
+          <Property Name="NetworkID" Type="integer" Nullable="false" />
+          <Property Name="Parameter" Type="varchar" Nullable="false" />
+          <Property Name="Value" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="Player">
+          <Key>
+            <PropertyRef Name="PlayerID" />
+          </Key>
+          <Property Name="PlayerID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="MainName" Type="varchar" Nullable="false" />
+          <Property Name="FirstName" Type="varchar" />
+          <Property Name="DateOfBirth" Type="datetime" Nullable="false" />
+          <Property Name="Address" Type="varchar" />
+          <Property Name="City" Type="varchar" />
+          <Property Name="CountyOrArea" Type="varchar" />
+          <Property Name="PostCode" Type="varchar" />
+          <Property Name="PhoneNumber" Type="varchar" />
+          <Property Name="DateOfSubscription" Type="datetime" Nullable="false" />
+          <Property Name="Sex" Type="char" Nullable="false" />
+          <Property Name="PlayerCathegory" Type="varchar" Nullable="false" />
+          <Property Name="Email" Type="varchar" />
+          <Property Name="Password" Type="varchar" />
+        </EntityType>
+        <EntityType Name="SavedMessage">
+          <Key>
+            <PropertyRef Name="MessageID" />
+          </Key>
+          <Property Name="MessageID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="CharacterID" Type="integer" Nullable="false" />
+          <Property Name="Subject" Type="nvarchar" Nullable="false" />
+          <Property Name="Source" Type="varchar" />
+          <Property Name="Message" Type="nvarchar" />
+          <Property Name="HackingLevel" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Skill">
+          <Key>
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="SkillID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+          <Property Name="AcquireManyTimes" Type="bit" Nullable="false" />
+          <Property Name="ExperiencePointsCost" Type="integer" Nullable="false" />
+          <Property Name="IsAdvanced" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SkillEffect">
+          <Key>
+            <PropertyRef Name="SkillID" />
+            <PropertyRef Name="EffectID" />
+          </Key>
+          <Property Name="SkillID" Type="integer" Nullable="false" />
+          <Property Name="EffectID" Type="varchar" Nullable="false" />
+          <Property Name="Value" Type="varchar" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SkillPrerequisite">
+          <Key>
+            <PropertyRef Name="SkillID" />
+            <PropertyRef Name="RequiredSkillID" />
+          </Key>
+          <Property Name="SkillID" Type="integer" Nullable="false" />
+          <Property Name="RequiredSkillID" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Species">
+          <Key>
+            <PropertyRef Name="SpeciesID" />
+          </Key>
+          <Property Name="SpeciesID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+        </EntityType>
+        <EntityType Name="Substance">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="integer" Nullable="false" />
+          <Property Name="ApplicationMode" Type="varchar" Nullable="false" />
+          <Property Name="StrengthValue" Type="integer" Nullable="false" />
+          <Property Name="SubstanceTypeID" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="SubstanceType">
+          <Key>
+            <PropertyRef Name="SubstanceTypeID" />
+          </Key>
+          <Property Name="SubstanceTypeID" Type="integer" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="varchar" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Talent">
+          <Key>
+            <PropertyRef Name="TalentID" />
+          </Key>
+          <Property Name="TalentID" Type="varchar" Nullable="false" />
+          <Property Name="Name" Type="varchar" Nullable="false" />
+          <Property Name="Description" Type="nvarchar" />
+          <Property Name="TalentType" Type="integer" Nullable="false" />
+        </EntityType>
+        <EntityType Name="TalentSkill">
+          <Key>
+            <PropertyRef Name="SkillID" />
+            <PropertyRef Name="TalentID" />
+          </Key>
+          <Property Name="SkillID" Type="integer" Nullable="false" />
+          <Property Name="TalentID" Type="varchar" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_AccountHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="AccountHacking" Type="gamedataModel.Store.AccountHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AccountHacking">
+              <PropertyRef Name="HackingCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AccountHacking_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="AccountHacking" Type="gamedataModel.Store.AccountHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AccountHacking">
+              <PropertyRef Name="HackedCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AddressBook_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="AddressBook" Type="gamedataModel.Store.AddressBook" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AddressBook">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BankAccount_0_0">
+          <End Role="Bank" Type="gamedataModel.Store.Bank" Multiplicity="1" />
+          <End Role="BankAccount" Type="gamedataModel.Store.BankAccount" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bank">
+              <PropertyRef Name="BankID" />
+            </Principal>
+            <Dependent Role="BankAccount">
+              <PropertyRef Name="BankID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BankAccount_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="BankAccount" Type="gamedataModel.Store.BankAccount" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="BankAccount">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterEventDay_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterEventDay" Type="gamedataModel.Store.CharacterEventDay" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterEventDay">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterInfection_0_0">
+          <End Role="Infection" Type="gamedataModel.Store.Infection" Multiplicity="1" />
+          <End Role="CharacterInfection" Type="gamedataModel.Store.CharacterInfection" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Infection">
+              <PropertyRef Name="InfectionID" />
+            </Principal>
+            <Dependent Role="CharacterInfection">
+              <PropertyRef Name="InfectionID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterInfection_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterInfection" Type="gamedataModel.Store.CharacterInfection" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterInfection">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.Store.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_1_0">
+          <End Role="Talent" Type="gamedataModel.Store.Talent" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.Store.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_2_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.Store.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterTalent_0_0">
+          <End Role="Talent" Type="gamedataModel.Store.Talent" Multiplicity="1" />
+          <End Role="CharacterTalent" Type="gamedataModel.Store.CharacterTalent" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="CharacterTalent">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterTalent_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterTalent" Type="gamedataModel.Store.CharacterTalent" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterTalent">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_0_0">
+          <End Role="Talent" Type="gamedataModel.Store.Talent" Multiplicity="0..1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.Store.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_1_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.Store.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_2_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.Store.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadFiles_0_0">
+          <End Role="Datapad" Type="gamedataModel.Store.Datapad" Multiplicity="1" />
+          <End Role="DatapadFiles" Type="gamedataModel.Store.DatapadFiles" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="DatapadFiles">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadHacking_0_0">
+          <End Role="Datapad" Type="gamedataModel.Store.Datapad" Multiplicity="1" />
+          <End Role="DatapadHacking" Type="gamedataModel.Store.DatapadHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="DatapadHacking">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadHacking_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="DatapadHacking" Type="gamedataModel.Store.DatapadHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="DatapadHacking">
+              <PropertyRef Name="HackingCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DeviceNetwork_0_0">
+          <End Role="Network" Type="gamedataModel.Store.Network" Multiplicity="1" />
+          <End Role="DeviceNetwork" Type="gamedataModel.Store.DeviceNetwork" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="DeviceNetwork">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Element_0_0">
+          <End Role="ElementAvailability" Type="gamedataModel.Store.ElementAvailability" Multiplicity="1" />
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ElementAvailability">
+              <PropertyRef Name="AvailabilityID" />
+            </Principal>
+            <Dependent Role="Element">
+              <PropertyRef Name="AvailabilityID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementCompound_0_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="0..1" />
+          <End Role="ElementCompound" Type="gamedataModel.Store.ElementCompound" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementCompound">
+              <PropertyRef Name="ComponentElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementCompound_1_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="1" />
+          <End Role="ElementCompound" Type="gamedataModel.Store.ElementCompound" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementCompound">
+              <PropertyRef Name="CompoundElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementQRCode_0_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="1" />
+          <End Role="ElementQRCode" Type="gamedataModel.Store.ElementQRCode" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementQRCode">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDatapad_0_0">
+          <End Role="Datapad" Type="gamedataModel.Store.Datapad" Multiplicity="1" />
+          <End Role="EventDatapad" Type="gamedataModel.Store.EventDatapad" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="EventDatapad">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDatapad_1_0">
+          <End Role="Event" Type="gamedataModel.Store.Event" Multiplicity="1" />
+          <End Role="EventDatapad" Type="gamedataModel.Store.EventDatapad" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventDatapad">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDays_0_0">
+          <End Role="Event" Type="gamedataModel.Store.Event" Multiplicity="1" />
+          <End Role="EventDays" Type="gamedataModel.Store.EventDays" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventDays">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventElement_0_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="1" />
+          <End Role="EventElement" Type="gamedataModel.Store.EventElement" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="EventElement">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventElement_1_0">
+          <End Role="Event" Type="gamedataModel.Store.Event" Multiplicity="1" />
+          <End Role="EventElement" Type="gamedataModel.Store.EventElement" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventElement">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_4_0">
+          <End Role="Network" Type="gamedataModel.Store.Network" Multiplicity="0..1" />
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_5_0">
+          <End Role="Species" Type="gamedataModel.Store.Species" Multiplicity="1" />
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Species">
+              <PropertyRef Name="SpeciesID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="SpeciesID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_6_0">
+          <End Role="Player" Type="gamedataModel.Store.Player" Multiplicity="1" />
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="PlayerID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="PlayerID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Item_0_0">
+          <End Role="ItemType" Type="gamedataModel.Store.ItemType" Multiplicity="0..1" />
+          <End Role="Item" Type="gamedataModel.Store.Item" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ItemType">
+              <PropertyRef Name="ItemTypeID" />
+            </Principal>
+            <Dependent Role="Item">
+              <PropertyRef Name="ItemTypeID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Item_1_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="1" />
+          <End Role="Item" Type="gamedataModel.Store.Item" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="Item">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailInBox_0_0">
+          <End Role="Message" Type="gamedataModel.Store.Message" Multiplicity="1" />
+          <End Role="MailInBox" Type="gamedataModel.Store.MailInBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MailInBox">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailInBox_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="MailInBox" Type="gamedataModel.Store.MailInBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MailInBox">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailOutBox_0_0">
+          <End Role="Message" Type="gamedataModel.Store.Message" Multiplicity="1" />
+          <End Role="MailOutBox" Type="gamedataModel.Store.MailOutBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MailOutBox">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailOutBox_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="MailOutBox" Type="gamedataModel.Store.MailOutBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MailOutBox">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Message_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="Message" Type="gamedataModel.Store.Message" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="Message">
+              <PropertyRef Name="SenderCharacter" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MessageHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="MessageHacking" Type="gamedataModel.Store.MessageHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MessageHacking">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MessageHacking_1_0">
+          <End Role="Message" Type="gamedataModel.Store.Message" Multiplicity="1" />
+          <End Role="MessageHacking" Type="gamedataModel.Store.MessageHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MessageHacking">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="NewsHacking" Type="gamedataModel.Store.NewsHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="NewsHacking">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsHacking_1_0">
+          <End Role="NewsStory" Type="gamedataModel.Store.NewsStory" Multiplicity="1" />
+          <End Role="NewsHacking" Type="gamedataModel.Store.NewsHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NewsStory">
+              <PropertyRef Name="NewsID" />
+            </Principal>
+            <Dependent Role="NewsHacking">
+              <PropertyRef Name="NewsID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsStory_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="0..1" />
+          <End Role="NewsStory" Type="gamedataModel.Store.NewsStory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="NewsStory">
+              <PropertyRef Name="AuthorCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsStory_1_0">
+          <End Role="Network" Type="gamedataModel.Store.Network" Multiplicity="1" />
+          <End Role="NewsStory" Type="gamedataModel.Store.NewsStory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="NewsStory">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Parameter_0_0">
+          <End Role="Network" Type="gamedataModel.Store.Network" Multiplicity="1" />
+          <End Role="Parameter" Type="gamedataModel.Store.Parameter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="Parameter">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SavedMessage_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.Store.HeroCharacter" Multiplicity="1" />
+          <End Role="SavedMessage" Type="gamedataModel.Store.SavedMessage" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="SavedMessage">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SkillEffect_0_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="SkillEffect" Type="gamedataModel.Store.SkillEffect" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="SkillEffect">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SkillPrerequisite_0_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="SkillPrerequisite" Type="gamedataModel.Store.SkillPrerequisite" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="SkillPrerequisite">
+              <PropertyRef Name="RequiredSkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SkillPrerequisite_1_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="SkillPrerequisite" Type="gamedataModel.Store.SkillPrerequisite" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="SkillPrerequisite">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Substance_0_0">
+          <End Role="SubstanceType" Type="gamedataModel.Store.SubstanceType" Multiplicity="1" />
+          <End Role="Substance" Type="gamedataModel.Store.Substance" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SubstanceType">
+              <PropertyRef Name="SubstanceTypeID" />
+            </Principal>
+            <Dependent Role="Substance">
+              <PropertyRef Name="SubstanceTypeID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Substance_1_0">
+          <End Role="Element" Type="gamedataModel.Store.Element" Multiplicity="1" />
+          <End Role="Substance" Type="gamedataModel.Store.Substance" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="Substance">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_TalentSkill_0_0">
+          <End Role="Talent" Type="gamedataModel.Store.Talent" Multiplicity="1" />
+          <End Role="TalentSkill" Type="gamedataModel.Store.TalentSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="TalentSkill">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_TalentSkill_1_0">
+          <End Role="Skill" Type="gamedataModel.Store.Skill" Multiplicity="1" />
+          <End Role="TalentSkill" Type="gamedataModel.Store.TalentSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="TalentSkill">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="gamedataModel" Alias="Self" p1:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:p1="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="gamedata2Entities" p1:LazyLoadingEnabled="true">
+          <EntitySet Name="AccountHackings" EntityType="gamedataModel.AccountHacking" />
+          <EntitySet Name="AddressBooks" EntityType="gamedataModel.AddressBook" />
+          <EntitySet Name="Banks" EntityType="gamedataModel.Bank" />
+          <EntitySet Name="BankAccounts" EntityType="gamedataModel.BankAccount" />
+          <EntitySet Name="CharacterEventDays" EntityType="gamedataModel.CharacterEventDay" />
+          <EntitySet Name="CharacterSkills" EntityType="gamedataModel.CharacterSkill" />
+          <EntitySet Name="CharacterUnlockedSkills" EntityType="gamedataModel.CharacterUnlockedSkill" />
+          <EntitySet Name="Datapads" EntityType="gamedataModel.Datapad" />
+          <EntitySet Name="DatapadFiles" EntityType="gamedataModel.DatapadFile" />
+          <EntitySet Name="DatapadHackings" EntityType="gamedataModel.DatapadHacking" />
+          <EntitySet Name="DeviceNetworks" EntityType="gamedataModel.DeviceNetwork" />
+          <EntitySet Name="Doors" EntityType="gamedataModel.Door" />
+          <EntitySet Name="Elements" EntityType="gamedataModel.Element" />
+          <EntitySet Name="ElementAvailabilities" EntityType="gamedataModel.ElementAvailability" />
+          <EntitySet Name="ElementCompounds" EntityType="gamedataModel.ElementCompound" />
+          <EntitySet Name="ElementQRCodes" EntityType="gamedataModel.ElementQRCode" />
+          <EntitySet Name="Events" EntityType="gamedataModel.Event" />
+          <EntitySet Name="EventDatapads" EntityType="gamedataModel.EventDatapad" />
+          <EntitySet Name="EventDays" EntityType="gamedataModel.EventDay" />
+          <EntitySet Name="EventElements" EntityType="gamedataModel.EventElement" />
+          <EntitySet Name="HackingTools" EntityType="gamedataModel.HackingTool" />
+          <EntitySet Name="HeroCharacters" EntityType="gamedataModel.HeroCharacter" />
+          <EntitySet Name="Infections" EntityType="gamedataModel.Infection" />
+          <EntitySet Name="Items" EntityType="gamedataModel.Item" />
+          <EntitySet Name="ItemTypes" EntityType="gamedataModel.ItemType" />
+          <EntitySet Name="MailInBoxes" EntityType="gamedataModel.MailInBox" />
+          <EntitySet Name="MailOutBoxes" EntityType="gamedataModel.MailOutBox" />
+          <EntitySet Name="Messages" EntityType="gamedataModel.Message" />
+          <EntitySet Name="MessageHackings" EntityType="gamedataModel.MessageHacking" />
+          <EntitySet Name="Networks" EntityType="gamedataModel.Network" />
+          <EntitySet Name="NewsHackings" EntityType="gamedataModel.NewsHacking" />
+          <EntitySet Name="NewsStories" EntityType="gamedataModel.NewsStory" />
+          <EntitySet Name="Parameters" EntityType="gamedataModel.Parameter" />
+          <EntitySet Name="Players" EntityType="gamedataModel.Player" />
+          <EntitySet Name="SavedMessages" EntityType="gamedataModel.SavedMessage" />
+          <EntitySet Name="Skills" EntityType="gamedataModel.Skill" />
+          <EntitySet Name="SkillEffects" EntityType="gamedataModel.SkillEffect" />
+          <EntitySet Name="Species" EntityType="gamedataModel.Species" />
+          <EntitySet Name="Substances" EntityType="gamedataModel.Substance" />
+          <EntitySet Name="SubstanceTypes" EntityType="gamedataModel.SubstanceType" />
+          <EntitySet Name="Talents" EntityType="gamedataModel.Talent" />
+          <AssociationSet Name="FK_AccountHacking_0_0" Association="gamedataModel.FK_AccountHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="AccountHacking" EntitySet="AccountHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AccountHacking_1_0" Association="gamedataModel.FK_AccountHacking_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="AccountHacking" EntitySet="AccountHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_AddressBook_0_0" Association="gamedataModel.FK_AddressBook_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="AddressBook" EntitySet="AddressBooks" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BankAccount_0_0" Association="gamedataModel.FK_BankAccount_0_0">
+            <End Role="Bank" EntitySet="Banks" />
+            <End Role="BankAccount" EntitySet="BankAccounts" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BankAccount_1_0" Association="gamedataModel.FK_BankAccount_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="BankAccount" EntitySet="BankAccounts" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterEventDay_1_0" Association="gamedataModel.FK_CharacterEventDay_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="CharacterEventDay" EntitySet="CharacterEventDays" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_0_0" Association="gamedataModel.FK_CharacterSkill_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_1_0" Association="gamedataModel.FK_CharacterSkill_1_0">
+            <End Role="Talent" EntitySet="Talents" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterSkill_2_0" Association="gamedataModel.FK_CharacterSkill_2_0">
+            <End Role="Skill" EntitySet="Skills" />
+            <End Role="CharacterSkill" EntitySet="CharacterSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_0_0" Association="gamedataModel.FK_CharacterUnlockedSkill_0_0">
+            <End Role="Talent" EntitySet="Talents" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_1_0" Association="gamedataModel.FK_CharacterUnlockedSkill_1_0">
+            <End Role="Skill" EntitySet="Skills" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_CharacterUnlockedSkill_2_0" Association="gamedataModel.FK_CharacterUnlockedSkill_2_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="CharacterUnlockedSkill" EntitySet="CharacterUnlockedSkills" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadFiles_0_0" Association="gamedataModel.FK_DatapadFiles_0_0">
+            <End Role="Datapad" EntitySet="Datapads" />
+            <End Role="DatapadFiles" EntitySet="DatapadFiles" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadHacking_0_0" Association="gamedataModel.FK_DatapadHacking_0_0">
+            <End Role="Datapad" EntitySet="Datapads" />
+            <End Role="DatapadHacking" EntitySet="DatapadHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDatapad_0_0" Association="gamedataModel.FK_EventDatapad_0_0">
+            <End Role="Datapad" EntitySet="Datapads" />
+            <End Role="EventDatapad" EntitySet="EventDatapads" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DatapadHacking_1_0" Association="gamedataModel.FK_DatapadHacking_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="DatapadHacking" EntitySet="DatapadHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_DeviceNetwork_0_0" Association="gamedataModel.FK_DeviceNetwork_0_0">
+            <End Role="Network" EntitySet="Networks" />
+            <End Role="DeviceNetwork" EntitySet="DeviceNetworks" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Element_0_0" Association="gamedataModel.FK_Element_0_0">
+            <End Role="ElementAvailability" EntitySet="ElementAvailabilities" />
+            <End Role="Element" EntitySet="Elements" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementCompound_0_0" Association="gamedataModel.FK_ElementCompound_0_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="ElementCompound" EntitySet="ElementCompounds" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementCompound_1_0" Association="gamedataModel.FK_ElementCompound_1_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="ElementCompound" EntitySet="ElementCompounds" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ElementQRCode_0_0" Association="gamedataModel.FK_ElementQRCode_0_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="ElementQRCode" EntitySet="ElementQRCodes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventElement_0_0" Association="gamedataModel.FK_EventElement_0_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="EventElement" EntitySet="EventElements" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Item_1_0" Association="gamedataModel.FK_Item_1_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="Item" EntitySet="Items" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Substance_1_0" Association="gamedataModel.FK_Substance_1_0">
+            <End Role="Element" EntitySet="Elements" />
+            <End Role="Substance" EntitySet="Substances" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDatapad_1_0" Association="gamedataModel.FK_EventDatapad_1_0">
+            <End Role="Event" EntitySet="Events" />
+            <End Role="EventDatapad" EntitySet="EventDatapads" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventDays_0_0" Association="gamedataModel.FK_EventDays_0_0">
+            <End Role="Event" EntitySet="Events" />
+            <End Role="EventDays" EntitySet="EventDays" />
+          </AssociationSet>
+          <AssociationSet Name="FK_EventElement_1_0" Association="gamedataModel.FK_EventElement_1_0">
+            <End Role="Event" EntitySet="Events" />
+            <End Role="EventElement" EntitySet="EventElements" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_4_0" Association="gamedataModel.FK_HeroCharacter_4_0">
+            <End Role="Network" EntitySet="Networks" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_5_0" Association="gamedataModel.FK_HeroCharacter_5_0">
+            <End Role="Species" EntitySet="Species" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+          </AssociationSet>
+          <AssociationSet Name="FK_HeroCharacter_6_0" Association="gamedataModel.FK_HeroCharacter_6_0">
+            <End Role="Player" EntitySet="Players" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailInBox_1_0" Association="gamedataModel.FK_MailInBox_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="MailInBox" EntitySet="MailInBoxes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailOutBox_1_0" Association="gamedataModel.FK_MailOutBox_1_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="MailOutBox" EntitySet="MailOutBoxes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Message_0_0" Association="gamedataModel.FK_Message_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="Message" EntitySet="Messages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MessageHacking_0_0" Association="gamedataModel.FK_MessageHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="MessageHacking" EntitySet="MessageHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsHacking_0_0" Association="gamedataModel.FK_NewsHacking_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="NewsHacking" EntitySet="NewsHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsStory_0_0" Association="gamedataModel.FK_NewsStory_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="NewsStory" EntitySet="NewsStories" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SavedMessage_0_0" Association="gamedataModel.FK_SavedMessage_0_0">
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+            <End Role="SavedMessage" EntitySet="SavedMessages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Item_0_0" Association="gamedataModel.FK_Item_0_0">
+            <End Role="ItemType" EntitySet="ItemTypes" />
+            <End Role="Item" EntitySet="Items" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailInBox_0_0" Association="gamedataModel.FK_MailInBox_0_0">
+            <End Role="Message" EntitySet="Messages" />
+            <End Role="MailInBox" EntitySet="MailInBoxes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MailOutBox_0_0" Association="gamedataModel.FK_MailOutBox_0_0">
+            <End Role="Message" EntitySet="Messages" />
+            <End Role="MailOutBox" EntitySet="MailOutBoxes" />
+          </AssociationSet>
+          <AssociationSet Name="FK_MessageHacking_1_0" Association="gamedataModel.FK_MessageHacking_1_0">
+            <End Role="Message" EntitySet="Messages" />
+            <End Role="MessageHacking" EntitySet="MessageHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsStory_1_0" Association="gamedataModel.FK_NewsStory_1_0">
+            <End Role="Network" EntitySet="Networks" />
+            <End Role="NewsStory" EntitySet="NewsStories" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Parameter_0_0" Association="gamedataModel.FK_Parameter_0_0">
+            <End Role="Network" EntitySet="Networks" />
+            <End Role="Parameter" EntitySet="Parameters" />
+          </AssociationSet>
+          <AssociationSet Name="FK_NewsHacking_1_0" Association="gamedataModel.FK_NewsHacking_1_0">
+            <End Role="NewsStory" EntitySet="NewsStories" />
+            <End Role="NewsHacking" EntitySet="NewsHackings" />
+          </AssociationSet>
+          <AssociationSet Name="FK_SkillEffect_0_0" Association="gamedataModel.FK_SkillEffect_0_0">
+            <End Role="Skill" EntitySet="Skills" />
+            <End Role="SkillEffect" EntitySet="SkillEffects" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Substance_0_0" Association="gamedataModel.FK_Substance_0_0">
+            <End Role="SubstanceType" EntitySet="SubstanceTypes" />
+            <End Role="Substance" EntitySet="Substances" />
+          </AssociationSet>
+          <AssociationSet Name="CharacterInfection" Association="gamedataModel.CharacterInfection">
+            <End Role="Infection" EntitySet="Infections" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+          </AssociationSet>
+          <AssociationSet Name="CharacterTalent" Association="gamedataModel.CharacterTalent">
+            <End Role="Talent" EntitySet="Talents" />
+            <End Role="HeroCharacter" EntitySet="HeroCharacters" />
+          </AssociationSet>
+          <AssociationSet Name="SkillPrerequisite" Association="gamedataModel.SkillPrerequisite">
+            <End Role="Skill" EntitySet="Skills" />
+            <End Role="Skill1" EntitySet="Skills" />
+          </AssociationSet>
+          <AssociationSet Name="TalentSkill" Association="gamedataModel.TalentSkill">
+            <End Role="Talent" EntitySet="Talents" />
+            <End Role="Skill" EntitySet="Skills" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="AccountHacking">
+          <Key>
+            <PropertyRef Name="HackedCharacterID" />
+            <PropertyRef Name="HackingCharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="HackedCharacterID" Type="Int64" Nullable="false" />
+          <Property Name="HackingCharacterID" Type="Int64" Nullable="false" />
+          <Property Name="AttemptNumber" Type="Int64" Nullable="false" />
+          <Property Name="Success" Type="Boolean" />
+          <Property Name="DateOfAttempt" Type="DateTime" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_AccountHacking_0_0" FromRole="AccountHacking" ToRole="HeroCharacter" />
+          <NavigationProperty Name="HeroCharacter1" Relationship="gamedataModel.FK_AccountHacking_1_0" FromRole="AccountHacking" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="AddressBook">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SavedCharacterID" />
+          </Key>
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="SavedCharacterID" Type="Int64" Nullable="false" />
+          <Property Name="SavedCharacterName" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_AddressBook_0_0" FromRole="AddressBook" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="Bank">
+          <Key>
+            <PropertyRef Name="BankID" />
+          </Key>
+          <Property Name="BankID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="BaseInterestRate" Type="Int64" />
+          <Property Name="InterestTimeInterval" Type="Int64" />
+          <Property Name="Price" Type="Int64" />
+          <Property Name="PriceTimeInterval" Type="Int64" />
+          <NavigationProperty Name="BankAccounts" Relationship="gamedataModel.FK_BankAccount_0_0" FromRole="Bank" ToRole="BankAccount" />
+        </EntityType>
+        <EntityType Name="BankAccount">
+          <Key>
+            <PropertyRef Name="AccountID" />
+          </Key>
+          <Property Name="AccountID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="BankID" Type="Int64" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="InterestTimeInterval" Type="Int64" />
+          <Property Name="Price" Type="Int64" />
+          <Property Name="PriceTimeInterval" Type="Int64" />
+          <Property Name="InterestRate" Type="Int64" />
+          <Property Name="SubscriptionDate" Type="DateTime" />
+          <Property Name="Amount" Type="Single" Nullable="false" />
+          <NavigationProperty Name="Bank" Relationship="gamedataModel.FK_BankAccount_0_0" FromRole="BankAccount" ToRole="Bank" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_BankAccount_1_0" FromRole="BankAccount" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="CharacterEventDay">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="IndividualDay" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="EventID" Type="Int64" Nullable="false" />
+          <Property Name="IndividualDay" Type="DateTime" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="HasPaid" Type="Boolean" Nullable="false" />
+          <Property Name="PaymentDate" Type="DateTime" />
+          <Property Name="TookPart" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_CharacterEventDay_1_0" FromRole="CharacterEventDay" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="CharacterSkill">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="SkillID" Type="Int64" Nullable="false" />
+          <Property Name="AcquiredManyTimes" Type="Int64" />
+          <Property Name="TalentID" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="AdditionalDetails" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_CharacterSkill_0_0" FromRole="CharacterSkill" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Talent" Relationship="gamedataModel.FK_CharacterSkill_1_0" FromRole="CharacterSkill" ToRole="Talent" />
+          <NavigationProperty Name="Skill" Relationship="gamedataModel.FK_CharacterSkill_2_0" FromRole="CharacterSkill" ToRole="Skill" />
+        </EntityType>
+        <EntityType Name="CharacterUnlockedSkill">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="SkillID" Type="Int64" Nullable="false" />
+          <Property Name="TalentID" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Notes" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Talent" Relationship="gamedataModel.FK_CharacterUnlockedSkill_0_0" FromRole="CharacterUnlockedSkill" ToRole="Talent" />
+          <NavigationProperty Name="Skill" Relationship="gamedataModel.FK_CharacterUnlockedSkill_1_0" FromRole="CharacterUnlockedSkill" ToRole="Skill" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_CharacterUnlockedSkill_2_0" FromRole="CharacterUnlockedSkill" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="Datapad">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+          </Key>
+          <Property Name="DatapadID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Content" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="HackingLevel" Type="Int64" Nullable="false" />
+          <Property Name="QRCode" Type="Guid" />
+          <NavigationProperty Name="DatapadFiles" Relationship="gamedataModel.FK_DatapadFiles_0_0" FromRole="Datapad" ToRole="DatapadFiles" />
+          <NavigationProperty Name="DatapadHackings" Relationship="gamedataModel.FK_DatapadHacking_0_0" FromRole="Datapad" ToRole="DatapadHacking" />
+          <NavigationProperty Name="EventDatapads" Relationship="gamedataModel.FK_EventDatapad_0_0" FromRole="Datapad" ToRole="EventDatapad" />
+        </EntityType>
+        <EntityType Name="DatapadFile">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+            <PropertyRef Name="FileNumber" />
+          </Key>
+          <Property Name="DatapadID" Type="Int64" Nullable="false" />
+          <Property Name="FileNumber" Type="Int64" Nullable="false" />
+          <Property Name="FileName" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Content" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="EncryptionLevel" Type="Int64" />
+          <NavigationProperty Name="Datapad" Relationship="gamedataModel.FK_DatapadFiles_0_0" FromRole="DatapadFiles" ToRole="Datapad" />
+        </EntityType>
+        <EntityType Name="DatapadHacking">
+          <Key>
+            <PropertyRef Name="DatapadID" />
+            <PropertyRef Name="HackingCharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="DatapadID" Type="Int64" Nullable="false" />
+          <Property Name="HackingCharacterID" Type="Int64" Nullable="false" />
+          <Property Name="AttemptNumber" Type="Int64" Nullable="false" />
+          <Property Name="Success" Type="Boolean" />
+          <Property Name="DateOfAttempt" Type="DateTime" />
+          <NavigationProperty Name="Datapad" Relationship="gamedataModel.FK_DatapadHacking_0_0" FromRole="DatapadHacking" ToRole="Datapad" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_DatapadHacking_1_0" FromRole="DatapadHacking" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="DeviceNetwork">
+          <Key>
+            <PropertyRef Name="IPv4Address" />
+          </Key>
+          <Property Name="IPv4Address" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="NetworkID" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Network" Relationship="gamedataModel.FK_DeviceNetwork_0_0" FromRole="DeviceNetwork" ToRole="Network" />
+        </EntityType>
+        <EntityType Name="Door">
+          <Key>
+            <PropertyRef Name="DoorID" />
+          </Key>
+          <Property Name="DoorID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Reference" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="QRCode" Type="Guid" Nullable="false" />
+          <Property Name="HackingLevel" Type="Int64" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Element">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="Effect" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="Price" Type="Single" Nullable="false" />
+          <Property Name="Picture" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="AvailabilityID" Type="Int64" Nullable="false" />
+          <Property Name="ExpirationDate" Type="DateTime" />
+          <Property Name="Discriminator" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="ElementAvailability" Relationship="gamedataModel.FK_Element_0_0" FromRole="Element" ToRole="ElementAvailability" />
+          <NavigationProperty Name="ElementCompounds" Relationship="gamedataModel.FK_ElementCompound_0_0" FromRole="Element" ToRole="ElementCompound" />
+          <NavigationProperty Name="ElementCompounds1" Relationship="gamedataModel.FK_ElementCompound_1_0" FromRole="Element" ToRole="ElementCompound" />
+          <NavigationProperty Name="ElementQRCodes" Relationship="gamedataModel.FK_ElementQRCode_0_0" FromRole="Element" ToRole="ElementQRCode" />
+          <NavigationProperty Name="EventElements" Relationship="gamedataModel.FK_EventElement_0_0" FromRole="Element" ToRole="EventElement" />
+          <NavigationProperty Name="Item" Relationship="gamedataModel.FK_Item_1_0" FromRole="Element" ToRole="Item" />
+          <NavigationProperty Name="Substance" Relationship="gamedataModel.FK_Substance_1_0" FromRole="Element" ToRole="Substance" />
+        </EntityType>
+        <EntityType Name="ElementAvailability">
+          <Key>
+            <PropertyRef Name="AvailabilityID" />
+          </Key>
+          <Property Name="AvailabilityID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Elements" Relationship="gamedataModel.FK_Element_0_0" FromRole="ElementAvailability" ToRole="Element" />
+        </EntityType>
+        <EntityType Name="ElementCompound">
+          <Key>
+            <PropertyRef Name="CompoundElementID" />
+            <PropertyRef Name="ComponentNumber" />
+          </Key>
+          <Property Name="CompoundElementID" Type="Int64" Nullable="false" />
+          <Property Name="ComponentNumber" Type="Int64" Nullable="false" />
+          <Property Name="ComponentElementID" Type="Int64" />
+          <NavigationProperty Name="Element" Relationship="gamedataModel.FK_ElementCompound_0_0" FromRole="ElementCompound" ToRole="Element" />
+          <NavigationProperty Name="Element1" Relationship="gamedataModel.FK_ElementCompound_1_0" FromRole="ElementCompound" ToRole="Element" />
+        </EntityType>
+        <EntityType Name="ElementQRCode">
+          <Key>
+            <PropertyRef Name="ElementID" />
+            <PropertyRef Name="QRCode" />
+          </Key>
+          <Property Name="ElementID" Type="Int64" Nullable="false" />
+          <Property Name="QRCode" Type="Guid" Nullable="false" />
+          <NavigationProperty Name="Element" Relationship="gamedataModel.FK_ElementQRCode_0_0" FromRole="ElementQRCode" ToRole="Element" />
+        </EntityType>
+        <EntityType Name="Event">
+          <Key>
+            <PropertyRef Name="EventID" />
+          </Key>
+          <Property Name="EventID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Title" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="StartDate" Type="DateTime" Nullable="false" />
+          <Property Name="TotalExperiencePoints" Type="Int64" Nullable="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="FullEventPrice" Type="Single" Nullable="false" />
+          <Property Name="Collection" Type="Single" />
+          <Property Name="IsClosed" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="EventDatapads" Relationship="gamedataModel.FK_EventDatapad_1_0" FromRole="Event" ToRole="EventDatapad" />
+          <NavigationProperty Name="EventDays" Relationship="gamedataModel.FK_EventDays_0_0" FromRole="Event" ToRole="EventDays" />
+          <NavigationProperty Name="EventElements" Relationship="gamedataModel.FK_EventElement_1_0" FromRole="Event" ToRole="EventElement" />
+        </EntityType>
+        <EntityType Name="EventDatapad">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="DatapadID" />
+          </Key>
+          <Property Name="EventID" Type="Int64" Nullable="false" />
+          <Property Name="DatapadID" Type="Int64" Nullable="false" />
+          <Property Name="NumberOfCopies" Type="Int64" />
+          <NavigationProperty Name="Datapad" Relationship="gamedataModel.FK_EventDatapad_0_0" FromRole="EventDatapad" ToRole="Datapad" />
+          <NavigationProperty Name="Event" Relationship="gamedataModel.FK_EventDatapad_1_0" FromRole="EventDatapad" ToRole="Event" />
+        </EntityType>
+        <EntityType Name="EventDay">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="IndividualDay" />
+          </Key>
+          <Property Name="EventID" Type="Int64" Nullable="false" />
+          <Property Name="IndividualDay" Type="DateTime" Nullable="false" />
+          <Property Name="ExperiencePoints" Type="Int64" />
+          <Property Name="InGameTime" Type="DateTime" Nullable="false" />
+          <Property Name="OffGameTime" Type="DateTime" Nullable="false" />
+          <Property Name="PricePerDay" Type="Single" />
+          <NavigationProperty Name="Event" Relationship="gamedataModel.FK_EventDays_0_0" FromRole="EventDays" ToRole="Event" />
+        </EntityType>
+        <EntityType Name="EventElement">
+          <Key>
+            <PropertyRef Name="EventID" />
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="EventID" Type="Int64" Nullable="false" />
+          <Property Name="ElementID" Type="Int64" Nullable="false" />
+          <Property Name="NumberOfCopies" Type="Int64" />
+          <NavigationProperty Name="Element" Relationship="gamedataModel.FK_EventElement_0_0" FromRole="EventElement" ToRole="Element" />
+          <NavigationProperty Name="Event" Relationship="gamedataModel.FK_EventElement_1_0" FromRole="EventElement" ToRole="Event" />
+        </EntityType>
+        <EntityType Name="HackingTool">
+          <Key>
+            <PropertyRef Name="HackingToolID" />
+          </Key>
+          <Property Name="HackingToolID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="QRCode" Type="Guid" Nullable="false" />
+          <Property Name="HackerLevel" Type="Int64" Nullable="false" />
+        </EntityType>
+        <EntityType Name="HeroCharacter">
+          <Key>
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="CharacterID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="PlayerID" Type="Int64" Nullable="false" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="SpeciesID" Type="Int64" Nullable="false" />
+          <Property Name="Type" Type="Int64" Nullable="false" />
+          <Property Name="ExperiencePoints" Type="Int64" Nullable="false" />
+          <Property Name="Sex" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="true" />
+          <Property Name="DarkSidePoints" Type="Int64" Nullable="false" />
+          <Property Name="DateOfCreation" Type="DateTime" Nullable="false" />
+          <Property Name="HonorificTitle" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="IsAlive" Type="Boolean" Nullable="false" />
+          <Property Name="DateOfDeath" Type="DateTime" />
+          <Property Name="LarpNetworkPassword" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="BloodFormula" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="NetworkID" Type="Int64" />
+          <Property Name="LastAccountEncryption" Type="DateTime" />
+          <Property Name="EncryptionLevel" Type="Int64" Nullable="false" />
+          <Property Name="QRCode" Type="Guid" />
+          <NavigationProperty Name="AccountHackings" Relationship="gamedataModel.FK_AccountHacking_0_0" FromRole="HeroCharacter" ToRole="AccountHacking" />
+          <NavigationProperty Name="AccountHackings1" Relationship="gamedataModel.FK_AccountHacking_1_0" FromRole="HeroCharacter" ToRole="AccountHacking" />
+          <NavigationProperty Name="AddressBooks" Relationship="gamedataModel.FK_AddressBook_0_0" FromRole="HeroCharacter" ToRole="AddressBook" />
+          <NavigationProperty Name="BankAccounts" Relationship="gamedataModel.FK_BankAccount_1_0" FromRole="HeroCharacter" ToRole="BankAccount" />
+          <NavigationProperty Name="CharacterEventDays" Relationship="gamedataModel.FK_CharacterEventDay_1_0" FromRole="HeroCharacter" ToRole="CharacterEventDay" />
+          <NavigationProperty Name="CharacterSkills" Relationship="gamedataModel.FK_CharacterSkill_0_0" FromRole="HeroCharacter" ToRole="CharacterSkill" />
+          <NavigationProperty Name="CharacterUnlockedSkills" Relationship="gamedataModel.FK_CharacterUnlockedSkill_2_0" FromRole="HeroCharacter" ToRole="CharacterUnlockedSkill" />
+          <NavigationProperty Name="DatapadHackings" Relationship="gamedataModel.FK_DatapadHacking_1_0" FromRole="HeroCharacter" ToRole="DatapadHacking" />
+          <NavigationProperty Name="Network" Relationship="gamedataModel.FK_HeroCharacter_4_0" FromRole="HeroCharacter" ToRole="Network" />
+          <NavigationProperty Name="Species" Relationship="gamedataModel.FK_HeroCharacter_5_0" FromRole="HeroCharacter" ToRole="Species" />
+          <NavigationProperty Name="Player" Relationship="gamedataModel.FK_HeroCharacter_6_0" FromRole="HeroCharacter" ToRole="Player" />
+          <NavigationProperty Name="MailInBoxes" Relationship="gamedataModel.FK_MailInBox_1_0" FromRole="HeroCharacter" ToRole="MailInBox" />
+          <NavigationProperty Name="MailOutBoxes" Relationship="gamedataModel.FK_MailOutBox_1_0" FromRole="HeroCharacter" ToRole="MailOutBox" />
+          <NavigationProperty Name="Messages" Relationship="gamedataModel.FK_Message_0_0" FromRole="HeroCharacter" ToRole="Message" />
+          <NavigationProperty Name="MessageHackings" Relationship="gamedataModel.FK_MessageHacking_0_0" FromRole="HeroCharacter" ToRole="MessageHacking" />
+          <NavigationProperty Name="NewsHackings" Relationship="gamedataModel.FK_NewsHacking_0_0" FromRole="HeroCharacter" ToRole="NewsHacking" />
+          <NavigationProperty Name="NewsStories" Relationship="gamedataModel.FK_NewsStory_0_0" FromRole="HeroCharacter" ToRole="NewsStory" />
+          <NavigationProperty Name="SavedMessages" Relationship="gamedataModel.FK_SavedMessage_0_0" FromRole="HeroCharacter" ToRole="SavedMessage" />
+          <NavigationProperty Name="Infections" Relationship="gamedataModel.CharacterInfection" FromRole="HeroCharacter" ToRole="Infection" />
+          <NavigationProperty Name="Talents" Relationship="gamedataModel.CharacterTalent" FromRole="HeroCharacter" ToRole="Talent" />
+        </EntityType>
+        <EntityType Name="Infection">
+          <Key>
+            <PropertyRef Name="InfectionID" />
+          </Key>
+          <Property Name="InfectionID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="HeroCharacters" Relationship="gamedataModel.CharacterInfection" FromRole="Infection" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="Item">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="Int64" Nullable="false" />
+          <Property Name="NumberOfCharges" Type="Int64" />
+          <Property Name="ItemTypeID" Type="Int64" />
+          <Property Name="Rechargeable" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="Element" Relationship="gamedataModel.FK_Item_1_0" FromRole="Item" ToRole="Element" />
+          <NavigationProperty Name="ItemType" Relationship="gamedataModel.FK_Item_0_0" FromRole="Item" ToRole="ItemType" />
+        </EntityType>
+        <EntityType Name="ItemType">
+          <Key>
+            <PropertyRef Name="ItemTypeID" />
+          </Key>
+          <Property Name="ItemTypeID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="Items" Relationship="gamedataModel.FK_Item_0_0" FromRole="ItemType" ToRole="Item" />
+        </EntityType>
+        <EntityType Name="MailInBox">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="MessageID" Type="Int64" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="IsDeleted" Type="Boolean" />
+          <Property Name="IsRead" Type="Boolean" />
+          <Property Name="DateOfDeletion" Type="DateTime" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_MailInBox_1_0" FromRole="MailInBox" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Message" Relationship="gamedataModel.FK_MailInBox_0_0" FromRole="MailInBox" ToRole="Message" />
+        </EntityType>
+        <EntityType Name="MailOutBox">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+          </Key>
+          <Property Name="MessageID" Type="Int64" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="IsDeleted" Type="Boolean" Nullable="false" />
+          <Property Name="IsRead" Type="Boolean" Nullable="false" />
+          <Property Name="DateOfDeletion" Type="DateTime" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_MailOutBox_1_0" FromRole="MailOutBox" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Message" Relationship="gamedataModel.FK_MailOutBox_0_0" FromRole="MailOutBox" ToRole="Message" />
+        </EntityType>
+        <EntityType Name="Message">
+          <Key>
+            <PropertyRef Name="MessageID" />
+          </Key>
+          <Property Name="MessageID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="SenderCharacter" Type="Int64" Nullable="false" />
+          <Property Name="Subject" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Message1" Type="String" Nullable="false" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="HackingLevel" Type="Int64" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="DateOfCreation" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_Message_0_0" FromRole="Message" ToRole="HeroCharacter" />
+          <NavigationProperty Name="MailInBoxes" Relationship="gamedataModel.FK_MailInBox_0_0" FromRole="Message" ToRole="MailInBox" />
+          <NavigationProperty Name="MailOutBoxes" Relationship="gamedataModel.FK_MailOutBox_0_0" FromRole="Message" ToRole="MailOutBox" />
+          <NavigationProperty Name="MessageHackings" Relationship="gamedataModel.FK_MessageHacking_1_0" FromRole="Message" ToRole="MessageHacking" />
+        </EntityType>
+        <EntityType Name="MessageHacking">
+          <Key>
+            <PropertyRef Name="MessageID" />
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="MessageID" Type="Int64" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="AttemptNumber" Type="Int64" Nullable="false" />
+          <Property Name="Success" Type="Boolean" Nullable="false" />
+          <Property Name="DateOfAttempt" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_MessageHacking_0_0" FromRole="MessageHacking" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Message" Relationship="gamedataModel.FK_MessageHacking_1_0" FromRole="MessageHacking" ToRole="Message" />
+        </EntityType>
+        <EntityType Name="Network">
+          <Key>
+            <PropertyRef Name="NetworkID" />
+          </Key>
+          <Property Name="NetworkID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="NetworkName" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="Faction" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="DeviceNetworks" Relationship="gamedataModel.FK_DeviceNetwork_0_0" FromRole="Network" ToRole="DeviceNetwork" />
+          <NavigationProperty Name="HeroCharacters" Relationship="gamedataModel.FK_HeroCharacter_4_0" FromRole="Network" ToRole="HeroCharacter" />
+          <NavigationProperty Name="NewsStories" Relationship="gamedataModel.FK_NewsStory_1_0" FromRole="Network" ToRole="NewsStory" />
+          <NavigationProperty Name="Parameters" Relationship="gamedataModel.FK_Parameter_0_0" FromRole="Network" ToRole="Parameter" />
+        </EntityType>
+        <EntityType Name="NewsHacking">
+          <Key>
+            <PropertyRef Name="NewsID" />
+            <PropertyRef Name="CharacterID" />
+            <PropertyRef Name="AttemptNumber" />
+          </Key>
+          <Property Name="NewsID" Type="Int64" Nullable="false" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="AttemptNumber" Type="Int64" Nullable="false" />
+          <Property Name="Success" Type="Boolean" Nullable="false" />
+          <Property Name="DateOfAttempt" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_NewsHacking_0_0" FromRole="NewsHacking" ToRole="HeroCharacter" />
+          <NavigationProperty Name="NewsStory" Relationship="gamedataModel.FK_NewsHacking_1_0" FromRole="NewsHacking" ToRole="NewsStory" />
+        </EntityType>
+        <EntityType Name="NewsStory">
+          <Key>
+            <PropertyRef Name="NewsID" />
+          </Key>
+          <Property Name="NewsID" Type="Int64" Nullable="false" />
+          <Property Name="DateOfCreation" Type="DateTime" Nullable="false" />
+          <Property Name="ExpirationDate" Type="DateTime" Nullable="false" />
+          <Property Name="Subject" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Message" Type="String" Nullable="false" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="NetworkID" Type="Int64" Nullable="false" />
+          <Property Name="AuthorCharacterID" Type="Int64" />
+          <Property Name="HackingLevel" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_NewsStory_0_0" FromRole="NewsStory" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Network" Relationship="gamedataModel.FK_NewsStory_1_0" FromRole="NewsStory" ToRole="Network" />
+          <NavigationProperty Name="NewsHackings" Relationship="gamedataModel.FK_NewsHacking_1_0" FromRole="NewsStory" ToRole="NewsHacking" />
+        </EntityType>
+        <EntityType Name="Parameter">
+          <Key>
+            <PropertyRef Name="NetworkID" />
+            <PropertyRef Name="Parameter1" />
+          </Key>
+          <Property Name="NetworkID" Type="Int64" Nullable="false" />
+          <Property Name="Parameter1" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Value" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Network" Relationship="gamedataModel.FK_Parameter_0_0" FromRole="Parameter" ToRole="Network" />
+        </EntityType>
+        <EntityType Name="Player">
+          <Key>
+            <PropertyRef Name="PlayerID" />
+          </Key>
+          <Property Name="PlayerID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="MainName" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="FirstName" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="DateOfBirth" Type="DateTime" Nullable="false" />
+          <Property Name="Address" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="City" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="CountyOrArea" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="PostCode" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="PhoneNumber" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="DateOfSubscription" Type="DateTime" Nullable="false" />
+          <Property Name="Sex" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="true" />
+          <Property Name="PlayerCathegory" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Email" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Password" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="HeroCharacters" Relationship="gamedataModel.FK_HeroCharacter_6_0" FromRole="Player" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="SavedMessage">
+          <Key>
+            <PropertyRef Name="MessageID" />
+          </Key>
+          <Property Name="MessageID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="CharacterID" Type="Int64" Nullable="false" />
+          <Property Name="Subject" Type="String" Nullable="false" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="Source" Type="String" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Message" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="HackingLevel" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="HeroCharacter" Relationship="gamedataModel.FK_SavedMessage_0_0" FromRole="SavedMessage" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="Skill">
+          <Key>
+            <PropertyRef Name="SkillID" />
+          </Key>
+          <Property Name="SkillID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="AcquireManyTimes" Type="Boolean" Nullable="false" />
+          <Property Name="ExperiencePointsCost" Type="Int64" Nullable="false" />
+          <Property Name="IsAdvanced" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="CharacterSkills" Relationship="gamedataModel.FK_CharacterSkill_2_0" FromRole="Skill" ToRole="CharacterSkill" />
+          <NavigationProperty Name="CharacterUnlockedSkills" Relationship="gamedataModel.FK_CharacterUnlockedSkill_1_0" FromRole="Skill" ToRole="CharacterUnlockedSkill" />
+          <NavigationProperty Name="SkillEffects" Relationship="gamedataModel.FK_SkillEffect_0_0" FromRole="Skill" ToRole="SkillEffect" />
+          <NavigationProperty Name="Prerequisites" Relationship="gamedataModel.SkillPrerequisite" FromRole="Skill" ToRole="Skill1" />
+          <NavigationProperty Name="DependentSkills" Relationship="gamedataModel.SkillPrerequisite" FromRole="Skill1" ToRole="Skill" />
+          <NavigationProperty Name="Talents" Relationship="gamedataModel.TalentSkill" FromRole="Skill" ToRole="Talent" />
+        </EntityType>
+        <EntityType Name="SkillEffect">
+          <Key>
+            <PropertyRef Name="SkillID" />
+            <PropertyRef Name="EffectID" />
+          </Key>
+          <Property Name="SkillID" Type="Int64" Nullable="false" />
+          <Property Name="EffectID" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Value" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="Skill" Relationship="gamedataModel.FK_SkillEffect_0_0" FromRole="SkillEffect" ToRole="Skill" />
+        </EntityType>
+        <EntityType Name="Species">
+          <Key>
+            <PropertyRef Name="SpeciesID" />
+          </Key>
+          <Property Name="SpeciesID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="HeroCharacters" Relationship="gamedataModel.FK_HeroCharacter_5_0" FromRole="Species" ToRole="HeroCharacter" />
+        </EntityType>
+        <EntityType Name="Substance">
+          <Key>
+            <PropertyRef Name="ElementID" />
+          </Key>
+          <Property Name="ElementID" Type="Int64" Nullable="false" />
+          <Property Name="ApplicationMode" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="StrengthValue" Type="Int64" Nullable="false" />
+          <Property Name="SubstanceTypeID" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="Element" Relationship="gamedataModel.FK_Substance_1_0" FromRole="Substance" ToRole="Element" />
+          <NavigationProperty Name="SubstanceType" Relationship="gamedataModel.FK_Substance_0_0" FromRole="Substance" ToRole="SubstanceType" />
+        </EntityType>
+        <EntityType Name="SubstanceType">
+          <Key>
+            <PropertyRef Name="SubstanceTypeID" />
+          </Key>
+          <Property Name="SubstanceTypeID" Type="Int64" Nullable="false" p1:StoreGeneratedPattern="Identity" />
+          <Property Name="Description" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <NavigationProperty Name="Substances" Relationship="gamedataModel.FK_Substance_0_0" FromRole="SubstanceType" ToRole="Substance" />
+        </EntityType>
+        <EntityType Name="Talent">
+          <Key>
+            <PropertyRef Name="TalentID" />
+          </Key>
+          <Property Name="TalentID" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="2147483647" Unicode="false" FixedLength="false" />
+          <Property Name="Description" Type="String" MaxLength="2147483647" Unicode="true" FixedLength="false" />
+          <Property Name="TalentType" Type="Int64" Nullable="false" />
+          <NavigationProperty Name="CharacterSkills" Relationship="gamedataModel.FK_CharacterSkill_1_0" FromRole="Talent" ToRole="CharacterSkill" />
+          <NavigationProperty Name="CharacterUnlockedSkills" Relationship="gamedataModel.FK_CharacterUnlockedSkill_0_0" FromRole="Talent" ToRole="CharacterUnlockedSkill" />
+          <NavigationProperty Name="HeroCharacters" Relationship="gamedataModel.CharacterTalent" FromRole="Talent" ToRole="HeroCharacter" />
+          <NavigationProperty Name="Skills" Relationship="gamedataModel.TalentSkill" FromRole="Talent" ToRole="Skill" />
+        </EntityType>
+        <Association Name="FK_AccountHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="AccountHacking" Type="gamedataModel.AccountHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AccountHacking">
+              <PropertyRef Name="HackingCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AccountHacking_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="AccountHacking" Type="gamedataModel.AccountHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AccountHacking">
+              <PropertyRef Name="HackedCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_AddressBook_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="AddressBook" Type="gamedataModel.AddressBook" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="AddressBook">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BankAccount_0_0">
+          <End Role="Bank" Type="gamedataModel.Bank" Multiplicity="1" />
+          <End Role="BankAccount" Type="gamedataModel.BankAccount" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Bank">
+              <PropertyRef Name="BankID" />
+            </Principal>
+            <Dependent Role="BankAccount">
+              <PropertyRef Name="BankID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BankAccount_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="BankAccount" Type="gamedataModel.BankAccount" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="BankAccount">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterEventDay_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterEventDay" Type="gamedataModel.CharacterEventDay" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterEventDay">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_1_0">
+          <End Role="Talent" Type="gamedataModel.Talent" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterSkill_2_0">
+          <End Role="Skill" Type="gamedataModel.Skill" Multiplicity="1" />
+          <End Role="CharacterSkill" Type="gamedataModel.CharacterSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="CharacterSkill">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_0_0">
+          <End Role="Talent" Type="gamedataModel.Talent" Multiplicity="0..1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Talent">
+              <PropertyRef Name="TalentID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="TalentID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_1_0">
+          <End Role="Skill" Type="gamedataModel.Skill" Multiplicity="1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_CharacterUnlockedSkill_2_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="CharacterUnlockedSkill" Type="gamedataModel.CharacterUnlockedSkill" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="CharacterUnlockedSkill">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadFiles_0_0">
+          <End Role="Datapad" Type="gamedataModel.Datapad" Multiplicity="1" />
+          <End Role="DatapadFiles" Type="gamedataModel.DatapadFile" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="DatapadFiles">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadHacking_0_0">
+          <End Role="Datapad" Type="gamedataModel.Datapad" Multiplicity="1" />
+          <End Role="DatapadHacking" Type="gamedataModel.DatapadHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="DatapadHacking">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDatapad_0_0">
+          <End Role="Datapad" Type="gamedataModel.Datapad" Multiplicity="1" />
+          <End Role="EventDatapad" Type="gamedataModel.EventDatapad" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Datapad">
+              <PropertyRef Name="DatapadID" />
+            </Principal>
+            <Dependent Role="EventDatapad">
+              <PropertyRef Name="DatapadID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DatapadHacking_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="DatapadHacking" Type="gamedataModel.DatapadHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="DatapadHacking">
+              <PropertyRef Name="HackingCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_DeviceNetwork_0_0">
+          <End Role="Network" Type="gamedataModel.Network" Multiplicity="1" />
+          <End Role="DeviceNetwork" Type="gamedataModel.DeviceNetwork" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="DeviceNetwork">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Element_0_0">
+          <End Role="ElementAvailability" Type="gamedataModel.ElementAvailability" Multiplicity="1" />
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ElementAvailability">
+              <PropertyRef Name="AvailabilityID" />
+            </Principal>
+            <Dependent Role="Element">
+              <PropertyRef Name="AvailabilityID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementCompound_0_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="0..1" />
+          <End Role="ElementCompound" Type="gamedataModel.ElementCompound" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementCompound">
+              <PropertyRef Name="ComponentElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementCompound_1_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="1" />
+          <End Role="ElementCompound" Type="gamedataModel.ElementCompound" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementCompound">
+              <PropertyRef Name="CompoundElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ElementQRCode_0_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="1" />
+          <End Role="ElementQRCode" Type="gamedataModel.ElementQRCode" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="ElementQRCode">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventElement_0_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="1" />
+          <End Role="EventElement" Type="gamedataModel.EventElement" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="EventElement">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Item_1_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="1" />
+          <End Role="Item" Type="gamedataModel.Item" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="Item">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Substance_1_0">
+          <End Role="Element" Type="gamedataModel.Element" Multiplicity="1" />
+          <End Role="Substance" Type="gamedataModel.Substance" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="Element">
+              <PropertyRef Name="ElementID" />
+            </Principal>
+            <Dependent Role="Substance">
+              <PropertyRef Name="ElementID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDatapad_1_0">
+          <End Role="Event" Type="gamedataModel.Event" Multiplicity="1" />
+          <End Role="EventDatapad" Type="gamedataModel.EventDatapad" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventDatapad">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventDays_0_0">
+          <End Role="Event" Type="gamedataModel.Event" Multiplicity="1" />
+          <End Role="EventDays" Type="gamedataModel.EventDay" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventDays">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_EventElement_1_0">
+          <End Role="Event" Type="gamedataModel.Event" Multiplicity="1" />
+          <End Role="EventElement" Type="gamedataModel.EventElement" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Event">
+              <PropertyRef Name="EventID" />
+            </Principal>
+            <Dependent Role="EventElement">
+              <PropertyRef Name="EventID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_4_0">
+          <End Role="Network" Type="gamedataModel.Network" Multiplicity="0..1" />
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_5_0">
+          <End Role="Species" Type="gamedataModel.Species" Multiplicity="1" />
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Species">
+              <PropertyRef Name="SpeciesID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="SpeciesID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_HeroCharacter_6_0">
+          <End Role="Player" Type="gamedataModel.Player" Multiplicity="1" />
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Player">
+              <PropertyRef Name="PlayerID" />
+            </Principal>
+            <Dependent Role="HeroCharacter">
+              <PropertyRef Name="PlayerID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailInBox_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="MailInBox" Type="gamedataModel.MailInBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MailInBox">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailOutBox_1_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="MailOutBox" Type="gamedataModel.MailOutBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MailOutBox">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Message_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="Message" Type="gamedataModel.Message" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="Message">
+              <PropertyRef Name="SenderCharacter" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MessageHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="MessageHacking" Type="gamedataModel.MessageHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="MessageHacking">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsHacking_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="NewsHacking" Type="gamedataModel.NewsHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="NewsHacking">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsStory_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="0..1" />
+          <End Role="NewsStory" Type="gamedataModel.NewsStory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="NewsStory">
+              <PropertyRef Name="AuthorCharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SavedMessage_0_0">
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="1" />
+          <End Role="SavedMessage" Type="gamedataModel.SavedMessage" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="HeroCharacter">
+              <PropertyRef Name="CharacterID" />
+            </Principal>
+            <Dependent Role="SavedMessage">
+              <PropertyRef Name="CharacterID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Item_0_0">
+          <End Role="ItemType" Type="gamedataModel.ItemType" Multiplicity="0..1" />
+          <End Role="Item" Type="gamedataModel.Item" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ItemType">
+              <PropertyRef Name="ItemTypeID" />
+            </Principal>
+            <Dependent Role="Item">
+              <PropertyRef Name="ItemTypeID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailInBox_0_0">
+          <End Role="Message" Type="gamedataModel.Message" Multiplicity="1" />
+          <End Role="MailInBox" Type="gamedataModel.MailInBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MailInBox">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MailOutBox_0_0">
+          <End Role="Message" Type="gamedataModel.Message" Multiplicity="1" />
+          <End Role="MailOutBox" Type="gamedataModel.MailOutBox" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MailOutBox">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_MessageHacking_1_0">
+          <End Role="Message" Type="gamedataModel.Message" Multiplicity="1" />
+          <End Role="MessageHacking" Type="gamedataModel.MessageHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Message">
+              <PropertyRef Name="MessageID" />
+            </Principal>
+            <Dependent Role="MessageHacking">
+              <PropertyRef Name="MessageID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsStory_1_0">
+          <End Role="Network" Type="gamedataModel.Network" Multiplicity="1" />
+          <End Role="NewsStory" Type="gamedataModel.NewsStory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="NewsStory">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Parameter_0_0">
+          <End Role="Network" Type="gamedataModel.Network" Multiplicity="1" />
+          <End Role="Parameter" Type="gamedataModel.Parameter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Network">
+              <PropertyRef Name="NetworkID" />
+            </Principal>
+            <Dependent Role="Parameter">
+              <PropertyRef Name="NetworkID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_NewsHacking_1_0">
+          <End Role="NewsStory" Type="gamedataModel.NewsStory" Multiplicity="1" />
+          <End Role="NewsHacking" Type="gamedataModel.NewsHacking" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="NewsStory">
+              <PropertyRef Name="NewsID" />
+            </Principal>
+            <Dependent Role="NewsHacking">
+              <PropertyRef Name="NewsID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_SkillEffect_0_0">
+          <End Role="Skill" Type="gamedataModel.Skill" Multiplicity="1" />
+          <End Role="SkillEffect" Type="gamedataModel.SkillEffect" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Skill">
+              <PropertyRef Name="SkillID" />
+            </Principal>
+            <Dependent Role="SkillEffect">
+              <PropertyRef Name="SkillID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Substance_0_0">
+          <End Role="SubstanceType" Type="gamedataModel.SubstanceType" Multiplicity="1" />
+          <End Role="Substance" Type="gamedataModel.Substance" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="SubstanceType">
+              <PropertyRef Name="SubstanceTypeID" />
+            </Principal>
+            <Dependent Role="Substance">
+              <PropertyRef Name="SubstanceTypeID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="CharacterInfection">
+          <End Role="Infection" Type="gamedataModel.Infection" Multiplicity="*" />
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="*" />
+        </Association>
+        <Association Name="CharacterTalent">
+          <End Role="Talent" Type="gamedataModel.Talent" Multiplicity="*" />
+          <End Role="HeroCharacter" Type="gamedataModel.HeroCharacter" Multiplicity="*" />
+        </Association>
+        <Association Name="SkillPrerequisite">
+          <End Role="Skill" Type="gamedataModel.Skill" Multiplicity="*" />
+          <End Role="Skill1" Type="gamedataModel.Skill" Multiplicity="*" />
+        </Association>
+        <Association Name="TalentSkill">
+          <End Role="Talent" Type="gamedataModel.Talent" Multiplicity="*" />
+          <End Role="Skill" Type="gamedataModel.Skill" Multiplicity="*" />
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="gamedataModelStoreContainer" CdmEntityContainer="gamedata2Entities">
+          <EntitySetMapping Name="AccountHackings">
+            <EntityTypeMapping TypeName="gamedataModel.AccountHacking">
+              <MappingFragment StoreEntitySet="AccountHacking">
+                <ScalarProperty Name="HackedCharacterID" ColumnName="HackedCharacterID" />
+                <ScalarProperty Name="HackingCharacterID" ColumnName="HackingCharacterID" />
+                <ScalarProperty Name="AttemptNumber" ColumnName="AttemptNumber" />
+                <ScalarProperty Name="Success" ColumnName="Success" />
+                <ScalarProperty Name="DateOfAttempt" ColumnName="DateOfAttempt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="AddressBooks">
+            <EntityTypeMapping TypeName="gamedataModel.AddressBook">
+              <MappingFragment StoreEntitySet="AddressBook">
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="SavedCharacterID" ColumnName="SavedCharacterID" />
+                <ScalarProperty Name="SavedCharacterName" ColumnName="SavedCharacterName" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Banks">
+            <EntityTypeMapping TypeName="gamedataModel.Bank">
+              <MappingFragment StoreEntitySet="Bank">
+                <ScalarProperty Name="BankID" ColumnName="BankID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="BaseInterestRate" ColumnName="BaseInterestRate" />
+                <ScalarProperty Name="InterestTimeInterval" ColumnName="InterestTimeInterval" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="PriceTimeInterval" ColumnName="PriceTimeInterval" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="BankAccounts">
+            <EntityTypeMapping TypeName="gamedataModel.BankAccount">
+              <MappingFragment StoreEntitySet="BankAccount">
+                <ScalarProperty Name="AccountID" ColumnName="AccountID" />
+                <ScalarProperty Name="BankID" ColumnName="BankID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="InterestTimeInterval" ColumnName="InterestTimeInterval" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="PriceTimeInterval" ColumnName="PriceTimeInterval" />
+                <ScalarProperty Name="InterestRate" ColumnName="InterestRate" />
+                <ScalarProperty Name="SubscriptionDate" ColumnName="SubscriptionDate" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CharacterEventDays">
+            <EntityTypeMapping TypeName="gamedataModel.CharacterEventDay">
+              <MappingFragment StoreEntitySet="CharacterEventDay">
+                <ScalarProperty Name="EventID" ColumnName="EventID" />
+                <ScalarProperty Name="IndividualDay" ColumnName="IndividualDay" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="HasPaid" ColumnName="HasPaid" />
+                <ScalarProperty Name="PaymentDate" ColumnName="PaymentDate" />
+                <ScalarProperty Name="TookPart" ColumnName="TookPart" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CharacterSkills">
+            <EntityTypeMapping TypeName="gamedataModel.CharacterSkill">
+              <MappingFragment StoreEntitySet="CharacterSkill">
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+                <ScalarProperty Name="AcquiredManyTimes" ColumnName="AcquiredManyTimes" />
+                <ScalarProperty Name="TalentID" ColumnName="TalentID" />
+                <ScalarProperty Name="AdditionalDetails" ColumnName="AdditionalDetails" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CharacterUnlockedSkills">
+            <EntityTypeMapping TypeName="gamedataModel.CharacterUnlockedSkill">
+              <MappingFragment StoreEntitySet="CharacterUnlockedSkill">
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+                <ScalarProperty Name="TalentID" ColumnName="TalentID" />
+                <ScalarProperty Name="Notes" ColumnName="Notes" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Datapads">
+            <EntityTypeMapping TypeName="gamedataModel.Datapad">
+              <MappingFragment StoreEntitySet="Datapad">
+                <ScalarProperty Name="DatapadID" ColumnName="DatapadID" />
+                <ScalarProperty Name="Content" ColumnName="Content" />
+                <ScalarProperty Name="HackingLevel" ColumnName="HackingLevel" />
+                <ScalarProperty Name="QRCode" ColumnName="QRCode" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DatapadFiles">
+            <EntityTypeMapping TypeName="gamedataModel.DatapadFile">
+              <MappingFragment StoreEntitySet="DatapadFiles">
+                <ScalarProperty Name="DatapadID" ColumnName="DatapadID" />
+                <ScalarProperty Name="FileNumber" ColumnName="FileNumber" />
+                <ScalarProperty Name="FileName" ColumnName="FileName" />
+                <ScalarProperty Name="Content" ColumnName="Content" />
+                <ScalarProperty Name="EncryptionLevel" ColumnName="EncryptionLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DatapadHackings">
+            <EntityTypeMapping TypeName="gamedataModel.DatapadHacking">
+              <MappingFragment StoreEntitySet="DatapadHacking">
+                <ScalarProperty Name="DatapadID" ColumnName="DatapadID" />
+                <ScalarProperty Name="HackingCharacterID" ColumnName="HackingCharacterID" />
+                <ScalarProperty Name="AttemptNumber" ColumnName="AttemptNumber" />
+                <ScalarProperty Name="Success" ColumnName="Success" />
+                <ScalarProperty Name="DateOfAttempt" ColumnName="DateOfAttempt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DeviceNetworks">
+            <EntityTypeMapping TypeName="gamedataModel.DeviceNetwork">
+              <MappingFragment StoreEntitySet="DeviceNetwork">
+                <ScalarProperty Name="IPv4Address" ColumnName="IPv4Address" />
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Doors">
+            <EntityTypeMapping TypeName="gamedataModel.Door">
+              <MappingFragment StoreEntitySet="Door">
+                <ScalarProperty Name="DoorID" ColumnName="DoorID" />
+                <ScalarProperty Name="Reference" ColumnName="Reference" />
+                <ScalarProperty Name="QRCode" ColumnName="QRCode" />
+                <ScalarProperty Name="HackingLevel" ColumnName="HackingLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Elements">
+            <EntityTypeMapping TypeName="gamedataModel.Element">
+              <MappingFragment StoreEntitySet="Element">
+                <ScalarProperty Name="ElementID" ColumnName="ElementID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Effect" ColumnName="Effect" />
+                <ScalarProperty Name="Price" ColumnName="Price" />
+                <ScalarProperty Name="Picture" ColumnName="Picture" />
+                <ScalarProperty Name="AvailabilityID" ColumnName="AvailabilityID" />
+                <ScalarProperty Name="ExpirationDate" ColumnName="ExpirationDate" />
+                <ScalarProperty Name="Discriminator" ColumnName="Discriminator" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ElementAvailabilities">
+            <EntityTypeMapping TypeName="gamedataModel.ElementAvailability">
+              <MappingFragment StoreEntitySet="ElementAvailability">
+                <ScalarProperty Name="AvailabilityID" ColumnName="AvailabilityID" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ElementCompounds">
+            <EntityTypeMapping TypeName="gamedataModel.ElementCompound">
+              <MappingFragment StoreEntitySet="ElementCompound">
+                <ScalarProperty Name="CompoundElementID" ColumnName="CompoundElementID" />
+                <ScalarProperty Name="ComponentNumber" ColumnName="ComponentNumber" />
+                <ScalarProperty Name="ComponentElementID" ColumnName="ComponentElementID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ElementQRCodes">
+            <EntityTypeMapping TypeName="gamedataModel.ElementQRCode">
+              <MappingFragment StoreEntitySet="ElementQRCode">
+                <ScalarProperty Name="ElementID" ColumnName="ElementID" />
+                <ScalarProperty Name="QRCode" ColumnName="QRCode" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Events">
+            <EntityTypeMapping TypeName="gamedataModel.Event">
+              <MappingFragment StoreEntitySet="Event">
+                <ScalarProperty Name="EventID" ColumnName="EventID" />
+                <ScalarProperty Name="Title" ColumnName="Title" />
+                <ScalarProperty Name="StartDate" ColumnName="StartDate" />
+                <ScalarProperty Name="TotalExperiencePoints" ColumnName="TotalExperiencePoints" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="FullEventPrice" ColumnName="FullEventPrice" />
+                <ScalarProperty Name="Collection" ColumnName="Collection" />
+                <ScalarProperty Name="IsClosed" ColumnName="IsClosed" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EventDatapads">
+            <EntityTypeMapping TypeName="gamedataModel.EventDatapad">
+              <MappingFragment StoreEntitySet="EventDatapad">
+                <ScalarProperty Name="EventID" ColumnName="EventID" />
+                <ScalarProperty Name="DatapadID" ColumnName="DatapadID" />
+                <ScalarProperty Name="NumberOfCopies" ColumnName="NumberOfCopies" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EventDays">
+            <EntityTypeMapping TypeName="gamedataModel.EventDay">
+              <MappingFragment StoreEntitySet="EventDays">
+                <ScalarProperty Name="EventID" ColumnName="EventID" />
+                <ScalarProperty Name="IndividualDay" ColumnName="IndividualDay" />
+                <ScalarProperty Name="ExperiencePoints" ColumnName="ExperiencePoints" />
+                <ScalarProperty Name="InGameTime" ColumnName="InGameTime" />
+                <ScalarProperty Name="OffGameTime" ColumnName="OffGameTime" />
+                <ScalarProperty Name="PricePerDay" ColumnName="PricePerDay" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="EventElements">
+            <EntityTypeMapping TypeName="gamedataModel.EventElement">
+              <MappingFragment StoreEntitySet="EventElement">
+                <ScalarProperty Name="EventID" ColumnName="EventID" />
+                <ScalarProperty Name="ElementID" ColumnName="ElementID" />
+                <ScalarProperty Name="NumberOfCopies" ColumnName="NumberOfCopies" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="HackingTools">
+            <EntityTypeMapping TypeName="gamedataModel.HackingTool">
+              <MappingFragment StoreEntitySet="HackingTool">
+                <ScalarProperty Name="HackingToolID" ColumnName="HackingToolID" />
+                <ScalarProperty Name="QRCode" ColumnName="QRCode" />
+                <ScalarProperty Name="HackerLevel" ColumnName="HackerLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="HeroCharacters">
+            <EntityTypeMapping TypeName="gamedataModel.HeroCharacter">
+              <MappingFragment StoreEntitySet="HeroCharacter">
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="PlayerID" ColumnName="PlayerID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="SpeciesID" ColumnName="SpeciesID" />
+                <ScalarProperty Name="Type" ColumnName="Type" />
+                <ScalarProperty Name="ExperiencePoints" ColumnName="ExperiencePoints" />
+                <ScalarProperty Name="Sex" ColumnName="Sex" />
+                <ScalarProperty Name="DarkSidePoints" ColumnName="DarkSidePoints" />
+                <ScalarProperty Name="DateOfCreation" ColumnName="DateOfCreation" />
+                <ScalarProperty Name="HonorificTitle" ColumnName="HonorificTitle" />
+                <ScalarProperty Name="IsAlive" ColumnName="IsAlive" />
+                <ScalarProperty Name="DateOfDeath" ColumnName="DateOfDeath" />
+                <ScalarProperty Name="LarpNetworkPassword" ColumnName="LarpNetworkPassword" />
+                <ScalarProperty Name="BloodFormula" ColumnName="BloodFormula" />
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+                <ScalarProperty Name="LastAccountEncryption" ColumnName="LastAccountEncryption" />
+                <ScalarProperty Name="EncryptionLevel" ColumnName="EncryptionLevel" />
+                <ScalarProperty Name="QRCode" ColumnName="QRCode" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Infections">
+            <EntityTypeMapping TypeName="gamedataModel.Infection">
+              <MappingFragment StoreEntitySet="Infection">
+                <ScalarProperty Name="InfectionID" ColumnName="InfectionID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Items">
+            <EntityTypeMapping TypeName="gamedataModel.Item">
+              <MappingFragment StoreEntitySet="Item">
+                <ScalarProperty Name="ElementID" ColumnName="ElementID" />
+                <ScalarProperty Name="NumberOfCharges" ColumnName="NumberOfCharges" />
+                <ScalarProperty Name="ItemTypeID" ColumnName="ItemTypeID" />
+                <ScalarProperty Name="Rechargeable" ColumnName="Rechargeable" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ItemTypes">
+            <EntityTypeMapping TypeName="gamedataModel.ItemType">
+              <MappingFragment StoreEntitySet="ItemType">
+                <ScalarProperty Name="ItemTypeID" ColumnName="ItemTypeID" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MailInBoxes">
+            <EntityTypeMapping TypeName="gamedataModel.MailInBox">
+              <MappingFragment StoreEntitySet="MailInBox">
+                <ScalarProperty Name="MessageID" ColumnName="MessageID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="IsRead" ColumnName="IsRead" />
+                <ScalarProperty Name="DateOfDeletion" ColumnName="DateOfDeletion" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MailOutBoxes">
+            <EntityTypeMapping TypeName="gamedataModel.MailOutBox">
+              <MappingFragment StoreEntitySet="MailOutBox">
+                <ScalarProperty Name="MessageID" ColumnName="MessageID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="IsRead" ColumnName="IsRead" />
+                <ScalarProperty Name="DateOfDeletion" ColumnName="DateOfDeletion" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Messages">
+            <EntityTypeMapping TypeName="gamedataModel.Message">
+              <MappingFragment StoreEntitySet="Message">
+                <ScalarProperty Name="MessageID" ColumnName="MessageID" />
+                <ScalarProperty Name="SenderCharacter" ColumnName="SenderCharacter" />
+                <ScalarProperty Name="Subject" ColumnName="Subject" />
+                <ScalarProperty Name="Message1" ColumnName="Message" />
+                <ScalarProperty Name="HackingLevel" ColumnName="HackingLevel" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="DateOfCreation" ColumnName="DateOfCreation" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="MessageHackings">
+            <EntityTypeMapping TypeName="gamedataModel.MessageHacking">
+              <MappingFragment StoreEntitySet="MessageHacking">
+                <ScalarProperty Name="MessageID" ColumnName="MessageID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="AttemptNumber" ColumnName="AttemptNumber" />
+                <ScalarProperty Name="Success" ColumnName="Success" />
+                <ScalarProperty Name="DateOfAttempt" ColumnName="DateOfAttempt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Networks">
+            <EntityTypeMapping TypeName="gamedataModel.Network">
+              <MappingFragment StoreEntitySet="Network">
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+                <ScalarProperty Name="NetworkName" ColumnName="NetworkName" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Faction" ColumnName="Faction" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="NewsHackings">
+            <EntityTypeMapping TypeName="gamedataModel.NewsHacking">
+              <MappingFragment StoreEntitySet="NewsHacking">
+                <ScalarProperty Name="NewsID" ColumnName="NewsID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="AttemptNumber" ColumnName="AttemptNumber" />
+                <ScalarProperty Name="Success" ColumnName="Success" />
+                <ScalarProperty Name="DateOfAttempt" ColumnName="DateOfAttempt" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="NewsStories">
+            <EntityTypeMapping TypeName="gamedataModel.NewsStory">
+              <MappingFragment StoreEntitySet="NewsStory">
+                <ScalarProperty Name="NewsID" ColumnName="NewsID" />
+                <ScalarProperty Name="DateOfCreation" ColumnName="DateOfCreation" />
+                <ScalarProperty Name="ExpirationDate" ColumnName="ExpirationDate" />
+                <ScalarProperty Name="Subject" ColumnName="Subject" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+                <ScalarProperty Name="AuthorCharacterID" ColumnName="AuthorCharacterID" />
+                <ScalarProperty Name="HackingLevel" ColumnName="HackingLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Parameters">
+            <EntityTypeMapping TypeName="gamedataModel.Parameter">
+              <MappingFragment StoreEntitySet="Parameter">
+                <ScalarProperty Name="NetworkID" ColumnName="NetworkID" />
+                <ScalarProperty Name="Parameter1" ColumnName="Parameter" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Players">
+            <EntityTypeMapping TypeName="gamedataModel.Player">
+              <MappingFragment StoreEntitySet="Player">
+                <ScalarProperty Name="PlayerID" ColumnName="PlayerID" />
+                <ScalarProperty Name="MainName" ColumnName="MainName" />
+                <ScalarProperty Name="FirstName" ColumnName="FirstName" />
+                <ScalarProperty Name="DateOfBirth" ColumnName="DateOfBirth" />
+                <ScalarProperty Name="Address" ColumnName="Address" />
+                <ScalarProperty Name="City" ColumnName="City" />
+                <ScalarProperty Name="CountyOrArea" ColumnName="CountyOrArea" />
+                <ScalarProperty Name="PostCode" ColumnName="PostCode" />
+                <ScalarProperty Name="PhoneNumber" ColumnName="PhoneNumber" />
+                <ScalarProperty Name="DateOfSubscription" ColumnName="DateOfSubscription" />
+                <ScalarProperty Name="Sex" ColumnName="Sex" />
+                <ScalarProperty Name="PlayerCathegory" ColumnName="PlayerCathegory" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Password" ColumnName="Password" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SavedMessages">
+            <EntityTypeMapping TypeName="gamedataModel.SavedMessage">
+              <MappingFragment StoreEntitySet="SavedMessage">
+                <ScalarProperty Name="MessageID" ColumnName="MessageID" />
+                <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+                <ScalarProperty Name="Subject" ColumnName="Subject" />
+                <ScalarProperty Name="Source" ColumnName="Source" />
+                <ScalarProperty Name="Message" ColumnName="Message" />
+                <ScalarProperty Name="HackingLevel" ColumnName="HackingLevel" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Skills">
+            <EntityTypeMapping TypeName="gamedataModel.Skill">
+              <MappingFragment StoreEntitySet="Skill">
+                <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="AcquireManyTimes" ColumnName="AcquireManyTimes" />
+                <ScalarProperty Name="ExperiencePointsCost" ColumnName="ExperiencePointsCost" />
+                <ScalarProperty Name="IsAdvanced" ColumnName="IsAdvanced" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SkillEffects">
+            <EntityTypeMapping TypeName="gamedataModel.SkillEffect">
+              <MappingFragment StoreEntitySet="SkillEffect">
+                <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+                <ScalarProperty Name="EffectID" ColumnName="EffectID" />
+                <ScalarProperty Name="Value" ColumnName="Value" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Species">
+            <EntityTypeMapping TypeName="gamedataModel.Species">
+              <MappingFragment StoreEntitySet="Species">
+                <ScalarProperty Name="SpeciesID" ColumnName="SpeciesID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Substances">
+            <EntityTypeMapping TypeName="gamedataModel.Substance">
+              <MappingFragment StoreEntitySet="Substance">
+                <ScalarProperty Name="ElementID" ColumnName="ElementID" />
+                <ScalarProperty Name="ApplicationMode" ColumnName="ApplicationMode" />
+                <ScalarProperty Name="StrengthValue" ColumnName="StrengthValue" />
+                <ScalarProperty Name="SubstanceTypeID" ColumnName="SubstanceTypeID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="SubstanceTypes">
+            <EntityTypeMapping TypeName="gamedataModel.SubstanceType">
+              <MappingFragment StoreEntitySet="SubstanceType">
+                <ScalarProperty Name="SubstanceTypeID" ColumnName="SubstanceTypeID" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Talents">
+            <EntityTypeMapping TypeName="gamedataModel.Talent">
+              <MappingFragment StoreEntitySet="Talent">
+                <ScalarProperty Name="TalentID" ColumnName="TalentID" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="TalentType" ColumnName="TalentType" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <AssociationSetMapping Name="CharacterInfection" TypeName="gamedataModel.CharacterInfection" StoreEntitySet="CharacterInfection">
+            <EndProperty Name="Infection">
+              <ScalarProperty Name="InfectionID" ColumnName="InfectionID" />
+            </EndProperty>
+            <EndProperty Name="HeroCharacter">
+              <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+            </EndProperty>
+          </AssociationSetMapping>
+          <AssociationSetMapping Name="CharacterTalent" TypeName="gamedataModel.CharacterTalent" StoreEntitySet="CharacterTalent">
+            <EndProperty Name="Talent">
+              <ScalarProperty Name="TalentID" ColumnName="TalentID" />
+            </EndProperty>
+            <EndProperty Name="HeroCharacter">
+              <ScalarProperty Name="CharacterID" ColumnName="CharacterID" />
+            </EndProperty>
+          </AssociationSetMapping>
+          <AssociationSetMapping Name="SkillPrerequisite" TypeName="gamedataModel.SkillPrerequisite" StoreEntitySet="SkillPrerequisite">
+            <EndProperty Name="Skill">
+              <ScalarProperty Name="SkillID" ColumnName="RequiredSkillID" />
+            </EndProperty>
+            <EndProperty Name="Skill1">
+              <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+            </EndProperty>
+          </AssociationSetMapping>
+          <AssociationSetMapping Name="TalentSkill" TypeName="gamedataModel.TalentSkill" StoreEntitySet="TalentSkill">
+            <EndProperty Name="Talent">
+              <ScalarProperty Name="TalentID" ColumnName="TalentID" />
+            </EndProperty>
+            <EndProperty Name="Skill">
+              <ScalarProperty Name="SkillID" ColumnName="SkillID" />
+            </EndProperty>
+          </AssociationSetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
