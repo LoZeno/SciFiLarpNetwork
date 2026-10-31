@@ -1,9 +1,9 @@
 # Project layout
 
-The replacement solution is organized at the repository root and kept separate from the legacy `SciFiNetwork` tree until the greenfield replacement task (SPEC-12) explicitly addresses that content.
+The replacement solution is organized at the repository root. The legacy `SciFiNetwork` implementation tree was removed as part of SPEC-12; historical files remain available through Git history.
 
 ```text
-SciFiLarpNetwork.sln
+SciFiLarpNetwork.slnx
 src/
   Backend/       ASP.NET Core MVC backend
   Frontend/      React and TypeScript single-page application
@@ -21,4 +21,4 @@ docs/
 
 The application and test directories are structural placeholders at this stage, not implemented projects. Project files and framework targets are introduced by their corresponding later roadmap tasks. Runtime and build dependencies must remain resolvable from the repository and documented SDK/tool installations; no source or build configuration may depend on an external checkout path.
 
-The existing `SciFiNetwork` solution, its projects, databases, binaries, and metadata are intentionally untouched by this layout task.
+The separate `Holonet3` source repository remains unchanged and is used only as historical domain/behavior reference material.
