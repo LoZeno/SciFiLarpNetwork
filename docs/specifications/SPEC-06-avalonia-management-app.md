@@ -11,6 +11,8 @@ Consider the legacy manager's player/character, skill/ability, event, message, n
 ## Acceptance criteria
 
 - The desktop client is built with Avalonia and uses the same backend API and authorization rules as other clients.
+- English is the default UI language; complete English and Italian translations and extensible localization resources are provided in accordance with SPEC-20.
 - It provides responsive, accessible workflows for in-scope administrative tasks and surfaces validation and server errors clearly.
 - It does not open or modify the event store directly.
 - The application builds and launches on every supported OS/architecture combination in SPEC-07.
+- The installed management client can connect to a configured local host and complete its in-scope workflows without internet access, external identity services, remote content, or runtime dependency downloads, as required by SPEC-21.

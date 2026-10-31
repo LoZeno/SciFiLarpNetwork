@@ -11,4 +11,5 @@ Use RavenDB as the initial datastore, with event records as the durable source o
 - Implement projections as rebuildable indexes/read models. Document whether each projection is immediately or eventually consistent and how clients observe its freshness.
 - Demonstrate datastore operation and packaging compatibility on the requested OS/architecture matrix before relying on it for application distribution.
 - Document licensing, deployment mode, backup/restore, upgrades, and local development setup before production use.
+- Verify that the event store can be installed, licensed, started, backed up, and operated locally without internet access or online license activation, as required by SPEC-21.
 - If RavenDB cannot satisfy the verified platform, licensing, or deployment constraints, stop and present the tradeoff for approval before switching to PostgreSQL/Marten.
