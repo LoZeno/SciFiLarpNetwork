@@ -24,7 +24,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 
 | # | Status | Specification | Implementation gate |
 |---:|:---:|---|---|
-| 01 | [ ] | [SPEC-01 Repository and layout](SPEC-01-repository-location.md) | Establish the new solution/project layout in the destination repository without changing the legacy repository. |
+| 01 | [x] | [SPEC-01 Repository and layout](SPEC-01-repository-location.md) | Establish the root solution and reserved source/test/deployment layout without changing the legacy repository; actual project files are added by later tasks. |
 | 02 | [ ] | [SPEC-12 Greenfield replacement](SPEC-12-greenfield-replacement.md) | Deliberately retain or remove old destination contents; preserve Git history and metadata. |
 | 03 | [ ] | [SPEC-15 Specification-first workflow](SPEC-15-specification-first-workflow.md) | Use the specification selection and acceptance process throughout implementation. |
 | 04 | [ ] | [SPEC-02 Generic Sci-Fi LARP product](SPEC-02-generic-sci-fi-larp-product.md) | Establish generic terminology, product identity, and in-scope domain capability vocabulary. |

@@ -6,6 +6,7 @@ All new product code and project documentation belong in the `SciFiLarpNetwork` 
 
 ## Acceptance criteria
 
-- The new solution, application projects, tests, and build/development documentation are committed under `SciFiLarpNetwork`.
-- Project layout clearly separates the .NET backend, React/TypeScript SPA, Avalonia management application, and automated tests.
+- A new solution is present at the `SciFiLarpNetwork` repository root.
+- Repository-local directories clearly reserve separate locations for the .NET backend, React/TypeScript SPA, Avalonia management application, their tests, and database deployment assets.
+- A repository-local layout document describes these locations and makes clear that component project files and framework targets are introduced by their later implementation steps.
 - No new runtime or build dependency requires a path outside the repository checkout, except documented SDK/tool installations.
