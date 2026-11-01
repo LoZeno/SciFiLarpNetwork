@@ -14,6 +14,7 @@ Frontend/
 Management/
   src/            Avalonia administrative application
   tests/          .NET management-client tests
+Localization/     Shared English and Italian resource files
 deployment/
   Database/      Database installation and configuration assets
 docs/
@@ -30,5 +31,7 @@ The repository's .NET SDK selection and default target framework are defined by 
 Repository-wide nullable, analyzer, and C# style defaults are also defined in `Directory.Build.props` and `.editorconfig`; see [C# conventions](csharp-conventions.md).
 
 The frontend package and its strict TypeScript, lint, formatting, and test-runner configuration live under `Frontend`; see [TypeScript conventions](typescript-conventions.md).
+
+Shared English and Italian localization resources live under `Localization`; see [localization conventions](localization.md).
 
 The separate `Holonet3` source repository remains unchanged and is used only as historical domain/behavior reference material.

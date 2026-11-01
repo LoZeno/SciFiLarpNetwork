@@ -17,3 +17,10 @@ English is the default language and source language for all applications: the Re
 - Language preference persists across refreshes and application restarts as appropriate, and can be changed without losing unsaved work.
 - Tests cover locale selection, English fallback, Italian text rendering, localized validation/error messages, and locale-sensitive formatting.
 - README documents supported languages, default-language behavior, and how to configure/change the language.
+
+## Baseline implementation
+
+- `Localization/en.json` and `Localization/it.json` establish the shared UTF-8 JSON resource format and initial common, accessibility, validation, and error strings.
+- `Localization/validate.mjs` checks that English and Italian resources exist, all locale key sets match English, keys are namespaced, and translation values are non-empty. `Frontend/npm run check` includes this validation.
+- [Localization conventions](../architecture/localization.md) defines the English fallback, stable namespaced keys, backend error-code mapping, locale/formatting separation, preference boundaries, and user-authored content handling.
+- Framework-specific resource loading, language selection UI, preference persistence/synchronization, runtime fallback, and feature-specific translations are implemented and tested with the relevant application roadmap tasks; this foundation does not claim those application behaviors are already delivered.

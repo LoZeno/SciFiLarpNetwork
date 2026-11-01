@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test"
+    "locales:check": "node ../Localization/validate.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run locales:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

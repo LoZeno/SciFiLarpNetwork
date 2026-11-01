@@ -31,7 +31,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 05 | [x] | [SPEC-03 .NET 10](SPEC-03-dotnet-10.md) | Establish the SDK-style .NET 10 project baseline. |
 | 06 | [x] | [SPEC-13 Idiomatic modern C#](SPEC-13-idiomatic-csharp.md) | Establish C# language, nullable, analyzer, and formatting conventions. |
 | 07 | [x] | [SPEC-14 Idiomatic TypeScript](SPEC-14-idiomatic-typescript.md) | Establish strict TypeScript, React, lint, and formatting conventions. |
-| 08 | [ ] | [SPEC-20 Application language and localization](SPEC-20-language-and-localization.md) | Establish English-default, English/Italian resources and extensible localization conventions before UI strings proliferate. |
+| 08 | [x] | [SPEC-20 Application language and localization](SPEC-20-language-and-localization.md) | Establish English-default, English/Italian resources and extensible localization conventions before UI strings proliferate. |
 | 09 | [ ] | [SPEC-21 Offline-capable closed-intranet operation](SPEC-21-offline-intranet-operation.md) | Establish offline-first dependency, asset, licensing, and outbound-network constraints before selecting runtime dependencies. |
 | 10 | [ ] | [SPEC-07 Cross-platform and architecture support](SPEC-07-cross-platform-support.md) | Verify the proposed platform/runtime/dependency matrix and resolve unsupported combinations before relying on them. |
 | 11 | [ ] | [SPEC-11 xUnit testing](SPEC-11-xunit-testing.md) | Establish .NET test conventions, integration-test isolation, and frontend testing alongside its own test runner. |
