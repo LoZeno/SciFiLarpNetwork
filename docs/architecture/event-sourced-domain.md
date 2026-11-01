@@ -12,7 +12,7 @@ The write path is:
 4. The event-store boundary appends the batch atomically only if the stream is still at the version the aggregate read. A conflict rejects the command. The caller reloads and re-evaluates the intent; it must not blindly retry stale events.
 5. Projections consume committed events in stream order and expose rebuildable query models.
 
-Transport, authentication, persistence-provider APIs, and projection storage do not belong in domain aggregates. The RavenDB-specific adapter, durable append implementation, and runtime projection workers are introduced under SPEC-09; this document defines their contract, not a substitute in-memory production store.
+Transport, authentication, persistence-provider APIs, and projection storage do not belong in domain aggregates. The PostgreSQL/Marten durable append adapter and runtime projection workers are introduced with backend implementation; this document defines their contract, not a substitute in-memory production store.
 
 ## Commands, streams, and transaction boundaries
 
@@ -74,4 +74,4 @@ The test suites must include:
 - Schema evolution tests for each supported event version and upcaster path, plus deterministic replay from stored fixtures.
 - Tests that corrections append compensating facts and do not mutate prior history.
 
-The store-level and projection-worker tests depend on the durable provider contract and are implemented with SPEC-09. Aggregate and feature-invariant tests are added with their domain capabilities; this avoids introducing placeholder game behavior before its feature specification is reached.
+The store-level and projection-worker tests depend on the selected PostgreSQL/Marten provider and are implemented with backend persistence. Aggregate and feature-invariant tests are added with their domain capabilities; this avoids introducing placeholder game behavior before its feature specification is reached.

@@ -38,6 +38,8 @@ The .NET xUnit projects, test commands, and test-isolation conventions are descr
 
 The event/command/aggregate boundaries, stream concurrency contract, schema evolution, and projection recovery rules are described in [event-sourced domain](event-sourced-domain.md).
 
+The selected PostgreSQL + Marten event-store architecture, licensing, ARM64 smoke-test evidence, offline image requirements, and remaining release gates are recorded in [datastore decision](datastore-assessment.md).
+
 Offline runtime constraints and the current frontend asset guard are defined in [closed-intranet operation](offline-operation.md).
 
 The verified OS/architecture constraints and platform approval blocker are recorded in the [platform support matrix](platform-support-matrix.md).

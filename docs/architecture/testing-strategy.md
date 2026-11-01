@@ -34,7 +34,7 @@ The GitHub Actions workflow runs both command paths on pull requests and pushes 
 - Integration tests own their data and service lifetime. Use a unique temporary directory/database or isolated test container per test run, clean it up reliably, and never depend on a developer's local event store, credentials, DNS, or machine-specific paths.
 - Do not share mutable test state across concurrently executing tests. Avoid timing assumptions, public network calls, real external services, and order-dependent fixtures.
 - Exercise the persisted event source, projection rebuilds, optimistic concurrency, MVC behavior, and contracts at appropriate integration boundaries when those implementations exist.
-- Event-sourcing test obligations and their implementation milestones are defined in [event-sourced domain](event-sourced-domain.md): store/projection integration cases accompany SPEC-09, and aggregate transition cases accompany the relevant feature work.
+- Event-sourcing test obligations are defined in [event-sourced domain](event-sourced-domain.md): PostgreSQL/Marten store and projection integration cases accompany backend persistence implementation, and aggregate transition cases accompany the relevant feature work. The provider decision is recorded in [datastore decision](datastore-assessment.md).
 - Keep test data generic and franchise-neutral. Distinguish Account, Player, and Character as defined in the domain glossary.
 - Tests and fixture setup must run without public internet access after their declared packages/runtime prerequisites have been prepared locally.
 

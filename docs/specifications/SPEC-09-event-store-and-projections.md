@@ -1,15 +1,23 @@
 # SPEC-09: Event store and projections
 
-## Requirement and selected direction
+## Decision
 
-Use RavenDB as the initial datastore, with event records as the durable source of truth and RavenDB indexes/projections (including map/reduce where appropriate) for queryable current-state snapshots. This selects the RavenDB option from the requested alternatives; do not add a second datastore or use mutable read models as the event log.
+Use PostgreSQL 18 with Marten 9 for the durable event store and projections. PostgreSQL event streams are the source of truth; read models are rebuildable. Run PostgreSQL in a Linux container with Docker Compose/operator-provided container runtime. The decision, license review, ARM64 host smoke test, projection strategy, and remaining release gates are recorded in [datastore decision](../architecture/datastore-assessment.md). Do not add RavenDB or a second datastore.
 
-## Acceptance criteria
+## Step 14 acceptance criteria — provider selection
 
-- Store event records with stream/aggregate identity, sequence/version, event type/schema version, timestamp, and payload sufficient to replay state.
-- Use optimistic concurrency or an equivalent atomic append mechanism to prevent silently overwriting concurrent events.
-- Implement projections as rebuildable indexes/read models. Document whether each projection is immediately or eventually consistent and how clients observe its freshness.
-- Demonstrate datastore operation and packaging compatibility on all six approved SPEC-07 runtime identifiers (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`) before relying on it for application distribution. Do not treat 32-bit x86 as an approved target.
-- Document licensing, deployment mode, backup/restore, upgrades, and local development setup before production use.
-- Verify that the event store can be installed, licensed, started, backed up, and operated locally without internet access or online license activation, as required by SPEC-21.
-- If RavenDB cannot satisfy the verified platform, licensing, or deployment constraints, stop and present the tradeoff for approval before switching to PostgreSQL/Marten.
+- Select a provider compatible with .NET 10 and record datastore and library redistribution licenses.
+- Establish that the database image supports the approved host CPU architectures and verify a native startup on the user's Windows ARM64 Docker host.
+- Define the event append/concurrency contract, projection lifecycles/freshness, offline image provisioning, and deployment risks before backend implementation.
+- Keep all six application RIDs and 32-bit x86 exclusion aligned with SPEC-07.
+
+All four criteria are satisfied by the decision and evidence in [datastore decision](../architecture/datastore-assessment.md). The successful local PostgreSQL 18.6 smoke test ran on Docker's `linux/arm64` engine. This closes provider selection; it does not claim that later product implementation or release gates are complete.
+
+## Implementation requirements for subsequent backend/deployment work
+
+These are product implementation and release gates, not evidence that the durable adapter already exists:
+
+- Store immutable, replayable events with stream identity/version, explicit event and schema types, timestamps, actor/correlation metadata, and payload; atomically append with expected-version concurrency.
+- Build rebuildable, idempotent projections. Specify inline/async/live consistency per use case, surface async checkpoints and errors, and support clean rebuild and failure recovery.
+- Test ordering, replay, concurrency conflicts, schema evolution, duplicate delivery, projection rebuild, and recovery with xUnit and the selected PostgreSQL/Marten integration.
+- Document pinned image setup, offline import/start, secure configuration, persistence, backup/restore, and upgrade procedures. Later release work must test all six approved RIDs and outbound-blocked startup with locally available images.
