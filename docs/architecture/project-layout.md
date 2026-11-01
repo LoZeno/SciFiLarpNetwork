@@ -23,4 +23,6 @@ The application and test directories are structural placeholders at this stage, 
 
 The repository's .NET SDK selection and default target framework are defined by root `global.json` and `Directory.Build.props`; see [the .NET baseline](dotnet-baseline.md) for the documented build command.
 
+Repository-wide nullable, analyzer, and C# style defaults are also defined in `Directory.Build.props` and `.editorconfig`; see [C# conventions](csharp-conventions.md).
+
 The separate `Holonet3` source repository remains unchanged and is used only as historical domain/behavior reference material.

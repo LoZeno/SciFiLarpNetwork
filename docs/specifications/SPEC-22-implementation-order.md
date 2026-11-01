@@ -29,7 +29,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 03 | [x] | [SPEC-15 Specification-first workflow](SPEC-15-specification-first-workflow.md) | Use SPEC-22 as the persistent first-unchecked-task and cross-session handoff record; inspect worktree and acceptance evidence for each serial task. |
 | 04 | [x] | [SPEC-02 Generic Sci-Fi LARP product](SPEC-02-generic-sci-fi-larp-product.md) | Establish franchise-neutral product terminology, initial capability scope, and explicit legacy omissions before feature implementation. |
 | 05 | [x] | [SPEC-03 .NET 10](SPEC-03-dotnet-10.md) | Establish the SDK-style .NET 10 project baseline. |
-| 06 | [ ] | [SPEC-13 Idiomatic modern C#](SPEC-13-idiomatic-csharp.md) | Establish C# language, nullable, analyzer, and formatting conventions. |
+| 06 | [x] | [SPEC-13 Idiomatic modern C#](SPEC-13-idiomatic-csharp.md) | Establish C# language, nullable, analyzer, and formatting conventions. |
 | 07 | [ ] | [SPEC-14 Idiomatic TypeScript](SPEC-14-idiomatic-typescript.md) | Establish strict TypeScript, React, lint, and formatting conventions. |
 | 08 | [ ] | [SPEC-20 Application language and localization](SPEC-20-language-and-localization.md) | Establish English-default, English/Italian resources and extensible localization conventions before UI strings proliferate. |
 | 09 | [ ] | [SPEC-21 Offline-capable closed-intranet operation](SPEC-21-offline-intranet-operation.md) | Establish offline-first dependency, asset, licensing, and outbound-network constraints before selecting runtime dependencies. |
