@@ -17,3 +17,9 @@ The internet may be available during development or deployment preparation, but 
 - Startup and operational diagnostics clearly distinguish local configuration/service failures from lack of public internet and do not attempt indefinite external retries.
 - A documented offline smoke test blocks outbound network access and demonstrates host startup, browser access, desktop-client access, database persistence, and QR scanning.
 - Database licensing and operation are verified to work without online activation or periodic internet access. If the selected datastore or any mandatory dependency cannot meet this requirement, stop and request approval for an alternative before implementation proceeds.
+
+## Baseline implementation
+
+- [Closed-intranet and offline operation](../architecture/offline-operation.md) defines runtime/build dependency boundaries, local-service configuration, optional connectivity policy, licensing review, and the final outbound-blocked smoke test.
+- `Frontend/scripts/check-offline-assets.mjs` detects remote resource references in frontend HTML/CSS under `Frontend/src` and `Frontend/public`. The frontend `npm run check` includes this guard.
+- Backend, Avalonia, datastore, release packaging, and integrated outbound-blocked runtime verification remain acceptance work for their scheduled implementation/deployment tasks; the current empty application scaffold cannot yet demonstrate those behaviors.
