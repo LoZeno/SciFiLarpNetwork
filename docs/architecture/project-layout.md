@@ -36,6 +36,8 @@ Shared English and Italian localization resources live under `Localization`; see
 
 The .NET xUnit projects, test commands, and test-isolation conventions are described in [testing strategy](testing-strategy.md).
 
+The event/command/aggregate boundaries, stream concurrency contract, schema evolution, and projection recovery rules are described in [event-sourced domain](event-sourced-domain.md).
+
 Offline runtime constraints and the current frontend asset guard are defined in [closed-intranet operation](offline-operation.md).
 
 The verified OS/architecture constraints and platform approval blocker are recorded in the [platform support matrix](platform-support-matrix.md).

@@ -36,7 +36,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 10 | [x] | [SPEC-07 Cross-platform and architecture support](SPEC-07-cross-platform-support.md) | Approve the six 64-bit RIDs and explicitly exclude 32-bit x86; record per-target build/publish/smoke-test evidence before release. |
 | 11 | [x] | [SPEC-11 xUnit testing](SPEC-11-xunit-testing.md) | Establish .NET test projects, documented test isolation, and CI execution alongside frontend checks. |
 | 12 | [x] | [SPEC-10 Minimum code coverage](SPEC-10-code-coverage.md) | Establish separate coverage reports and 80% CI thresholds for .NET lines and TypeScript statements/lines. |
-| 13 | [ ] | [SPEC-08 Event-sourced domain](SPEC-08-event-sourced-domain.md) | Define command/event/stream/projection boundaries and domain invariants. |
+| 13 | [x] | [SPEC-08 Event-sourced domain](SPEC-08-event-sourced-domain.md) | Define provider-neutral command/event/stream/projection contracts, domain invariants, replay/evolution, and recovery/test obligations. |
 | 14 | [ ] | [SPEC-09 Event store and projections](SPEC-09-event-store-and-projections.md) | Verify the approved RavenDB direction against offline, license, platform, event, and projection requirements. |
 | 15 | [ ] | [SPEC-05 ASP.NET Core MVC backend](SPEC-05-aspnetcore-mvc-backend.md) | Establish the .NET 10 API, contracts, validation, error codes, configuration, and documentation baseline. |
 | 16 | [ ] | [SPEC-04 React and TypeScript web client](SPEC-04-react-typescript-spa.md) | Establish the locally served SPA, API client, routing, localization, and UI test baseline. |
