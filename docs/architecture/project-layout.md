@@ -6,14 +6,14 @@ The replacement solution is organized at the repository root. The legacy `SciFiN
 SciFiLarpNetwork.slnx
 Backend/
   src/            ASP.NET Core MVC backend
-  tests/          .NET backend unit and integration tests
+  tests/          .NET backend unit and integration test project
 Frontend/
   src/            React and TypeScript single-page application
   tests/          Frontend type, unit, and integration tests
   package.json    Frontend scripts and dependencies
 Management/
   src/            Avalonia administrative application
-  tests/          .NET management-client tests
+  tests/          .NET management-client test project
 Localization/     Shared English and Italian resource files
 deployment/
   Database/      Database installation and configuration assets
@@ -33,6 +33,8 @@ Repository-wide nullable, analyzer, and C# style defaults are also defined in `D
 The frontend package and its strict TypeScript, lint, formatting, and test-runner configuration live under `Frontend`; see [TypeScript conventions](typescript-conventions.md).
 
 Shared English and Italian localization resources live under `Localization`; see [localization conventions](localization.md).
+
+The .NET xUnit projects, test commands, and test-isolation conventions are described in [testing strategy](testing-strategy.md).
 
 Offline runtime constraints and the current frontend asset guard are defined in [closed-intranet operation](offline-operation.md).
 

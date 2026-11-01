@@ -34,7 +34,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 08 | [x] | [SPEC-20 Application language and localization](SPEC-20-language-and-localization.md) | Establish English-default, English/Italian resources and extensible localization conventions before UI strings proliferate. |
 | 09 | [x] | [SPEC-21 Offline-capable closed-intranet operation](SPEC-21-offline-intranet-operation.md) | Establish offline-first dependency, asset, licensing, and outbound-network constraints before selecting runtime dependencies. |
 | 10 | [x] | [SPEC-07 Cross-platform and architecture support](SPEC-07-cross-platform-support.md) | Approve the six 64-bit RIDs and explicitly exclude 32-bit x86; record per-target build/publish/smoke-test evidence before release. |
-| 11 | [ ] | [SPEC-11 xUnit testing](SPEC-11-xunit-testing.md) | Establish .NET test conventions, integration-test isolation, and frontend testing alongside its own test runner. |
+| 11 | [x] | [SPEC-11 xUnit testing](SPEC-11-xunit-testing.md) | Establish .NET test projects, documented test isolation, and CI execution alongside frontend checks. |
 | 12 | [ ] | [SPEC-10 Minimum code coverage](SPEC-10-code-coverage.md) | Establish separate coverage reporting and the 80% CI threshold before feature implementation. |
 | 13 | [ ] | [SPEC-08 Event-sourced domain](SPEC-08-event-sourced-domain.md) | Define command/event/stream/projection boundaries and domain invariants. |
 | 14 | [ ] | [SPEC-09 Event store and projections](SPEC-09-event-store-and-projections.md) | Verify the approved RavenDB direction against offline, license, platform, event, and projection requirements. |
