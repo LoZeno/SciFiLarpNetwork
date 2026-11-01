@@ -20,6 +20,17 @@ jobs:
           dotnet-version: 10.0.x
       - name: Test solution
         run: dotnet test SciFiLarpNetwork.slnx --configuration Release
+      - name: Upload .NET coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-coverage
+          path: |
+            Backend/tests/**/TestResults/coverage/coverage.cobertura.xml
+            Backend/tests/**/TestResults/coverage/coverage.json
+            Management/tests/**/TestResults/coverage/coverage.cobertura.xml
+            Management/tests/**/TestResults/coverage/coverage.json
+          if-no-files-found: error
 
   frontend-checks:
     name: Frontend checks
@@ -36,3 +47,10 @@ jobs:
           cache-dependency-path: Frontend/package-lock.json
       - run: npm ci
       - run: npm run check
+      - name: Upload TypeScript coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: Frontend/coverage/
+          if-no-files-found: error
