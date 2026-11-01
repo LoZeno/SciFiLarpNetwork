@@ -36,4 +36,6 @@ Shared English and Italian localization resources live under `Localization`; see
 
 Offline runtime constraints and the current frontend asset guard are defined in [closed-intranet operation](offline-operation.md).
 
+The verified OS/architecture constraints and platform approval blocker are recorded in the [platform support matrix](platform-support-matrix.md).
+
 The separate `Holonet3` source repository remains unchanged and is used only as historical domain/behavior reference material.

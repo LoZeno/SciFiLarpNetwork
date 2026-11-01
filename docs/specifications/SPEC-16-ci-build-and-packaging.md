@@ -2,7 +2,7 @@
 
 ## Requirement
 
-Create GitHub Actions workflows that build, test, and package all product components for Windows, Linux, and macOS on x86, x64, and ARM64, including the React frontend, .NET MVC backend, Avalonia management application, and database setup/installer.
+Create GitHub Actions workflows that build, test, and package all product components for Windows, Linux, and macOS on x64 and ARM64, including the React frontend, .NET MVC backend, Avalonia management application, and database setup/installer. The approved runtime identifiers are `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`; 32-bit x86 is explicitly excluded by SPEC-07.
 
 ## Acceptance criteria
 
