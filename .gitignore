@@ -216,3 +216,8 @@ pip-log.txt
 
 # JetBrains IDEs
 .idea/
+
+# Node.js and frontend tooling
+**/node_modules/
+**/coverage/
+**/dist/
