@@ -1,6 +1,6 @@
 # TypeScript conventions
 
-The frontend toolchain is configured in `src/Frontend/package.json`. Run its checks from that directory:
+The frontend toolchain is configured in `Frontend/package.json`. Run its checks from that directory:
 
 ```powershell
 npm run check
