@@ -10,7 +10,7 @@ The sequence is deliberately one task at a time. Do not start a later row while 
 
 1. Read this file and inspect the repository/worktree before changing code. Do not assume prior chat history.
 2. Find the **first unchecked row** in the sequence. That row is the only implementation task to start. The next agent uses the same rule.
-3. Read that specification and its cited prerequisites in full. Follow SPEC-15, the specification-first workflow, and keep the change limited to the selected task and directly necessary dependencies.
+3. Read that specification, its cited prerequisites, and `docs/architecture/domain-language-and-scope.md` in full. Treat the domain language and scope guide as a continuous product constraint: use its generic terminology, respect its included capabilities and explicit omissions, and do not add franchise assumptions or revive omitted behavior without user approval.
 4. If the task is blocked by an ambiguity, conflict, unavailable dependency, or unmet acceptance criterion, do not skip it. Record the blocker in the handoff/PR and ask for a decision where needed.
 5. Mark the row `[x]` only after all acceptance criteria for that specification are implemented or demonstrably satisfied, relevant tests pass, and the changes are persisted in the branch/commit/PR being handed off. Otherwise leave it `[ ]`.
 6. In the handoff, state the completed row number and spec, verification performed, any remaining limitation, and the next unchecked row. Do not mark later rows complete just because some of their code was incidentally introduced.
@@ -28,7 +28,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 02 | [x] | [SPEC-12 Greenfield replacement](SPEC-12-greenfield-replacement.md) | Remove the legacy implementation tree deliberately, retain new scaffold/specs and Git history, and make no implicit data-import or compatibility commitment. |
 | 03 | [x] | [SPEC-15 Specification-first workflow](SPEC-15-specification-first-workflow.md) | Use SPEC-22 as the persistent first-unchecked-task and cross-session handoff record; inspect worktree and acceptance evidence for each serial task. |
 | 04 | [x] | [SPEC-02 Generic Sci-Fi LARP product](SPEC-02-generic-sci-fi-larp-product.md) | Establish franchise-neutral product terminology, initial capability scope, and explicit legacy omissions before feature implementation. |
-| 05 | [ ] | [SPEC-03 .NET 10](SPEC-03-dotnet-10.md) | Establish the SDK-style .NET 10 project baseline. |
+| 05 | [x] | [SPEC-03 .NET 10](SPEC-03-dotnet-10.md) | Establish the SDK-style .NET 10 project baseline. |
 | 06 | [ ] | [SPEC-13 Idiomatic modern C#](SPEC-13-idiomatic-csharp.md) | Establish C# language, nullable, analyzer, and formatting conventions. |
 | 07 | [ ] | [SPEC-14 Idiomatic TypeScript](SPEC-14-idiomatic-typescript.md) | Establish strict TypeScript, React, lint, and formatting conventions. |
 | 08 | [ ] | [SPEC-20 Application language and localization](SPEC-20-language-and-localization.md) | Establish English-default, English/Italian resources and extensible localization conventions before UI strings proliferate. |
@@ -137,5 +137,6 @@ All routes in this phase depend on CROSSCUT-02, server-side authorization, accou
 
 - Run the existing checks and preserve the coverage thresholds from SPEC-10 for each completed implementation task; do not postpone testing until Phase G.
 - Maintain English-default and English/Italian localization (SPEC-20), closed-intranet operation (SPEC-21), supported platform claims (SPEC-07), and event-sourcing rules (SPEC-08/SPEC-09) throughout every phase.
+- Keep `docs/architecture/domain-language-and-scope.md` in mind for every implementation: preserve its canonical vocabulary, generic/configurable product identity, initial scope, and explicit omissions. If a selected feature spec conflicts with it or appears to require an omitted capability, stop and resolve the conflict before implementing.
 - Update CI incrementally as projects/features are introduced; row 71 is the final cross-component packaging, release-matrix, and offline-validation completion gate, not permission to defer basic builds or tests.
 - Keep the manager and Web Forms features as generic product workflows. Legacy file names and route names in this roadmap identify source behavior only; they are not required product branding or architecture.

@@ -21,4 +21,6 @@ docs/
 
 The application and test directories are structural placeholders at this stage, not implemented projects. Project files and framework targets are introduced by their corresponding later roadmap tasks. Runtime and build dependencies must remain resolvable from the repository and documented SDK/tool installations; no source or build configuration may depend on an external checkout path.
 
+The repository's .NET SDK selection and default target framework are defined by root `global.json` and `Directory.Build.props`; see [the .NET baseline](dotnet-baseline.md) for the documented build command.
+
 The separate `Holonet3` source repository remains unchanged and is used only as historical domain/behavior reference material.
