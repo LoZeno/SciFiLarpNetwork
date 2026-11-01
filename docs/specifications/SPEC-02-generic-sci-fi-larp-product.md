@@ -8,9 +8,7 @@ English is the default language of all applications. The web client, backend use
 
 Every application and core feature must also work on a closed intranet without guaranteed public internet access. See [SPEC-21](SPEC-21-offline-intranet-operation.md).
 
-## Initial capability inventory
-
-Use the legacy system as a discovery source for capabilities including player and character records, network selection, messages and contacts, news, personal files/datapads, simulated hacking, skills/abilities, events and participation, objects/items, substances, infections/medical records, QR-code workflows, and event printouts. This inventory is not a mandate to copy every legacy screen or business rule.
+The canonical product identity, vocabulary, initial capability scope, and explicit omissions are documented in [Product language and initial capability scope](../architecture/domain-language-and-scope.md).
 
 ## Acceptance criteria
 
@@ -18,4 +16,5 @@ Use the legacy system as a discovery source for capabilities including player an
 - Application UI and user-facing messages meet the English-default and English/Italian localization requirements in SPEC-20.
 - Core application behavior meets the offline/closed-intranet requirements in SPEC-21.
 - Domain names and seeded/sample content are generic; no legacy Star Wars-specific branding, copyrighted imagery, or setting assumptions are carried forward.
-- Before feature implementation, identify which legacy capabilities are in scope and document any intentionally omitted or materially changed behavior.
+- The initial in-scope capabilities and intentionally omitted/materially changed legacy behavior are documented in the domain language and scope guide before feature implementation.
+- Product and domain terminology follows the generic vocabulary in that guide; setting-specific display names are configurable and are not hard-coded franchise assumptions.

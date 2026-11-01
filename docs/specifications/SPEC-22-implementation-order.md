@@ -27,7 +27,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 | 01 | [x] | [SPEC-01 Repository and layout](SPEC-01-repository-location.md) | Establish the root solution and reserved source/test/deployment layout without changing the legacy repository; actual project files are added by later tasks. |
 | 02 | [x] | [SPEC-12 Greenfield replacement](SPEC-12-greenfield-replacement.md) | Remove the legacy implementation tree deliberately, retain new scaffold/specs and Git history, and make no implicit data-import or compatibility commitment. |
 | 03 | [x] | [SPEC-15 Specification-first workflow](SPEC-15-specification-first-workflow.md) | Use SPEC-22 as the persistent first-unchecked-task and cross-session handoff record; inspect worktree and acceptance evidence for each serial task. |
-| 04 | [ ] | [SPEC-02 Generic Sci-Fi LARP product](SPEC-02-generic-sci-fi-larp-product.md) | Establish generic terminology, product identity, and in-scope domain capability vocabulary. |
+| 04 | [x] | [SPEC-02 Generic Sci-Fi LARP product](SPEC-02-generic-sci-fi-larp-product.md) | Establish franchise-neutral product terminology, initial capability scope, and explicit legacy omissions before feature implementation. |
 | 05 | [ ] | [SPEC-03 .NET 10](SPEC-03-dotnet-10.md) | Establish the SDK-style .NET 10 project baseline. |
 | 06 | [ ] | [SPEC-13 Idiomatic modern C#](SPEC-13-idiomatic-csharp.md) | Establish C# language, nullable, analyzer, and formatting conventions. |
 | 07 | [ ] | [SPEC-14 Idiomatic TypeScript](SPEC-14-idiomatic-typescript.md) | Establish strict TypeScript, React, lint, and formatting conventions. |
