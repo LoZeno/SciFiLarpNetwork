@@ -1,5 +1,5 @@
 using System.Text.Json;
-using SciFiLarpNetwork.Management.Api.Siren;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Api;
 

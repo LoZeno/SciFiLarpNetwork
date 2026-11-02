@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SciFiLarpNetwork.Backend.Api.Siren;
 using SciFiLarpNetwork.Backend.Localization.Text;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Api.Discovery;
 

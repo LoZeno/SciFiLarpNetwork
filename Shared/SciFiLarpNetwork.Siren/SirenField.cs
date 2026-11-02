@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SciFiLarpNetwork.Backend.Api.Siren;
+namespace SciFiLarpNetwork.Common.Siren;
 
 public sealed record SirenField
 {

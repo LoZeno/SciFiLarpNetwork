@@ -2,12 +2,16 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Api;
-using SciFiLarpNetwork.Management.Api.Siren;
+using SciFiLarpNetwork.Common.ApiLinkPolicy;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.Api;
 
 public sealed class ManagementApiClientTests
 {
+    private static readonly JsonSerializerOptions FixtureJsonOptions =
+        new(JsonSerializerDefaults.Web);
+
     [Fact]
     public async Task DiscoverAsyncFollowsLatestVersionAndFiltersUnsafeNavigation()
     {
@@ -133,13 +137,15 @@ public sealed class ManagementApiClientTests
             return SirenResponse("""{"class":["message"]}""");
         });
         using var body = JsonDocument.Parse("""{"message":"hello"}""");
-        var action = new SirenAction(
-            "send-message",
-            "/api/v1/messages",
-            "POST",
-            "application/json",
-            "Send message",
-            []);
+        var action = new SirenAction
+        {
+            Name = "send-message",
+            Href = "/api/v1/messages",
+            Method = "POST",
+            Type = "application/json",
+            Title = "Send message",
+            Fields = []
+        };
 
         var result = await client.SubmitActionAsync(
             "http://localhost/api",
@@ -159,8 +165,14 @@ public sealed class ManagementApiClientTests
     {
         using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
         using var body = JsonDocument.Parse("""{"value":1}""");
-        var unsupportedMethod = new SirenAction("submit", "/api/v1", "TRACE", null, null, []);
-        var unsupportedType = new SirenAction("submit", "/api/v1", "POST", "text/plain", null, []);
+        var unsupportedMethod = new SirenAction { Name = "submit", Href = "/api/v1", Method = "TRACE" };
+        var unsupportedType = new SirenAction
+        {
+            Name = "submit",
+            Href = "/api/v1",
+            Method = "POST",
+            Type = "text/plain"
+        };
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             client.SubmitActionAsync("http://localhost/api", unsupportedMethod, null, "en"));
@@ -169,7 +181,7 @@ public sealed class ManagementApiClientTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             client.SubmitActionAsync(
                 "http://localhost/api",
-                new SirenAction("submit", null, "POST", null, null, []),
+                new SirenAction { Name = "submit", Href = "", Method = "POST" },
                 null,
                 "en"));
     }
@@ -179,22 +191,59 @@ public sealed class ManagementApiClientTests
     {
         using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
         using var body = JsonDocument.Parse("""{"value":1}""");
-        var action = new SirenAction("lookup", "/api/v1", "GET", "application/json", null, []);
+        var action = new SirenAction
+        {
+            Name = "lookup",
+            Href = "/api/v1",
+            Method = "GET",
+            Type = "application/json"
+        };
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             client.SubmitActionAsync("http://localhost/api", action, body.RootElement, "en"));
     }
 
     [Fact]
-    public void SirenActionFieldStoresDeclaredFieldMetadata()
+    public void SirenFieldStoresDeclaredFieldMetadata()
     {
-        var field = new SirenActionField("message", "text", "Hello", "Message");
+        using var value = JsonDocument.Parse("\"Hello\"");
+        var field = new SirenField
+        {
+            Name = "message",
+            Type = "text",
+            Value = value.RootElement,
+            Title = "Message"
+        };
 
         Assert.Equal("message", field.Name);
         Assert.Equal("text", field.Type);
-        Assert.Equal("Hello", field.Value);
+        Assert.Equal("Hello", field.Value?.GetString());
         Assert.Equal("Message", field.Title);
     }
+
+    [Fact]
+    public void ApiLinkPolicyMatchesSharedConformanceCases()
+    {
+        var fixturePath = Path.Combine(AppContext.BaseDirectory, "test-cases.json");
+        var testCases = JsonSerializer.Deserialize<ApiLinkPolicyTestCase[]>(
+            File.ReadAllText(fixturePath),
+            FixtureJsonOptions)!;
+
+        foreach (var testCase in testCases)
+        {
+            var apiRoot = ApiLinkPolicy.CreateApiRoot(testCase.ApiBaseUrl);
+            var resolved = ApiLinkPolicy.TryResolve(apiRoot, testCase.Href, out var target);
+
+            Assert.Equal(testCase.ExpectedHref is not null, resolved);
+            Assert.Equal(testCase.ExpectedHref, resolved ? target.AbsoluteUri : null);
+        }
+    }
+
+    private sealed record ApiLinkPolicyTestCase(
+        string Name,
+        string ApiBaseUrl,
+        string Href,
+        string? ExpectedHref);
 
     private static ManagementApiClient CreateClient(
         Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>

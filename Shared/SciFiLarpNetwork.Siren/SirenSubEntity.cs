@@ -1,14 +1,24 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SciFiLarpNetwork.Backend.Api.Siren;
+namespace SciFiLarpNetwork.Common.Siren;
 
-public sealed record SirenEntity<TProperties>
+public sealed record SirenSubEntity
 {
     [JsonPropertyName("class")]
-    public required IReadOnlyList<string> Class { get; init; }
+    public IReadOnlyList<string>? Class { get; init; }
+
+    [JsonPropertyName("rel")]
+    public required IReadOnlyList<string> Rel { get; init; }
+
+    [JsonPropertyName("href")]
+    public string? Href { get; init; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; init; }
 
     [JsonPropertyName("properties")]
-    public TProperties? Properties { get; init; }
+    public JsonElement? Properties { get; init; }
 
     [JsonPropertyName("entities")]
     public IReadOnlyList<SirenSubEntity>? Entities { get; init; }

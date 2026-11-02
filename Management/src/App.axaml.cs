@@ -6,6 +6,7 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
+using SciFiLarpNetwork.Common.Localization;
 
 namespace SciFiLarpNetwork.Management;
 
@@ -49,7 +50,7 @@ public partial class App : Avalonia.Application
             startupErrorKey = "management.settingsLoadError";
         }
 
-        var localizer = new JsonLocalizer();
+        var localizer = new JsonLocalizer(new LocalizationCatalog());
         var apiClient = new ManagementApiClient(httpClient);
         return new MainWindow(
             new MainWindowViewModel(apiClient, settingsStore, localizer, settings, startupErrorKey));

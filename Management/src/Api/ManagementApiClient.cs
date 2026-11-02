@@ -1,8 +1,8 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using SciFiLarpNetwork.Management.Api.Siren;
+using SciFiLarpNetwork.Common.ApiLinkPolicy;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Api;
 
@@ -10,20 +10,20 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly MediaTypeWithQualityHeaderValue SirenMediaType =
-        new("application/vnd.siren+json");
+        new(SirenMediaTypes.Json);
 
     public async Task<ApiDiscovery> DiscoverAsync(
         string apiBaseUrl,
         string locale,
         CancellationToken cancellationToken = default)
     {
-        var apiRoot = CreateApiRoot(apiBaseUrl);
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
         var rootResource = await GetEntityAsync(apiRoot, locale, cancellationToken);
         var latestVersionLink = rootResource.Links?.FirstOrDefault(link =>
-            link.Rel?.Contains("urn:scifilarnetwork:rels:latest-version", StringComparer.Ordinal) == true);
+            link.Rel?.Contains(SirenRelations.LatestVersion, StringComparer.Ordinal) == true);
 
         if (latestVersionLink is null ||
-            !TryResolveApiTarget(apiRoot, latestVersionLink.Href, out var latestVersionUri))
+            !ApiLinkPolicy.TryResolve(apiRoot, latestVersionLink.Href, out var latestVersionUri))
         {
             return new ApiDiscovery(rootResource, GetSafeNavigationLinks(apiRoot, rootResource));
         }
@@ -38,8 +38,12 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         string locale,
         CancellationToken cancellationToken = default)
     {
-        var apiRoot = CreateApiRoot(apiBaseUrl);
-        var target = ResolveApiTarget(apiRoot, href);
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, href, out var target))
+        {
+            throw new InvalidOperationException("The Siren target is outside the configured API origin or path.");
+        }
+
         return GetEntityAsync(target, locale, cancellationToken);
     }
 
@@ -50,13 +54,17 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         string locale,
         CancellationToken cancellationToken = default)
     {
-        var apiRoot = CreateApiRoot(apiBaseUrl);
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
         if (string.IsNullOrWhiteSpace(action.Href) || string.IsNullOrWhiteSpace(action.Method))
         {
             throw new InvalidOperationException("The Siren action must declare a target and HTTP method.");
         }
 
-        var target = ResolveApiTarget(apiRoot, action.Href);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, action.Href, out var target))
+        {
+            throw new InvalidOperationException("The Siren target is outside the configured API origin or path.");
+        }
+
         var method = action.Method.ToUpperInvariant() switch
         {
             "GET" => HttpMethod.Get,
@@ -161,67 +169,17 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
     private static SirenLink[] GetSafeNavigationLinks(Uri apiRoot, SirenEntity resource) =>
         resource.Links?
             .Where(link =>
-                link.Rel?.Contains("urn:scifilarnetwork:rels:navigation", StringComparer.Ordinal) == true &&
+                link.Rel?.Contains(SirenRelations.Navigation, StringComparer.Ordinal) == true &&
                 !string.IsNullOrWhiteSpace(link.Href) &&
                 !string.IsNullOrWhiteSpace(link.Title) &&
-                TryResolveApiTarget(apiRoot, link.Href, out _))
+                ApiLinkPolicy.TryResolve(apiRoot, link.Href, out _))
             .ToArray()
         ?? [];
-
-    private static Uri CreateApiRoot(string apiBaseUrl)
-    {
-        if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var configuredUri) ||
-            configuredUri.Scheme is not ("http" or "https") ||
-            !string.IsNullOrEmpty(configuredUri.UserInfo) ||
-            !string.IsNullOrEmpty(configuredUri.Query) ||
-            !string.IsNullOrEmpty(configuredUri.Fragment) ||
-            !IsApiPath(configuredUri.AbsolutePath))
-        {
-            throw new UriFormatException("The API URL must be an absolute HTTP(S) URL under /api.");
-        }
-
-        var normalizedPath = configuredUri.AbsolutePath.TrimEnd('/') + "/";
-        return new UriBuilder(configuredUri) { Path = normalizedPath }.Uri;
-    }
-
-    private static bool IsApiPath(string path) =>
-        path.Equals("/api", StringComparison.OrdinalIgnoreCase) ||
-        path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsJsonMediaType(string mediaType) =>
         mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase) ||
         mediaType.StartsWith("application/", StringComparison.OrdinalIgnoreCase) &&
         mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase);
-
-    private static Uri ResolveApiTarget(Uri apiRoot, string? href)
-    {
-        if (TryResolveApiTarget(apiRoot, href, out var target))
-        {
-            return target;
-        }
-
-        throw new InvalidOperationException("The Siren target is outside the configured API origin or path.");
-    }
-
-    private static bool TryResolveApiTarget(Uri apiRoot, string? href, out Uri target)
-    {
-        target = default!;
-        if (string.IsNullOrWhiteSpace(href) ||
-            !Uri.TryCreate(apiRoot, href, out var resolved) ||
-            !string.Equals(resolved.Scheme, apiRoot.Scheme, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(resolved.Host, apiRoot.Host, StringComparison.OrdinalIgnoreCase) ||
-            resolved.Port != apiRoot.Port ||
-            !string.IsNullOrEmpty(resolved.UserInfo) ||
-            !string.IsNullOrEmpty(resolved.Fragment) ||
-            !(resolved.AbsolutePath.Equals(apiRoot.AbsolutePath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ||
-              resolved.AbsolutePath.StartsWith(apiRoot.AbsolutePath, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-
-        target = resolved;
-        return true;
-    }
 
     public void Dispose() => httpClient.Dispose();
 }

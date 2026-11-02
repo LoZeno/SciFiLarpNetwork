@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Api;
-using SciFiLarpNetwork.Backend.Api.Siren;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
 

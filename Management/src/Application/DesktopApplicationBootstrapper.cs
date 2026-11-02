@@ -1,5 +1,3 @@
-using Avalonia.Controls;
-using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using SciFiLarpNetwork.Management.Views;
 

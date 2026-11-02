@@ -19,6 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\..\Shared\SciFiLarpNetwork.ApiLinkPolicy\test-cases.json"
+          Link="test-cases.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

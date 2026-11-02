@@ -1,39 +1,17 @@
-using System.Reflection;
-using System.Text.Json;
+using SciFiLarpNetwork.Common.Localization;
 
 namespace SciFiLarpNetwork.Management.Localization;
 
-public sealed class JsonLocalizer : IManagementLocalizer
+public sealed class JsonLocalizer(LocalizationCatalog catalog) : IManagementLocalizer
 {
-    private const string ResourcePrefix = "SciFiLarpNetwork.Management.Localization.";
-    private readonly Dictionary<string, string> _english = Load("en");
-    private readonly Dictionary<string, string> _italian = Load("it");
+    public JsonLocalizer() : this(new LocalizationCatalog())
+    {
+    }
 
     public string Translate(string key, string locale)
     {
-        var resources = locale.Equals("it", StringComparison.OrdinalIgnoreCase)
-            ? _italian
-            : _english;
-
-        if (resources.TryGetValue(key, out var value))
-        {
-            return value;
-        }
-
-        if (_english.TryGetValue(key, out value))
-        {
-            return value;
-        }
-
-        return _english["common.unknownError"];
-    }
-
-    private static Dictionary<string, string> Load(string locale)
-    {
-        var resourceName = $"{ResourcePrefix}{locale}.json";
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException($"Missing embedded localization resource '{resourceName}'.");
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(stream)
-            ?? throw new JsonException($"Localization resource '{resourceName}' is empty.");
+        return catalog.TryGetText(key, locale, out var value)
+            ? value
+            : catalog.GetText("common.unknownError", "en");
     }
 }

@@ -1,15 +1,17 @@
+using SciFiLarpNetwork.Common.Siren;
+
 namespace SciFiLarpNetwork.Backend.Api;
 
 public static class ApiErrorCodes
 {
-    public const string Conflict = "errors.conflict";
-    public const string Forbidden = "errors.forbidden";
-    public const string InternalServerError = "errors.internalServerError";
-    public const string NotFound = "errors.notFound";
-    public const string RequestFailed = "errors.requestFailed";
-    public const string ServiceUnavailable = "errors.serviceUnavailable";
-    public const string Unauthorized = "errors.unauthorized";
-    public const string Validation = "errors.validation";
+    public const string Conflict = SirenErrorCodes.Conflict;
+    public const string Forbidden = SirenErrorCodes.Forbidden;
+    public const string InternalServerError = SirenErrorCodes.InternalServerError;
+    public const string NotFound = SirenErrorCodes.NotFound;
+    public const string RequestFailed = SirenErrorCodes.RequestFailed;
+    public const string ServiceUnavailable = SirenErrorCodes.ServiceUnavailable;
+    public const string Unauthorized = SirenErrorCodes.Unauthorized;
+    public const string Validation = SirenErrorCodes.Validation;
 
     public static (string Code, string MessageKey) FromStatusCode(int statusCode) =>
         statusCode switch

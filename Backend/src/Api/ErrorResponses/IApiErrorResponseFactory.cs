@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-
-using SciFiLarpNetwork.Backend.Api.Siren;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Api.ErrorResponses;
 

@@ -1,12 +1,12 @@
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using SciFiLarpNetwork.Management.Api;
-using SciFiLarpNetwork.Management.Api.Siren;
 using SciFiLarpNetwork.Management.Application;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
@@ -53,20 +53,20 @@ public sealed class DesktopApplicationBootstrapperTests(AvaloniaHeadlessFixture 
             CancellationToken cancellationToken = default) =>
             Task.FromException<ApiDiscovery>(new NotImplementedException());
 
-        public Task<SirenEntity> GetResourceAsync(
+        public Task<SirenEntity<JsonElement>> GetResourceAsync(
             string apiBaseUrl,
             string href,
             string locale,
             CancellationToken cancellationToken = default) =>
-            Task.FromException<SirenEntity>(new NotImplementedException());
+            Task.FromException<SirenEntity<JsonElement>>(new NotImplementedException());
 
-        public Task<SirenEntity> SubmitActionAsync(
+        public Task<SirenEntity<JsonElement>> SubmitActionAsync(
             string apiBaseUrl,
             SirenAction action,
             JsonElement? body,
             string locale,
             CancellationToken cancellationToken = default) =>
-            Task.FromException<SirenEntity>(new NotImplementedException());
+            Task.FromException<SirenEntity<JsonElement>>(new NotImplementedException());
     }
 
     private sealed class TestSettingsStore : IManagementSettingsStore

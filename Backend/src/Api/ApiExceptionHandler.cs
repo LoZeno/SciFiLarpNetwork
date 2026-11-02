@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using SciFiLarpNetwork.Backend.Api.ErrorResponses;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Api;
 

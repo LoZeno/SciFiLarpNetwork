@@ -6,6 +6,7 @@ import {
   resolveApiTarget,
 } from '../../src/api/client';
 import { parseSirenEntity, sirenMediaType } from '../../src/api/siren';
+import apiLinkPolicyCases from '../../../Shared/SciFiLarpNetwork.ApiLinkPolicy/test-cases.json';
 
 function sirenResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -15,6 +16,15 @@ function sirenResponse(body: unknown, status = 200): Response {
 }
 
 describe('Siren API client', () => {
+  it.each(apiLinkPolicyCases)('matches shared API link policy: $name', (testCase) => {
+    const apiBase = new URL(testCase.apiBaseUrl);
+    const basePath = apiBase.pathname;
+    const clientBase = createApiBaseUrl(basePath, apiBase.origin);
+    const resolved = resolveApiTarget(testCase.href, clientBase);
+
+    expect(resolved?.href ?? null).toBe(testCase.expectedHref);
+  });
+
   it('resolves only same-origin targets under the configured API path', () => {
     const apiBase = createApiBaseUrl('/local/api', 'https://network.test');
 

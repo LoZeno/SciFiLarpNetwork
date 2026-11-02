@@ -2,10 +2,10 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Api;
-using SciFiLarpNetwork.Management.Api.Siren;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
 
@@ -19,12 +19,20 @@ public sealed class MainWindowViewModelTests
             Discovery = new ApiDiscovery(
                 Resource(
                     """{"title":"Administration","description":"Choose a management area."}""",
-                    [new SirenAction("inspect", "/api/v1", "GET", null, "Inspect", [])]),
+                    [new SirenAction
+                    {
+                        Name = "inspect",
+                        Href = "/api/v1",
+                        Method = "GET",
+                        Title = "Inspect"
+                    }]),
                 [
-                    new SirenLink(
-                        ["urn:scifilarnetwork:rels:navigation"],
-                        "/api/v1/messages",
-                        "Messages")
+                    new SirenLink
+                    {
+                        Rel = [SirenRelations.Navigation],
+                        Href = "/api/v1/messages",
+                        Title = "Messages"
+                    }
                 ])
         };
         var settingsStore = new StubSettingsStore();
@@ -228,11 +236,13 @@ public sealed class MainWindowViewModelTests
         new(apiClient, settingsStore, new JsonLocalizer(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
-        new(
-            ["resource"],
-            JsonDocument.Parse(properties).RootElement.Clone(),
-            [],
-            actions);
+        new()
+        {
+            Class = ["resource"],
+            Properties = JsonDocument.Parse(properties).RootElement.Clone(),
+            Entities = [],
+            Actions = actions
+        };
 
     private sealed class StubSettingsStore : IManagementSettingsStore
     {

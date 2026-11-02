@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Api;
-using SciFiLarpNetwork.Management.Api.Siren;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 
@@ -34,8 +34,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _localizer = localizer;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
-        ConnectCommand = new AsyncCommand(ConnectAsync, () => !IsBusy);
-        OpenResourceCommand = new AsyncCommand(OpenResourceAsync, () => !IsBusy && SelectedNavigationItem is not null);
+        ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
+        OpenResourceCommand = new AsyncCommand(
+            OpenResourceAsync,
+            HandleCommandException,
+            () => !IsBusy && SelectedNavigationItem is not null);
         SetStatus(startupErrorKey ?? "navigation.empty");
     }
 
@@ -346,6 +349,12 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _statusKey = statusKey;
         _apiErrorCode = null;
         OnPropertyChanged(nameof(StatusMessage));
+    }
+
+    private void HandleCommandException(Exception exception)
+    {
+        Trace.TraceError("Unhandled management command exception: {0}", exception);
+        SetStatus("common.error");
     }
 
     private void OnLocalizedPropertiesChanged()

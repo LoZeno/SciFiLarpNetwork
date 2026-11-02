@@ -1,4 +1,4 @@
-namespace SciFiLarpNetwork.Backend.Api;
+namespace SciFiLarpNetwork.Common.Siren;
 
 public static class SirenMediaTypes
 {

@@ -10,8 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\Localization\en.json" LogicalName="SciFiLarpNetwork.Backend.Localization.en.json" />
-    <EmbeddedResource Include="..\..\Localization\it.json" LogicalName="SciFiLarpNetwork.Backend.Localization.it.json" />
+    <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.Localization\SciFiLarpNetwork.Localization.csproj" />
+    <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.Siren\SciFiLarpNetwork.Siren.csproj" />
   </ItemGroup>
 
 </Project>

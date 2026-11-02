@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace SciFiLarpNetwork.Backend.Api.Siren;
+namespace SciFiLarpNetwork.Common.Siren;
 
 public sealed record SirenAction
 {

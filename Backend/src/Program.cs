@@ -8,6 +8,7 @@ using Microsoft.OpenApi;
 using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Backend.Api.ErrorResponses;
 using SciFiLarpNetwork.Backend.Localization.Text;
+using SciFiLarpNetwork.Common.Siren;
 
 var builder = WebApplication.CreateBuilder(args);
 
