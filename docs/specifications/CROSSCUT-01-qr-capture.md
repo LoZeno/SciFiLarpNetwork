@@ -29,10 +29,18 @@ Create a small React/TypeScript scanner adapter with a stable application-facing
 - QR decoding libraries and scanner UI are bundled or served by the local host; decoding occurs on the device and never calls a third-party internet service. A scan succeeds on the isolated LAN with outbound internet blocked.
 - Document how camera permission's secure-context requirement is met on a venue LAN without public DNS or an internet-based certificate service. Provide manual entry, keyboard-wedge scanner, or locally decoded still-image fallback on devices where browser camera access cannot be enabled.
 
+## Phase B implementation profile
+
+- The React client uses a replaceable TypeScript scanner adapter backed by locally bundled `@zxing/browser` 0.2.1 and its `@zxing/library` 0.23.0 peer dependency (MIT and Apache-2.0 respectively). Recheck upstream maintenance, advisories, compatibility, and production bundle impact when upgrading.
+- A camera decode immediately invokes the consuming workflow callback once; the scanner does not ask for a second confirmation. The callback receives an untrusted string and the consuming workflow is responsible for submitting it to the correct server endpoint for purpose-specific validation. Manual and keyboard-wedge entry require an explicit **Use code** action; pressing Enter alone does not submit.
+- Still-image decoding uses a temporary local object URL, revokes it after decoding, and never uploads or persists the image. Captured code strings are not placed in navigation URLs or logged.
+- Camera capture requires a secure browser context. `localhost` is suitable only on the host device; for other venue devices, configure a local DNS name and serve the app over HTTPS with a certificate whose subject alternative name matches that name, signed by a venue-managed local CA trusted by the participating devices. This needs no public DNS or internet certificate service. Do not instruct users to bypass certificate warnings; where trusted HTTPS cannot be provisioned, use the manual, keyboard-wedge, or locally decoded image paths.
+- Physical-camera performance and permission behavior still require smoke testing on the supported browser/device matrix before release; unit tests exercise the adapter contract and lifecycle using controlled scanner fakes.
+
 ## Reference material consulted
 
 - MDN: [`BarcodeDetector`](https://developer.mozilla.org/en-US/docs/Web/API/BarcodeDetector) (experimental/limited availability).
 - [`@zxing/browser`](https://github.com/zxing-js/browser) upstream browser-layer documentation.
 - [`html5-qrcode`](https://github.com/mebjas/html5-qrcode) upstream maintenance-status notice.
 
-The upstream documentation was checked on 2026-10-30; reassess project health before selecting a dependency.
+The upstream documentation and npm metadata were checked on 2026-11-01; reassess project health before upgrading the dependency.

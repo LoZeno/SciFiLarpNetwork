@@ -46,7 +46,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 
 |   # | Status | Specification                                                                  | Implementation gate                                                                         |
 | --: | :----: | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-|  18 |  [ ]   | [CROSSCUT-01 QR capture and identity/code scanning](CROSSCUT-01-qr-capture.md) | Deliver the offline-capable scanner adapter and fallbacks before any QR-dependent workflow. |
+|  18 |  [x]   | [CROSSCUT-01 QR capture and identity/code scanning](CROSSCUT-01-qr-capture.md) | Scanner adapter and fallbacks are implemented and automated checks pass; physical-camera permission/performance smoke testing remains a pre-release validation gate. |
 |  19 |  [ ]   | [CROSSCUT-02 Theatrical hacking simulation](CROSSCUT-02-cinematic-hacking.md)  | Deliver the fictional-only, server-validated challenge before any hacking workflow.         |
 
 ### Phase C — administrative catalog and event capabilities
@@ -129,9 +129,10 @@ All routes in this phase depend on CROSSCUT-02, server-side authorization, accou
 |   # | Status | Specification                                                                       | Implementation gate                                                                                                                |
 | --: | :----: | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 |  69 |  [ ]   | [SPEC-18 Self-hosted deployment](SPEC-18-self-hosted-deployment.md)                 | Deliver a complete locally hosted stack for a normal computer and isolated venue LAN.                                              |
-|  70 |  [ ]   | [SPEC-19 Container-based hosting](SPEC-19-container-deployment.md)                  | Add optional redistributable containers/deployment artifacts without replacing self-hosting.                                       |
-|  71 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation and end-to-end verification of API discovery, navigation, and a representative action. |
-|  72 |  [ ]   | [SPEC-17 Configuration documentation in README](SPEC-17-configuration-readme.md)    | Finish and verify operator instructions for every component, platform, language, and hosting mode.                                 |
+|  70 |  [ ]   | [SPEC-23 HTTPS certificates for self-hosted and venue deployments](SPEC-23-venue-https-certificates.md) | Provide automated Let's Encrypt and `step-ca` certificate provisioning and renewal options for secure venue hosting. |
+|  71 |  [ ]   | [SPEC-19 Container-based hosting](SPEC-19-container-deployment.md)                  | Add optional redistributable containers/deployment artifacts without replacing self-hosting.                                       |
+|  72 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation and end-to-end verification of API discovery, navigation, and a representative action. |
+|  73 |  [ ]   | [SPEC-17 Configuration documentation in README](SPEC-17-configuration-readme.md)    | Finish and verify operator instructions for every component, platform, language, and hosting mode.                                 |
 
 ## Continuous requirements (not separate queue entries)
 

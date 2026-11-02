@@ -390,6 +390,67 @@ a {
   font-size: 0.9rem;
 }
 
+.qr-capture {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(23 36 49 / 82%);
+}
+
+.qr-capture h2,
+.scanner-description,
+.scanner-status,
+.scanner-hint {
+  margin: 0;
+}
+
+.scanner-description,
+.scanner-hint,
+.scanner-status {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.scanner-camera,
+.scanner-controls,
+.scanner-manual-entry {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.scanner-camera video {
+  width: min(100%, 560px);
+  min-height: 180px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #080d12;
+  object-fit: cover;
+}
+
+.qr-capture .field {
+  width: min(100%, 440px);
+}
+
+.qr-capture input[type='file'] {
+  min-height: 40px;
+  color: var(--muted);
+}
+
+.qr-capture select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #f4f7fa;
+  background: #101923;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
