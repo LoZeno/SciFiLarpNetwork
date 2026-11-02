@@ -18,3 +18,12 @@ The web application is a React single-page application written in TypeScript. It
 - Resolve Siren targets relative to the response/configured API base and reject targets outside the configured same-origin API boundary. Never execute an action automatically, and treat server-advertised actions as affordances rather than proof of authorization.
 - Handle unknown resource classes, relations, and action fields safely and accessibly; present supported actions with localized labels and map stable server error codes to localized client messages.
 - Core UI and workflows remain usable on a closed intranet with public internet access unavailable; optional outbound features cannot block startup or core tasks.
+
+## Baseline implementation
+
+- `Frontend` now contains a React/TypeScript SPA built with Vite, strict TypeScript, React Router, Vitest, and React Testing Library. `npm run dev`, `npm run check`, and `npm run build` support independent development, verification, and local production packaging.
+- The application discovers the API root and follows its advertised latest-version link. It builds navigation from Siren navigation relations and resource targets, while treating classes as semantics rather than UI controls.
+- The Siren client validates response structure, same-origin API-path targets, response media types, stable error codes, and supported JSON action requests. Advertised actions are user-submitted only; unsupported actions are exposed as unavailable.
+- English is the default with optional locally persisted English/Italian preference. UI strings use shared repository locale resources; `Accept-Language` is sent to the backend without reloading the current resource or discarding unsaved form values. Date, date-time, and numeric formatting use the selected locale.
+- UI, API client, localization, and offline-asset checks run through `npm run check`; coverage currently exceeds the SPEC-10 80% statement and line thresholds.
+- The backend currently exposes only discovery roots, so the baseline shell has no feature navigation until later endpoint specifications. The production build is available under `Frontend/dist`; integrating it into the self-hosted application remains part of the deployment specification.

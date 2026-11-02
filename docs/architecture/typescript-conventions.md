@@ -12,4 +12,4 @@ TypeScript compiler settings in `tsconfig.json` enable strict checking, includin
 
 Use focused React components and hooks with one clear responsibility. Keep UI presentation and client-side validation distinct from server authorization and domain decisions. Follow the product glossary in [domain language and scope](domain-language-and-scope.md): Player, Character, and Account remain distinct concepts, while Network, Group, and Skill are generic configurable concepts rather than franchise assumptions.
 
-The test runner is configured now; its initial command allows an empty suite until feature-specific tests and the frontend test foundations are added by the relevant roadmap tasks, including SPEC-11. The frontend source is intentionally otherwise empty until the SPA implementation step.
+The frontend test suite uses Vitest with a jsdom environment and React Testing Library for UI contracts. `npm run check` enforces the SPEC-10 80% statement and line coverage thresholds across executable TypeScript, excluding only declaration files. Feature-level UI tests are added with their corresponding roadmap tasks.

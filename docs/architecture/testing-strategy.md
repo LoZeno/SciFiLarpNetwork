@@ -25,7 +25,7 @@ npm run check
 
 The frontend check includes coverage collection. Vitest measures all executable TypeScript under `src/`, writes text, LCOV, and HTML reports under `Frontend/coverage/`, and enforces 80% for both statements and lines.
 
-The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`, and uploads each platform's reports as workflow artifacts. At this scaffold stage there is no production C# or TypeScript source to measure; the .NET projects emit empty reports without applying a meaningless zero-code threshold, and the frontend coverage include set is empty. This is not behavioral coverage. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented; introducing either production project activates its threshold.
+The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`, and uploads each platform's reports as workflow artifacts. The backend API and React SPA now have production code and active coverage thresholds; the management test project remains an empty scaffold. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented.
 
 ## Test design
 

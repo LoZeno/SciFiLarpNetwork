@@ -24,13 +24,13 @@ docs/
 
 Each application owns its source and tests, so its project, tests, and tooling can be opened and worked on together in the appropriate IDE without mixing in other applications' source trees. Shared repository policy files and the root solution remain at the repository root.
 
-The backend now contains its .NET 10 ASP.NET Core MVC API baseline and xUnit contract tests; domain feature endpoints and authentication are introduced by later roadmap tasks. Management remains a structural placeholder until its roadmap task, and the frontend directory contains its tooling baseline until the React application task. Runtime and build dependencies must remain resolvable from the repository and documented SDK/tool installations; no source or build configuration may depend on an external checkout path.
+The backend contains its .NET 10 ASP.NET Core MVC API baseline and xUnit contract tests; domain feature endpoints and authentication are introduced by later roadmap tasks. The frontend contains its React/TypeScript SPA shell, Siren-aware client, localization, and UI tests; domain workflows are introduced by later roadmap tasks. Management remains a structural placeholder until its roadmap task. Runtime and build dependencies must remain resolvable from the repository and documented SDK/tool installations; no source or build configuration may depend on an external checkout path.
 
 The repository's .NET SDK selection and default target framework are defined by root `global.json` and `Directory.Build.props`; see [the .NET baseline](dotnet-baseline.md) for the documented build command.
 
 Repository-wide nullable, analyzer, and C# style defaults are also defined in `Directory.Build.props` and `.editorconfig`; see [C# conventions](csharp-conventions.md).
 
-The frontend package and its strict TypeScript, lint, formatting, and test-runner configuration live under `Frontend`; see [TypeScript conventions](typescript-conventions.md).
+The frontend package and its strict TypeScript, lint, formatting, and test-runner configuration live under `Frontend`; see [TypeScript conventions](typescript-conventions.md). The SPA shell and Siren client are documented in [React web client](react-web-client.md).
 
 Shared English and Italian localization resources live under `Localization`; see [localization conventions](localization.md).
 

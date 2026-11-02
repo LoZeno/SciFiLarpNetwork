@@ -11,7 +11,9 @@ using Microsoft.AspNetCore.TestHost;
 
 namespace SciFiLarpNetwork.Backend.Tests.Api;
 
-public abstract class ApiApplicationFactory : WebApplicationFactory<Program>
+// xUnit creates this fixture through IClassFixture<ApiApplicationFactory>.
+// ReSharper disable once ClassNeverInstantiated.Global
+public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

@@ -1,5 +1,10 @@
 {
   "app.name": "Sci-Fi LARP Network",
+  "app.workspace": "Network workspace",
+  "app.connectionError": "The network service is unavailable",
+  "app.apiConnected": "API connection established",
+  "app.apiDescription": "The network is available. Features and navigation appear here when provided by the configured service.",
+  "app.untitledNavigation": "Open resource",
   "common.back": "Back",
   "common.cancel": "Cancel",
   "common.close": "Close",
@@ -27,5 +32,13 @@
   "errors.unauthorized": "Sign in to continue.",
   "errors.validation": "The request contains invalid values.",
   "api.latestVersion": "Latest API version",
-  "api.serviceDescription": "API description"
+  "api.serviceDescription": "API description",
+  "navigation.label": "Application navigation",
+  "navigation.heading": "Navigation",
+  "navigation.empty": "No destinations are currently available.",
+  "navigation.emptyPage": "This service has not advertised any navigation destinations.",
+  "navigation.home": "Home",
+  "actions.heading": "Available actions",
+  "actions.unsupported": "This action uses fields or a request format this client does not support.",
+  "actions.completed": "Action completed."
 }
