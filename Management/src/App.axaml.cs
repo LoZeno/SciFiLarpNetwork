@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Application;
@@ -17,11 +18,16 @@ public partial class App : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        new DesktopApplicationBootstrapper(() =>
-                CreateMainWindow(
-                    ManagementSettingsStore.DefaultSettingsPath,
-                    new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })))
-            .Configure(ApplicationLifetime);
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+            desktop.Exit += (_, _) => httpClient.Dispose();
+
+            new DesktopApplicationBootstrapper(() =>
+                    CreateMainWindow(ManagementSettingsStore.DefaultSettingsPath, httpClient))
+                .Configure(desktop);
+        }
+
         base.OnFrameworkInitializationCompleted();
     }
 

@@ -7,16 +7,17 @@ using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.Api;
 
-public sealed class ManagementApiClientTests
+public sealed class ManagementApiClientTests : IDisposable
 {
     private static readonly JsonSerializerOptions FixtureJsonOptions =
         new(JsonSerializerDefaults.Web);
+    private HttpClient? _httpClient;
 
     [Fact]
     public async Task DiscoverAsyncFollowsLatestVersionAndFiltersUnsafeNavigation()
     {
         var requests = new List<HttpRequestMessage>();
-        using var client = CreateClient(request =>
+        var client = CreateClient(request =>
         {
             requests.Add(request);
             return request.RequestUri!.AbsolutePath switch
@@ -47,7 +48,7 @@ public sealed class ManagementApiClientTests
     public async Task DiscoverAsyncUsesRootWhenLatestVersionLinkIsUnsafe()
     {
         var requestCount = 0;
-        using var client = CreateClient(_ =>
+        var client = CreateClient(_ =>
         {
             requestCount++;
             return SirenResponse(
@@ -69,7 +70,7 @@ public sealed class ManagementApiClientTests
     [InlineData("http://localhost/api?key=value")]
     public async Task DiscoverAsyncRejectsInvalidApiBaseUrls(string apiBaseUrl)
     {
-        using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
+        var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
 
         await Assert.ThrowsAsync<UriFormatException>(() =>
             client.DiscoverAsync(apiBaseUrl, "en"));
@@ -78,7 +79,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task GetResourceAsyncRejectsTargetsOutsideConfiguredApiPath()
     {
-        using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
+        var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             client.GetResourceAsync("http://localhost/api", "/api-other/messages", "en"));
@@ -87,7 +88,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task DiscoverAsyncUsesStableErrorCodeFromSirenError()
     {
-        using var client = CreateClient(_ =>
+        var client = CreateClient(_ =>
             SirenResponse(
                 """{"class":["error"],"properties":{"code":"errors.forbidden"}}""",
                 HttpStatusCode.Forbidden));
@@ -102,7 +103,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task GetResourceAsyncRejectsSuccessfulNonJsonResponse()
     {
-        using var client = CreateClient(_ =>
+        var client = CreateClient(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("not json", Encoding.UTF8, "text/plain")
@@ -115,7 +116,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task GetResourceAsyncRejectsNonStandardJsonMediaTypes()
     {
-        using var client = CreateClient(_ =>
+        var client = CreateClient(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("{}", Encoding.UTF8, "application/notjson")
@@ -130,7 +131,7 @@ public sealed class ManagementApiClientTests
     {
         HttpRequestMessage? sentRequest = null;
         string? sentBody = null;
-        using var client = CreateClient(request =>
+        var client = CreateClient(request =>
         {
             sentRequest = request;
             sentBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -163,7 +164,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task SubmitActionAsyncRejectsUnsupportedMethodsAndPayloadTypes()
     {
-        using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
+        var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
         using var body = JsonDocument.Parse("""{"value":1}""");
         var unsupportedMethod = new SirenAction { Name = "submit", Href = "/api/v1", Method = "TRACE" };
         var unsupportedType = new SirenAction
@@ -189,7 +190,7 @@ public sealed class ManagementApiClientTests
     [Fact]
     public async Task SubmitActionAsyncRejectsBodyForGetAction()
     {
-        using var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
+        var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
         using var body = JsonDocument.Parse("""{"value":1}""");
         var action = new SirenAction
         {
@@ -245,9 +246,14 @@ public sealed class ManagementApiClientTests
         string Href,
         string? ExpectedHref);
 
-    private static ManagementApiClient CreateClient(
-        Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
-        new(new HttpClient(new StubHandler(responseFactory)));
+    private ManagementApiClient CreateClient(
+        Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
+    {
+        _httpClient = new HttpClient(new StubHandler(responseFactory));
+        return new ManagementApiClient(_httpClient);
+    }
+
+    public void Dispose() => _httpClient?.Dispose();
 
     private static HttpResponseMessage SirenResponse(
         string body,

@@ -6,7 +6,7 @@ using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Api;
 
-public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiClient, IDisposable
+public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly MediaTypeWithQualityHeaderValue SirenMediaType =
@@ -181,5 +181,4 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         mediaType.StartsWith("application/", StringComparison.OrdinalIgnoreCase) &&
         mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase);
 
-    public void Dispose() => httpClient.Dispose();
 }

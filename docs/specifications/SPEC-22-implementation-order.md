@@ -130,7 +130,7 @@ All routes in this phase depend on CROSSCUT-02, server-side authorization, accou
 | --: | :----: | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 |  69 |  [ ]   | [SPEC-18 Self-hosted deployment](SPEC-18-self-hosted-deployment.md)                 | Deliver a complete locally hosted stack for a normal computer and isolated venue LAN.                                              |
 |  70 |  [ ]   | [SPEC-19 Container-based hosting](SPEC-19-container-deployment.md)                  | Add optional redistributable containers/deployment artifacts without replacing self-hosting.                                       |
-|  71 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation. |
+|  71 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation and end-to-end verification of API discovery, navigation, and a representative action. |
 |  72 |  [ ]   | [SPEC-17 Configuration documentation in README](SPEC-17-configuration-readme.md)    | Finish and verify operator instructions for every component, platform, language, and hosting mode.                                 |
 
 ## Continuous requirements (not separate queue entries)

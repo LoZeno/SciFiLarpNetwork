@@ -12,6 +12,7 @@ Create GitHub Actions workflows that build, test, and package all product compon
 - Workflows use supported GitHub-hosted runners where available. Where a requested architecture or OS cannot be built or exercised by a hosted runner, document the runner or cross-compilation strategy and provide appropriate validation evidence.
 - The pipeline reports unsupported combinations explicitly rather than silently omitting them or publishing artifacts as though they were verified.
 - Artifacts are smoke-tested after packaging, and release artifact names identify version, OS, architecture, and package format.
+- An end-to-end browser test exercises SPA API discovery, follows advertised navigation, and submits a representative Siren action against the integrated application; run it in CI or the release validation pipeline.
 - Release bundles and container images contain all mandatory runtime assets and dependencies needed for offline installation; installation must not fetch packages, frontend assets, runtimes, or database services from the public internet (SPEC-21).
 - Add an offline validation job or release check that blocks outbound network access during a packaged application smoke test, including local UI asset loading and core API access.
 - Secrets are supplied through GitHub Actions secrets or equivalent secure configuration, not committed to workflow files.
