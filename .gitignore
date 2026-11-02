@@ -213,3 +213,11 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+# JetBrains IDEs
+.idea/
+
+# Node.js and frontend tooling
+**/node_modules/
+**/coverage/
+**/dist/

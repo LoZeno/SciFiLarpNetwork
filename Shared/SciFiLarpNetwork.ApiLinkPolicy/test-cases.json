@@ -1,0 +1,56 @@
+[
+  {
+    "name": "absolute API path target",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "/local/api/v1",
+    "expectedHref": "https://network.test/local/api/v1"
+  },
+  {
+    "name": "relative API target",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "v1/news",
+    "expectedHref": "https://network.test/local/api/v1/news"
+  },
+  {
+    "name": "query string inside API path",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "v1/news?page=2",
+    "expectedHref": "https://network.test/local/api/v1/news?page=2"
+  },
+  {
+    "name": "configured API root",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "/local/api",
+    "expectedHref": "https://network.test/local/api"
+  },
+  {
+    "name": "external absolute target",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "https://attacker.test/local/api",
+    "expectedHref": null
+  },
+  {
+    "name": "target outside API path",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "/openapi/v1.json",
+    "expectedHref": null
+  },
+  {
+    "name": "protocol relative external target",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "//attacker.test/local/api",
+    "expectedHref": null
+  },
+  {
+    "name": "fragment target",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "/local/api/v1#fragment",
+    "expectedHref": null
+  },
+  {
+    "name": "parent path escape",
+    "apiBaseUrl": "https://network.test/local/api",
+    "href": "../admin",
+    "expectedHref": null
+  }
+]

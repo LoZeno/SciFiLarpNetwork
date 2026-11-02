@@ -1,0 +1,59 @@
+using System.Text.Json;
+using SciFiLarpNetwork.Management.Settings;
+
+namespace SciFiLarpNetwork.Management.Tests.Settings;
+
+public sealed class ManagementSettingsStoreTests
+{
+    [Fact]
+    public void LoadWhenFileDoesNotExistReturnsDefaults()
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new ManagementSettingsStore(Path.Combine(directory.Path, "settings.json"));
+
+        Assert.Equal(new ManagementSettings(), store.Load());
+    }
+
+    [Fact]
+    public void DefaultSettingsPathIsAnAbsolutePath()
+    {
+        Assert.True(Path.IsPathFullyQualified(ManagementSettingsStore.DefaultSettingsPath));
+    }
+
+    [Fact]
+    public void SaveAndLoadPersistApiAddressAndLanguage()
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new ManagementSettingsStore(Path.Combine(directory.Path, "settings.json"));
+        var settings = new ManagementSettings("http://localhost:6000/api", "it");
+
+        store.Save(settings);
+
+        Assert.Equal(settings, store.Load());
+    }
+
+    [Fact]
+    public void LoadWhenFileIsMalformedThrowsJsonException()
+    {
+        using var directory = new TemporaryDirectory();
+        var filePath = Path.Combine(directory.Path, "settings.json");
+        File.WriteAllText(filePath, "{");
+
+        Assert.Throws<JsonException>(() => new ManagementSettingsStore(filePath).Load());
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"scifi-management-tests-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose() => Directory.Delete(Path, recursive: true);
+    }
+}

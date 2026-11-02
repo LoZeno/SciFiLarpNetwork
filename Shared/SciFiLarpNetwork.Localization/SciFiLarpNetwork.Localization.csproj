@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>SciFiLarpNetwork.Common.Localization</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\Localization\en.json" LogicalName="SciFiLarpNetwork.Common.Localization.en.json" />
+    <EmbeddedResource Include="..\..\Localization\it.json" LogicalName="SciFiLarpNetwork.Common.Localization.it.json" />
+  </ItemGroup>
+
+</Project>

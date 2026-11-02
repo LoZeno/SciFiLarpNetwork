@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/Backend/" />
+  <Folder Name="/Backend/src/">
+    <Project Path="Backend/src/SciFiLarpNetwork.Backend.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Tests/SciFiLarpNetwork.Backend.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Shared/" />
+  <Folder Name="/Shared/SciFiLarpNetwork.ApiLinkPolicy/">
+    <Project Path="Shared/SciFiLarpNetwork.ApiLinkPolicy/SciFiLarpNetwork.ApiLinkPolicy.csproj" />
+  </Folder>
+  <Folder Name="/Shared/SciFiLarpNetwork.Localization/">
+    <Project Path="Shared/SciFiLarpNetwork.Localization/SciFiLarpNetwork.Localization.csproj" />
+  </Folder>
+  <Folder Name="/Shared/SciFiLarpNetwork.Siren/">
+    <Project Path="Shared/SciFiLarpNetwork.Siren/SciFiLarpNetwork.Siren.csproj" />
+  </Folder>
+  <Folder Name="/Management/" />
+  <Folder Name="/Management/src/">
+    <Project Path="Management/src/SciFiLarpNetwork.Management.csproj" />
+  </Folder>
+  <Folder Name="/Management/tests/">
+    <Project Path="Management/tests/SciFiLarpNetwork.Management.Tests/SciFiLarpNetwork.Management.Tests.csproj" />
+  </Folder>
+</Solution>

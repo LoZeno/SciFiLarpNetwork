@@ -1,0 +1,91 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:SciFiLarpNetwork.Management.ViewModels"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
+    x:DataType="vm:MainWindowViewModel"
+    Title="{Binding WindowTitle}"
+    Width="1080"
+    Height="720"
+    MinWidth="720"
+    MinHeight="480">
+  <Grid RowDefinitions="Auto,*">
+    <Border Grid.Row="0" Padding="24,18" Background="{DynamicResource SystemAccentColor}">
+      <TextBlock
+          FontSize="22"
+          FontWeight="SemiBold"
+          Foreground="White"
+          Text="{Binding WindowTitle}" />
+    </Border>
+    <Grid Grid.Row="1" ColumnDefinitions="300,*">
+      <Border Grid.Column="0" Padding="20" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,0">
+        <StackPanel Spacing="12">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding ConnectionHeading}" />
+          <TextBlock Text="{Binding ApiAddressLabel}" />
+          <TextBox
+              AutomationProperties.Name="{Binding ApiAddressLabel}"
+              Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Button
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                Command="{Binding ConnectCommand}"
+                Content="{Binding ConnectLabel}" />
+            <ComboBox
+                Grid.Column="1"
+                AutomationProperties.Name="{Binding LanguageLabel}"
+                SelectedIndex="{Binding LocaleIndex, Mode=TwoWay}">
+              <ComboBoxItem Content="English" Tag="en" />
+              <ComboBoxItem Content="Italiano" Tag="it" />
+            </ComboBox>
+          </Grid>
+          <TextBlock
+              AutomationProperties.LiveSetting="Polite"
+              Text="{Binding StatusMessage}"
+              TextWrapping="Wrap" />
+          <TextBlock
+              Margin="0,14,0,0"
+              FontSize="18"
+              FontWeight="SemiBold"
+              Text="{Binding NavigationHeading}" />
+          <ListBox
+              AutomationProperties.Name="{Binding NavigationHeading}"
+              ItemsSource="{Binding NavigationItems}"
+              SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="models:NavigationItem">
+                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button
+              HorizontalAlignment="Stretch"
+              Command="{Binding OpenResourceCommand}"
+              Content="{Binding OpenResourceLabel}" />
+        </StackPanel>
+      </Border>
+      <ScrollViewer Grid.Column="1">
+        <StackPanel Margin="28" Spacing="16">
+          <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding ResourceTitle}" />
+          <TextBlock
+              FontSize="14"
+              Text="{Binding ResourceSummary}"
+              TextWrapping="Wrap" />
+          <TextBlock
+              FontSize="18"
+              FontWeight="SemiBold"
+              IsVisible="{Binding HasAvailableActions}"
+              Text="{Binding ActionsHeading}" />
+          <ItemsControl ItemsSource="{Binding AvailableActions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Margin="0,4" Text="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</Window>
