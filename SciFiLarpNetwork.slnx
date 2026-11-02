@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/Backend/" />
+  <Folder Name="/Backend/src/">
+    <Project Path="Backend/src/SciFiLarpNetwork.Backend.csproj" />
+  </Folder>
   <Folder Name="/Backend/tests/">
     <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Tests/SciFiLarpNetwork.Backend.Tests.csproj" />
   </Folder>

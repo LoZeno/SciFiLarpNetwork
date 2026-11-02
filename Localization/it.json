@@ -20,7 +20,12 @@
   "validation.tooLong": "Il valore è troppo lungo.",
   "errors.conflict": "La modifica è in conflitto con i dati attuali.",
   "errors.forbidden": "Non hai l'autorizzazione per eseguire questa operazione.",
+  "errors.internalServerError": "Si è verificato un errore imprevisto del server.",
   "errors.notFound": "Non è stato possibile trovare le informazioni richieste.",
+  "errors.requestFailed": "Non è stato possibile completare la richiesta.",
   "errors.serviceUnavailable": "Il servizio non è temporaneamente disponibile.",
-  "errors.unauthorized": "Accedi per continuare."
+  "errors.unauthorized": "Accedi per continuare.",
+  "errors.validation": "La richiesta contiene valori non validi.",
+  "api.latestVersion": "Versione API più recente",
+  "api.serviceDescription": "Descrizione API"
 }
