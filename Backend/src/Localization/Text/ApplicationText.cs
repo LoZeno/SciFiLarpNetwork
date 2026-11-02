@@ -2,12 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 
-namespace SciFiLarpNetwork.Backend.Localization;
-
-public interface IApplicationText
-{
-    string GetLocalizedText(string key);
-}
+namespace SciFiLarpNetwork.Backend.Localization.Text;
 
 public sealed class ApplicationText : IApplicationText
 {

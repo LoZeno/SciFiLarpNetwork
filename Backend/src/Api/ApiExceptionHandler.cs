@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using SciFiLarpNetwork.Backend.Api.ErrorResponses;
 
 namespace SciFiLarpNetwork.Backend.Api;
 

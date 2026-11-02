@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SciFiLarpNetwork.Backend.Localization;
+using SciFiLarpNetwork.Backend.Api.Siren;
+using SciFiLarpNetwork.Backend.Localization.Text;
 
-namespace SciFiLarpNetwork.Backend.Api;
+namespace SciFiLarpNetwork.Backend.Api.Discovery;
 
 [ApiController]
 [Route("api")]
@@ -67,13 +68,4 @@ public sealed class ApiRootController(IApplicationText text) : ControllerBase
     }
 
     private string ApiPath(string path) => $"{Request.PathBase}{path}";
-}
-
-public sealed record ApiRootProperties(string Name);
-
-public sealed record ApiVersionProperties(string Version, string Name);
-
-public static class SirenRelations
-{
-    public const string LatestVersion = "urn:scifilarnetwork:rels:latest-version";
 }

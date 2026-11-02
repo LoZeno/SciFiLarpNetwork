@@ -1,10 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Api;
+using SciFiLarpNetwork.Backend.Api.Siren;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api;
+namespace SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
 
 [ApiController]
 [Route("api/v1/contract-test")]
@@ -74,10 +74,4 @@ public sealed class ApiContractProbeController : ControllerBase
     [Authorize(Policy = "ContractAdmin")]
     [HttpPost("admin-action")]
     public IActionResult AdminAction() => Ok();
-}
-
-public sealed class ProbeRequest
-{
-    [Required]
-    public string? Name { get; init; }
 }

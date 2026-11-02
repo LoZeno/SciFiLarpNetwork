@@ -1,21 +1,8 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using SciFiLarpNetwork.Backend.Localization;
+using SciFiLarpNetwork.Backend.Api.Siren;
+using SciFiLarpNetwork.Backend.Localization.Text;
 
-namespace SciFiLarpNetwork.Backend.Api;
-
-public interface IApiErrorResponseFactory
-{
-    SirenEntity<ApiErrorProperties> Create(
-        HttpContext context,
-        int statusCode,
-        string code,
-        string messageKey,
-        IReadOnlyDictionary<string, IReadOnlyList<string>>? errors = null);
-
-    SirenEntity<ApiErrorProperties> CreateFromModelState(
-        HttpContext context,
-        ModelStateDictionary modelState);
-}
+namespace SciFiLarpNetwork.Backend.Api.ErrorResponses;
 
 public sealed class ApiErrorResponseFactory(IApplicationText text) : IApiErrorResponseFactory
 {
@@ -66,11 +53,3 @@ public sealed class ApiErrorResponseFactory(IApplicationText text) : IApiErrorRe
             errors);
     }
 }
-
-public sealed record ApiErrorProperties(
-    string Code,
-    string Title,
-    string Detail,
-    string TraceId,
-    int Status,
-    IReadOnlyDictionary<string, IReadOnlyList<string>>? Errors);

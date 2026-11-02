@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
+using SciFiLarpNetwork.Backend.Api.ErrorResponses;
 
 namespace SciFiLarpNetwork.Backend.Api;
 

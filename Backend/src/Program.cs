@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.OpenApi;
 using SciFiLarpNetwork.Backend.Api;
-using SciFiLarpNetwork.Backend.Localization;
+using SciFiLarpNetwork.Backend.Api.ErrorResponses;
+using SciFiLarpNetwork.Backend.Localization.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
