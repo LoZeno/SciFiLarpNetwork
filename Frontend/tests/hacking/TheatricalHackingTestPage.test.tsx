@@ -66,7 +66,7 @@ describe('theatrical hacking test page', () => {
     expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty('value', 0);
 
     let previousCharacter = secretCharacter;
-    for (let hit = 0; hit < 4; hit += 1) {
+    for (let hit = 0; hit < 5; hit += 1) {
       if (hit > 0) {
         await waitFor(() => {
           expect(screen.getByRole('button', { name: 'Request a hint' })).toHaveProperty(
@@ -97,10 +97,10 @@ describe('theatrical hacking test page', () => {
     await waitFor(() => {
       expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
         'value',
-        4,
+        5,
       );
     });
-    expect(document.querySelector('.hacking-code')?.textContent).toHaveLength(5);
+    expect(document.querySelector('.hacking-code')?.textContent).toHaveLength(6);
     expect(screen.getByText('ACCESS GRANTED')).toBeTruthy();
   });
 
