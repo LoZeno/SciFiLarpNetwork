@@ -26,3 +26,11 @@ The configured minimum is at least one. Keep difficulty-to-base-hit mapping and 
 - Provide keyboard, touch, screen-reader, reduced-motion, and non-keyboard/accessibility alternatives; ensure the random secret target is discoverable through permitted hints without making the challenge inaccessible.
 - All wording and visuals clearly indicate fictional gameplay. There is no shell, process execution, real credential capture, network probing, or actual access-control bypass.
 - Tests cover challenge generation, formula/clamping, hit validation, expiry, replay/concurrency, authorization, accessibility mode, and rendering safety.
+
+## Frontend demonstration profile
+
+- The frontend provides an unlinked, direct-route-only demonstration at `/theatrical-hacking-test`. It lets a tester set difficulty (1–10), minimum hits (default 1), and attacker hacking level, then starts a 60-second local simulation. For this demonstration, difficulty itself is the base-hit count; production game-specific difficulty rules must be configured and enforced by the server.
+- The local demonstration displays inert Rust-styled fictional code one character per accepted key/keypad input in a fixed-height, internally scrollable terminal. The displayed snippet loops after its final character. After each correct non-final hit, the local demonstration selects a different target character; production target generation and rotation remain server-authoritative.
+- The local demonstration also shows four distinct penalty characters, each different from the current target. Hitting one reduces progress by one step, clamped at zero. Whenever progress moves forward or backward, all four penalty characters are replaced with a fresh distinct set. Production penalty assignment and validation remain server-authoritative.
+- The test route is not connected to the backend and cannot grant or record game access. The secret and progress are local demonstration state only; it is not evidence that the server-authoritative challenge, authorization, event persistence, replay protection, or concurrency acceptance criteria are implemented.
+- The reusable display receives key-attempt and hint callbacks so later game workflows can delegate those operations to the authoritative backend. The test route supplies explicitly local-only callbacks.

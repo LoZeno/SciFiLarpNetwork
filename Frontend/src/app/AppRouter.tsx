@@ -7,6 +7,11 @@ const QrCaptureTestPage = lazy(() =>
     default: module.QrCaptureTestPage,
   })),
 );
+const TheatricalHackingTestPage = lazy(() =>
+  import('../hacking/TheatricalHackingTestPage').then((module) => ({
+    default: module.TheatricalHackingTestPage,
+  })),
+);
 
 export function AppRouter() {
   return (
@@ -16,6 +21,14 @@ export function AppRouter() {
         element={
           <Suspense fallback={null}>
             <QrCaptureTestPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/theatrical-hacking-test"
+        element={
+          <Suspense fallback={null}>
+            <TheatricalHackingTestPage />
           </Suspense>
         }
       />
