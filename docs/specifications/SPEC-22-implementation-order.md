@@ -16,7 +16,7 @@ The sequence is deliberately one task at a time. Do not start a later row while 
 6. In the handoff, state the completed row number and spec, verification performed, any remaining limitation, and the next unchecked row. Do not mark later rows complete just because some of their code was incidentally introduced.
 7. Work serially against this checklist: do not have multiple agents implement different rows concurrently. Shared domain/API changes can create hidden dependencies and invalidate the handoff state.
 
-All rows below begin unchecked. The previous `00-legacy-analysis.md` records completed repository analysis; it is discovery evidence, not an implementation task. `WEBFORM-INDEX.md` is an index, not a feature specification.
+Roadmap status reflects verified implementation; the previous `00-legacy-analysis.md` records completed repository analysis and is discovery evidence, not an implementation task. `WEBFORM-INDEX.md` is an index, not a feature specification.
 
 ## Canonical sequence
 
@@ -47,7 +47,7 @@ All rows below begin unchecked. The previous `00-legacy-analysis.md` records com
 |   # | Status | Specification                                                                  | Implementation gate                                                                         |
 | --: | :----: | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 |  18 |  [x]   | [CROSSCUT-01 QR capture and identity/code scanning](CROSSCUT-01-qr-capture.md) | Scanner adapter and fallbacks are implemented and automated checks pass; physical-camera permission/performance smoke testing remains a pre-release validation gate. |
-|  19 |  [ ]   | [CROSSCUT-02 Theatrical hacking simulation](CROSSCUT-02-cinematic-hacking.md)  | Deliver the fictional-only, server-validated challenge before any hacking workflow.         |
+|  19 |  [x]   | [CROSSCUT-02 Theatrical hacking interaction](CROSSCUT-02-cinematic-hacking.md) | Deliver the fictional-only reusable interaction and local demo; production authority is a separate Phase F task. |
 
 ### Phase C — administrative catalog and event capabilities
 
@@ -74,10 +74,10 @@ These are capabilities to migrate into the React SPA/backend, not a requirement 
 | --: | :----: | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 |  30 |  [ ]   | [WEBFORM-39 Network selection](legacy-features/webforms/WEBFORM-39-network-selection.md)                                       | Network selection and trusted local availability rules precede network-scoped sign-in.      |
 |  31 |  [ ]   | [WEBFORM-03 Membership login](legacy-features/webforms/WEBFORM-03-membership-login.md)                                         | Establish supported authentication and safe return navigation.                              |
-|  32 |  [ ]   | [WEBFORM-28 Default network sign-in](legacy-features/webforms/WEBFORM-28-default-network-login.md)                             | Implement the configurable default-network route.                                           |
-|  33 |  [ ]   | [WEBFORM-27 Configured network sign-in (legacy FPI)](legacy-features/webforms/WEBFORM-27-faction-login-independent-planets.md) | Implement or explicitly alias the first legacy network-specific entry route.                |
-|  34 |  [ ]   | [WEBFORM-29 Configured network sign-in (legacy Empire)](legacy-features/webforms/WEBFORM-29-faction-login-empire.md)           | Implement or explicitly alias the second legacy network-specific entry route.               |
-|  35 |  [ ]   | [WEBFORM-30 Configured network sign-in (legacy Republic)](legacy-features/webforms/WEBFORM-30-faction-login-republic.md)       | Implement or explicitly alias the third legacy network-specific entry route.                |
+|  32 |  [ ]   | [WEBFORM-28 Default network sign-in](legacy-features/webforms/WEBFORM-28-default-network-login.md)                             | Implement the configurable default-network route; defer simulated intrusion to Phase F.    |
+|  33 |  [ ]   | [WEBFORM-27 Configured network sign-in (legacy FPI)](legacy-features/webforms/WEBFORM-27-faction-login-independent-planets.md) | Implement or alias the network entry route; defer simulated intrusion to Phase F.           |
+|  34 |  [ ]   | [WEBFORM-29 Configured network sign-in (legacy Empire)](legacy-features/webforms/WEBFORM-29-faction-login-empire.md)           | Implement or alias the network entry route; defer simulated intrusion to Phase F.           |
+|  35 |  [ ]   | [WEBFORM-30 Configured network sign-in (legacy Republic)](legacy-features/webforms/WEBFORM-30-faction-login-republic.md)       | Implement or alias the network entry route; defer simulated intrusion to Phase F.           |
 |  36 |  [ ]   | [WEBFORM-31 QR login prototype](legacy-features/webforms/WEBFORM-31-qr-login-prototype.md)                                     | Complete or retire the prototype using the secure identity design and CROSSCUT-01.          |
 |  37 |  [ ]   | [WEBFORM-04 Registration](legacy-features/webforms/WEBFORM-04-registration.md)                                                 | Implement the approved account provisioning/verification flow.                              |
 |  38 |  [ ]   | [WEBFORM-01 Change password](legacy-features/webforms/WEBFORM-01-change-password.md)                                           | Implement authenticated self-service credential changes.                                    |
@@ -107,37 +107,38 @@ These are capabilities to migrate into the React SPA/backend, not a requirement 
 |  57 |  [ ]   | [WEBFORM-23 Biochemistry workbench](legacy-features/webforms/WEBFORM-23-biochemistry-lab.md)               | Implement skill-gated ingredient recipe analysis.                                           |
 |  58 |  [ ]   | [WEBFORM-24 Chemistry workbench](legacy-features/webforms/WEBFORM-24-chemistry-lab.md)                     | Implement skill-gated chemical recipe analysis.                                             |
 |  59 |  [ ]   | [WEBFORM-25 Technical assembly workbench](legacy-features/webforms/WEBFORM-25-technical-workbench.md)      | Implement skill-gated item assembly from catalogued components.                             |
-|  60 |  [ ]   | [WEBFORM-22 In-character computer console](legacy-features/webforms/WEBFORM-22-computer-console.md)        | Integrate fictional encryption/publication and the approved hacking challenge into the SPA. |
+|  60 |  [ ]   | [WEBFORM-22 In-character computer console](legacy-features/webforms/WEBFORM-22-computer-console.md)        | Integrate fictional encryption/publication and the CROSSCUT-02 presentation; defer production challenge actions to Phase F. |
 
-### Phase F — Web Forms-derived simulated account intrusion
+### Phase F — Server-authoritative challenge and simulated account intrusion
 
-All routes in this phase depend on CROSSCUT-02, server-side authorization, account/network data, and the relevant underlying message/news/file capabilities. Each category must remain a game-only simulation.
+The authoritative challenge depends on the authentication, character, skill, network/event, and event-store foundations delivered earlier. All routes also depend on CROSSCUT-02 presentation, server-side authorization, and the relevant underlying message/news/file capabilities. Each category remains a game-only simulation.
 
 |   # | Status | Specification                                                                                                   | Implementation gate                                                            |
 | --: | :----: | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-|  61 |  [ ]   | [WEBFORM-16 Browse accounts on a breached network](legacy-features/webforms/WEBFORM-16-network-account-list.md) | List eligible targets in the selected configured network.                      |
-|  62 |  [ ]   | [WEBFORM-13 Select a network account to breach](legacy-features/webforms/WEBFORM-13-hack-network-account.md)    | Challenge a selected target and establish an expiring, audited breach context. |
-|  63 |  [ ]   | [WEBFORM-09 Compromised account menu](legacy-features/webforms/WEBFORM-09-hacked-account-menu.md)               | Present only supported, authorized target data categories after a breach.      |
-|  64 |  [ ]   | [WEBFORM-10 Compromised contacts](legacy-features/webforms/WEBFORM-10-hacked-contacts.md)                       | Implement a clearly scoped contact view or explicitly omit it from the menu.   |
-|  65 |  [ ]   | [WEBFORM-11 Compromised personal files](legacy-features/webforms/WEBFORM-11-hacked-files.md)                    | Implement the authorized file challenge, read/copy rules, and audit events.    |
-|  66 |  [ ]   | [WEBFORM-12 Compromised incoming messages](legacy-features/webforms/WEBFORM-12-hacked-inbox.md)                 | Implement the target inbox challenge, decryption rules, and copy semantics.    |
-|  67 |  [ ]   | [WEBFORM-14 News on a breached network](legacy-features/webforms/WEBFORM-14-hacked-news.md)                     | Implement protected story viewing/editing and auditable updates.               |
-|  68 |  [ ]   | [WEBFORM-15 Compromised outgoing messages](legacy-features/webforms/WEBFORM-15-hacked-outbox.md)                | Implement the target outbox challenge and authorized copy semantics.           |
+|  61 |  [ ]   | [CROSSCUT-03 Server-authoritative hacking challenges](CROSSCUT-03-server-authoritative-hacking-challenges.md)   | Implement durable, authorized, replay-safe challenge rules before any production challenge consumer. |
+|  62 |  [ ]   | [WEBFORM-16 Browse accounts on a breached network](legacy-features/webforms/WEBFORM-16-network-account-list.md) | List eligible targets in the selected configured network.                      |
+|  63 |  [ ]   | [WEBFORM-13 Select a network account to breach](legacy-features/webforms/WEBFORM-13-hack-network-account.md)    | Challenge a selected target and establish an expiring, audited breach context. |
+|  64 |  [ ]   | [WEBFORM-09 Compromised account menu](legacy-features/webforms/WEBFORM-09-hacked-account-menu.md)               | Present only supported, authorized target data categories after a breach.      |
+|  65 |  [ ]   | [WEBFORM-10 Compromised contacts](legacy-features/webforms/WEBFORM-10-hacked-contacts.md)                       | Implement a clearly scoped contact view or explicitly omit it from the menu.   |
+|  66 |  [ ]   | [WEBFORM-11 Compromised personal files](legacy-features/webforms/WEBFORM-11-hacked-files.md)                    | Implement the authorized file challenge, read/copy rules, and audit events.    |
+|  67 |  [ ]   | [WEBFORM-12 Compromised incoming messages](legacy-features/webforms/WEBFORM-12-hacked-inbox.md)                 | Implement the target inbox challenge, decryption rules, and copy semantics.    |
+|  68 |  [ ]   | [WEBFORM-14 News on a breached network](legacy-features/webforms/WEBFORM-14-hacked-news.md)                     | Implement protected story viewing/editing and auditable updates.               |
+|  69 |  [ ]   | [WEBFORM-15 Compromised outgoing messages](legacy-features/webforms/WEBFORM-15-hacked-outbox.md)                | Implement the target outbox challenge and authorized copy semantics.           |
 
 ### Phase G — deployment, release packaging, and operator documentation
 
 |   # | Status | Specification                                                                       | Implementation gate                                                                                                                |
 | --: | :----: | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-|  69 |  [ ]   | [SPEC-18 Self-hosted deployment](SPEC-18-self-hosted-deployment.md)                 | Deliver a complete locally hosted stack for a normal computer and isolated venue LAN.                                              |
-|  70 |  [ ]   | [SPEC-23 HTTPS certificates for self-hosted and venue deployments](SPEC-23-venue-https-certificates.md) | Provide automated Let's Encrypt and `step-ca` certificate provisioning and renewal options for secure venue hosting. |
-|  71 |  [ ]   | [SPEC-19 Container-based hosting](SPEC-19-container-deployment.md)                  | Add optional redistributable containers/deployment artifacts without replacing self-hosting.                                       |
-|  72 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation and end-to-end verification of API discovery, navigation, and a representative action. |
-|  73 |  [ ]   | [SPEC-17 Configuration documentation in README](SPEC-17-configuration-readme.md)    | Finish and verify operator instructions for every component, platform, language, and hosting mode.                                 |
+|  70 |  [ ]   | [SPEC-18 Self-hosted deployment](SPEC-18-self-hosted-deployment.md)                 | Deliver a complete locally hosted stack for a normal computer and isolated venue LAN.                                              |
+|  71 |  [ ]   | [SPEC-23 HTTPS certificates for self-hosted and venue deployments](SPEC-23-venue-https-certificates.md) | Provide automated Let's Encrypt and `step-ca` certificate provisioning and renewal options for secure venue hosting. |
+|  72 |  [ ]   | [SPEC-19 Container-based hosting](SPEC-19-container-deployment.md)                  | Add optional redistributable containers/deployment artifacts without replacing self-hosting.                                       |
+|  73 |  [ ]   | [SPEC-16 Cross-platform CI builds and packaging](SPEC-16-ci-build-and-packaging.md) | Build, test, smoke-test, and package the final components/database setup across the verified matrix, including offline validation and end-to-end verification of API discovery, navigation, and a representative action. |
+|  74 |  [ ]   | [SPEC-17 Configuration documentation in README](SPEC-17-configuration-readme.md)    | Finish and verify operator instructions for every component, platform, language, and hosting mode.                                 |
 
 ## Continuous requirements (not separate queue entries)
 
 - Run the existing checks and preserve the coverage thresholds from SPEC-10 for each completed implementation task; do not postpone testing until Phase G.
 - Maintain English-default and English/Italian localization (SPEC-20), closed-intranet operation (SPEC-21), supported platform claims (SPEC-07), and event-sourcing rules (SPEC-08/SPEC-09) throughout every phase.
 - Keep `docs/architecture/domain-language-and-scope.md` in mind for every implementation: preserve its canonical vocabulary, generic/configurable product identity, initial scope, and explicit omissions. If a selected feature spec conflicts with it or appears to require an omitted capability, stop and resolve the conflict before implementing.
-- Update CI incrementally as projects/features are introduced; row 71 is the final cross-component packaging, release-matrix, and offline-validation completion gate, not permission to defer basic builds or tests.
+- Update CI incrementally as projects/features are introduced; row 73 is the final cross-component packaging, release-matrix, and offline-validation completion gate, not permission to defer basic builds or tests.
 - Keep the manager and Web Forms features as generic product workflows. Legacy file names and route names in this roadmap identify source behavior only; they are not required product branding or architecture.

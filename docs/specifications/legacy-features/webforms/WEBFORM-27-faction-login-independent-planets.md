@@ -12,4 +12,4 @@ Sets the network/faction context to legacy value 3, selects its color theme, and
 - A chosen network context is validated against server configuration and used consistently by character authentication and authorization.
 - Login success establishes the authenticated character/session; failure does not leave a stale or unauthorized network context.
 - Any network-specific visual theme is configurable and does not alter authorization rules.
-- Attempting to access a network without permission is rejected server-side; the fictional hack challenge follows CROSSCUT-02.
+- Attempting to sign in without network permission is rejected server-side. Do not expose a production simulated-intrusion flow from this sign-in route; any such workflow is deferred to Phase F and must follow CROSSCUT-03.

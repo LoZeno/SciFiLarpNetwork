@@ -49,6 +49,7 @@ These specifications were derived from the active `.aspx` files and code-behind 
 ## Cross-cutting experience specifications
 
 - [QR capture and identity/code scanning](../CROSSCUT-01-qr-capture.md)
-- [Theatrical hacking simulation](../CROSSCUT-02-cinematic-hacking.md)
+- [Theatrical hacking interaction](../CROSSCUT-02-cinematic-hacking.md)
+- [Server-authoritative hacking challenges](../CROSSCUT-03-server-authoritative-hacking-challenges.md)
 
 Reusable `.ascx` controls are included as supporting behavior in these page specifications rather than treated as independent Web Forms routes.

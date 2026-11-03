@@ -1,36 +1,38 @@
-# Cross-cutting specification: Theatrical hacking simulation
+# Cross-cutting specification: Theatrical hacking interaction
 
-## Legacy behavior
+## Purpose and safety boundary
 
-The shared Web Forms challenge asks for a character number and password, checks the character's hacker level, displays a timer/progress sequence, optionally accepts an override code, and then uses a random success probability influenced by attacker and target levels. Per-target attempt/cooldown behavior is stored for some attack types. Several call paths and attempt-log methods are incomplete or inconsistent.
+Provide a reusable, cinematic interface for an explicitly fictional, in-game challenge. The screen may show only prewritten inert code-like text; it must never execute, compile, interpret, or transmit that text, perform network probing, collect real credentials, or imply access to real systems. The display is presentation only and is never authoritative for game outcomes.
 
-## Proposed cinematic mini-game
+The reusable React control accepts challenge state and callbacks for attempts, hints, and expiry. It does not decide authorization, challenge difficulty, success, cooldowns, or game consequences. Production challenge creation and validation are specified separately in [CROSSCUT-03](CROSSCUT-03-server-authoritative-hacking-challenges.md).
 
-Show an in-character terminal with **prewritten, inert fictional C/C++-styled text** that appears to stream while the player types. Do not execute code, evaluate user input, contact external hosts, or present the simulation as real intrusion. Each attempt receives a server-generated challenge: a secret target character (for example one from an allowed letter/digit set), a base required-hit count derived from the target's configured protection/difficulty, and a deadline. The attacker must press the secret character repeatedly; other keys only advance harmless visual effects and do not count.
+## Interaction requirements
 
-Use the explicit count formula:
+- Show a fixed-height terminal with an internal scrollbar. In the demo, each accepted input advances one character of a long inert Rust-styled snippet, which loops at its end.
+- Automatically focus the terminal when an active challenge starts. Printable input is handled only when the terminal itself has focus; ignore modifier combinations, repeated keydown events, and input from unrelated controls. Prevent browser defaults for supported input keys, including apostrophe, so browser shortcuts such as Firefox Quick Find do not steal focus.
+- Do not insert user input into the displayed code. Any input that advances the visual stream is separate from the character submitted to the challenge callback.
+- Display a timer and accessible progress indicator. Stop accepting input after the challenge is no longer active or its deadline has elapsed; the server remains the source of the deadline and outcome.
+- Provide keyboard and touch/keypad input, visible focus, screen-reader labels/status, and reduced-motion behavior. Production integrations must offer an accessible way to discover or enter the target without exposing it in the ordinary challenge response.
+- In the reusable production presentation, do not render penalty-character lists, demo hints, or demo controls. The challenge workflow may expose an explicitly authorized accessible hint mode when specified by its consuming feature.
+- Show localized, clear active, progress, success, expiry, and error states. The success state says “ACCESS GRANTED” (localized). Visual styling and wording must identify fictional gameplay rather than real intrusion.
 
-`requiredHits = max(minimumHits, baseHits(difficulty) - max(0, attackerHackingLevel))`
+## Local demonstration profile
 
-The configured minimum is at least one. Keep difficulty-to-base-hit mapping and deadline configurable per game. Do not reveal the target key directly in normal mode; provide accessible optional hints or an alternate non-keyboard interaction so the game remains usable. A correct hit updates progress; a wrong key does not reduce required hits. The server validates challenge ID, actor, target, time window, key/hit sequence, and one-time completion. The visual fake-code stream can be deterministic/synthetic and is never an authority for the result.
+- Provide the unlinked, direct-route-only `/theatrical-hacking-test` page. It lets a tester set difficulty (1–10), minimum hits (default 1), and attacker hacking level, then starts a 60-second **local-only** simulation.
+- The demo uses difficulty itself as `baseHits(difficulty)` and calculates:
+
+  `requiredHits = max(1, minimumHits + baseHits(difficulty) - max(0, attackerHackingLevel))`
+
+  The minimum is at least one. Production configuration and calculation are server-authoritative under CROSSCUT-03.
+- Select a target character randomly from the configured demo alphabet. A correct hit advances progress; after a non-final correct hit, select a different target character. Other ordinary keys do not advance or reduce challenge progress.
+- Select four distinct demo penalty characters, each different from the current target. Hitting one reduces progress by one, clamped at zero. Whenever progress moves forward or backward, replace the four penalty characters with four new distinct characters. Penalty characters and the “Request a hint” control/result are visible only on this demo page.
+- Each input advances the inert visual code stream, independently of whether it is a target, penalty, or ordinary character. The code stream never affects the local result.
+- The route does not call the backend, grant or record game access, or prove that server authorization, durable event persistence, replay protection, or concurrency handling exists. Its target, progress, timer, and outcomes are demonstration state only.
 
 ## Acceptance criteria
 
-- Challenge initiation verifies the authenticated character, target eligibility, target protection, cooldown, and any in-game override item on the server before issuing challenge state.
-- Each attempt gets an unpredictable secret key and single-use challenge ID; the client cannot change required hits, attacker level, target difficulty, deadline, or result.
-- Required correct presses follow the formula above, clamp to a configured minimum of at least one, and are tested at low/negative/very high skill values and difficulty boundaries.
-- Only correct presses count. Wrong keys, paste, autofill, repeat events, keydown/keyup duplication, and input from unrelated controls cannot generate extra hits; key-repeat behavior is explicitly controlled.
-- A visible progress indicator and simulated code animation respond to user input without executing, compiling, interpreting, or sending the displayed text anywhere. Input content is not inserted into code in an executable or unsafe way.
-- Success/failure is computed and persisted once server-side; retries, replayed requests, tab duplication, disconnect/reconnect, expiry, and concurrent requests cannot award duplicate success.
-- Failure and success emit auditable domain events and apply the configured cooldown/alert/game consequences. UI animation does not extend or bypass the authoritative deadline.
-- Provide keyboard, touch, screen-reader, reduced-motion, and non-keyboard/accessibility alternatives; ensure the random secret target is discoverable through permitted hints without making the challenge inaccessible.
-- All wording and visuals clearly indicate fictional gameplay. There is no shell, process execution, real credential capture, network probing, or actual access-control bypass.
-- Tests cover challenge generation, formula/clamping, hit validation, expiry, replay/concurrency, authorization, accessibility mode, and rendering safety.
-
-## Frontend demonstration profile
-
-- The frontend provides an unlinked, direct-route-only demonstration at `/theatrical-hacking-test`. It lets a tester set difficulty (1–10), minimum hits (default 1), and attacker hacking level, then starts a 60-second local simulation. For this demonstration, difficulty itself is the base-hit count; production game-specific difficulty rules must be configured and enforced by the server.
-- The local demonstration displays inert Rust-styled fictional code one character per accepted key/keypad input in a fixed-height, internally scrollable terminal. The displayed snippet loops after its final character. After each correct non-final hit, the local demonstration selects a different target character; production target generation and rotation remain server-authoritative.
-- The local demonstration also shows four distinct penalty characters, each different from the current target. Hitting one reduces progress by one step, clamped at zero. Whenever progress moves forward or backward, all four penalty characters are replaced with a fresh distinct set. Production penalty assignment and validation remain server-authoritative.
-- The test route is not connected to the backend and cannot grant or record game access. The secret and progress are local demonstration state only; it is not evidence that the server-authoritative challenge, authorization, event persistence, replay protection, or concurrency acceptance criteria are implemented.
-- The reusable display receives key-attempt and hint callbacks so later game workflows can delegate those operations to the authoritative backend. The test route supplies explicitly local-only callbacks.
+- The reusable component is callback-driven and can be mounted without the demo-only controls or penalty/hint display.
+- Keyboard, keypad, focus, progress, deadline display, success/expiry states, and callback errors are tested.
+- The apostrophe regression test verifies browser-default prevention and that focus remains on the terminal.
+- Demo tests cover the hit formula and lower bound, target changes, four distinct penalties and their rotation, progress clamping, timer expiry, and local-only behavior.
+- Tests verify user input is never interpolated into the inert code and all displayed game text is localized.
