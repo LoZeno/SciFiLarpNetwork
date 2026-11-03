@@ -451,6 +451,38 @@ a {
   background: #101923;
 }
 
+.qr-capture-test {
+  display: grid;
+  width: min(100%, 800px);
+  min-height: 100vh;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.qr-capture-test > .qr-capture,
+.qr-capture-test-result {
+  width: 100%;
+}
+
+.qr-capture-test-result textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #f4f7fa;
+  background: #101923;
+  overflow-wrap: anywhere;
+  resize: vertical;
+}
+
+.qr-capture-test-clear {
+  justify-self: end;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;

@@ -69,5 +69,7 @@
   "scanner.useCode": "Use code",
   "scanner.captured": "Code captured. The destination will validate it; rescan to read another.",
   "scanner.unreadable": "No readable QR code was found in that image. Try another image or enter the code manually.",
-  "scanner.invalidImage": "Choose an image file."
+  "scanner.invalidImage": "Choose an image file.",
+  "scanner.testResult": "Decoded QR code",
+  "scanner.clearTestResult": "Clear result"
 }
