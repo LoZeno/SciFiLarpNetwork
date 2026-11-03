@@ -14,5 +14,5 @@ export function calculateRequiredHits(
     throw new RangeError('Challenge difficulty, minimum hits, or hacking level is invalid.');
   }
 
-  return Math.max(minimumHits, difficulty - Math.max(0, attackerHackingLevel));
+  return Math.max(1, minimumHits + difficulty - Math.max(0, attackerHackingLevel));
 }
