@@ -2,6 +2,8 @@
 
 **Legacy route:** `CartellaPersonale\FilePersonali.aspx`.
 
+This feature precedes WEBFORM-33 because messaging can copy messages into the authenticated character's personal files.
+
 ## Observed behavior
 
 For the signed-in character, lists saved files, allows creating a title/body file, stores line breaks and an optional encryption level, and displays a selected file. The legacy decryption-success callback is unimplemented.
