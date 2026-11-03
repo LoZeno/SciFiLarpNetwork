@@ -12,4 +12,4 @@ Sets legacy network/faction value 1 and its theme; the route delegates credentia
 - Validate the character's network membership server-side before completing authentication.
 - A safe, configured theme may reflect the network but cannot grant permissions or bypass login.
 - Failed authentication clears the attempted character/network context; successful authentication routes to the shared application home.
-- Intrusion is presented only as the fictional challenge specified by CROSSCUT-02.
+- Do not expose a production simulated-intrusion flow from this sign-in route; any such workflow is deferred to Phase F and must follow CROSSCUT-03.

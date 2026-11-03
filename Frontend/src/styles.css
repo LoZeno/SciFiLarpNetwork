@@ -390,6 +390,295 @@ a {
   font-size: 0.9rem;
 }
 
+.qr-capture {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(23 36 49 / 82%);
+}
+
+.qr-capture h2,
+.scanner-description,
+.scanner-status,
+.scanner-hint {
+  margin: 0;
+}
+
+.scanner-description,
+.scanner-hint,
+.scanner-status {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.scanner-camera,
+.scanner-controls,
+.scanner-manual-entry {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.scanner-camera video {
+  width: min(100%, 560px);
+  min-height: 180px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #080d12;
+  object-fit: cover;
+}
+
+.qr-capture .field {
+  width: min(100%, 440px);
+}
+
+.qr-capture input[type='file'] {
+  min-height: 40px;
+  color: var(--muted);
+}
+
+.qr-capture select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #f4f7fa;
+  background: #101923;
+}
+
+.qr-capture-test {
+  display: grid;
+  width: min(100%, 800px);
+  min-height: 100vh;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.qr-capture-test > .qr-capture,
+.qr-capture-test-result {
+  width: 100%;
+}
+
+.qr-capture-test-result textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #f4f7fa;
+  background: #101923;
+  overflow-wrap: anywhere;
+  resize: vertical;
+}
+
+.qr-capture-test-clear {
+  justify-self: end;
+}
+
+.hacking-test-page {
+  display: grid;
+  width: min(100%, 900px);
+  min-height: 100vh;
+  align-content: center;
+  gap: 18px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.hacking-demo-notice,
+.hacking-feedback,
+.hacking-outcome,
+.hacking-hint {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hacking-config {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(23 36 49 / 82%);
+}
+
+.hacking-config .field {
+  flex: 1 1 150px;
+  width: auto;
+}
+
+.hacking-simulation {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgb(23 36 49 / 82%);
+}
+
+.hacking-heading-row,
+.hacking-progress-label,
+.hacking-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hacking-heading-row h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.hacking-timer {
+  margin: 0;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.hacking-terminal {
+  display: flex;
+  height: 320px;
+  min-height: 0;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid #28534f;
+  border-radius: 8px;
+  background: #07110f;
+  color: #83e3c9;
+  cursor: text;
+  overflow: hidden;
+}
+
+.hacking-terminal:focus-visible {
+  outline-color: var(--accent);
+}
+
+.hacking-code-viewport {
+  min-height: 0;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-color: #397c70 #101923;
+  scrollbar-width: thin;
+}
+
+.hacking-code {
+  margin: 0;
+  color: #83e3c9;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hacking-terminal-prompt {
+  margin: 14px 0 0;
+  color: #a6c8bc;
+  font-size: 0.82rem;
+}
+
+.hacking-progress {
+  display: grid;
+  gap: 8px;
+  color: #cbd6de;
+}
+
+.hacking-progress progress {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--accent);
+}
+
+.hacking-penalties {
+  display: grid;
+  gap: 8px;
+}
+
+.hacking-penalties p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.hacking-penalty-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hacking-penalty-key {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #704b50;
+  border-radius: 6px;
+  color: #ffd5d8;
+  background: #281b20;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-weight: 700;
+}
+
+.hacking-feedback,
+.hacking-outcome,
+.hacking-hint {
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: #101923;
+}
+
+.hacking-hint strong {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.hacking-keypad {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+  gap: 7px;
+}
+
+.hacking-key {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #e8eef4;
+  background: #101923;
+  cursor: pointer;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+.hacking-key:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
