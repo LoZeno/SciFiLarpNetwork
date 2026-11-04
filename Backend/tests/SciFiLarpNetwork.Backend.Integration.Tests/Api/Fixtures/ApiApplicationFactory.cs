@@ -7,10 +7,10 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Marten;
 using JasperFx.Events.Projections;
-using SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
-using SciFiLarpNetwork.Backend.Tests.EventSourcing;
+using SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
+using SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api.Fixtures;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 // xUnit creates this fixture through IClassFixture<ApiApplicationFactory>.
 // ReSharper disable once ClassNeverInstantiated.Global

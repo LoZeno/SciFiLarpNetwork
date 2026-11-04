@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using SciFiLarpNetwork.Backend.Domain.Events;
 
-namespace SciFiLarpNetwork.Backend.Tests.EventSourcing;
+namespace SciFiLarpNetwork.Backend.Tests.Domain;
 
 public sealed class EventUpcasterRegistryTests
 {

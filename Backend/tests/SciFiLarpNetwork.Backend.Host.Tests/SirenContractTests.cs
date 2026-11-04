@@ -4,7 +4,7 @@ using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Backend.Localization.Text;
 using SciFiLarpNetwork.Common.Siren;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api;
+namespace SciFiLarpNetwork.Backend.Tests.Host;
 
 public sealed class SirenContractTests
 {

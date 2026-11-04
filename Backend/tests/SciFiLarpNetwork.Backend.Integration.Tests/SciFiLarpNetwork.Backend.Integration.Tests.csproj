@@ -1,9 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <RootNamespace>SciFiLarpNetwork.Backend.Tests.Integration</RootNamespace>
     <IsPackable>false</IsPackable>
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutput>$(MSBuildProjectDirectory)/TestResults/coverage/</CoverletOutput>
@@ -26,10 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Application\SciFiLarpNetwork.Backend.Application.csproj" />
-    <ProjectReference Include="..\..\src\Domain\SciFiLarpNetwork.Backend.Domain.csproj" />
     <ProjectReference Include="..\..\src\Host\SciFiLarpNetwork.Backend.csproj" />
-    <ProjectReference Include="..\..\src\Infrastructure\SciFiLarpNetwork.Backend.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/../../src/Host/SciFiLarpNetwork.Backend.csproj')">

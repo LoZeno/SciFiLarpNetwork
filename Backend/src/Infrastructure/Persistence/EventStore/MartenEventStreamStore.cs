@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using JasperFx.Events;
 using Marten;
-using Marten.Exceptions;
 using Npgsql;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Domain.Events;

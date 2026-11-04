@@ -16,7 +16,6 @@ public sealed class DomainEventTests
             1,
             DateTimeOffset.UtcNow,
             sourcePayload);
-        document.Dispose();
 
         Assert.Equal("original", domainEvent.Payload.GetProperty("value").GetString());
     }

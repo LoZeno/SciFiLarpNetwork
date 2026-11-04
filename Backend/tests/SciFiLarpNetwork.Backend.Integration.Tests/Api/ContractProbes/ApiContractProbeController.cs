@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Common.Siren;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
 
 [ApiController]
 [Route("api/v1/contract-test")]

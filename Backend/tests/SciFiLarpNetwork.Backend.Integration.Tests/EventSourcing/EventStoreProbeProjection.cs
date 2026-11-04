@@ -1,7 +1,7 @@
 using Marten.Events.Aggregation;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
-namespace SciFiLarpNetwork.Backend.Tests.EventSourcing;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
 public sealed record EventStoreProbeState(Guid Id, int EventCount, long LastSequence);
 

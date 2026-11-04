@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api.Fixtures;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 public sealed class TestAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,

@@ -2,7 +2,6 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten;
-using Marten.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;

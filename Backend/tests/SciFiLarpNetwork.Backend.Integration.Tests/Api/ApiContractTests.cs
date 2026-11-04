@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using SciFiLarpNetwork.Backend.Tests.Api.Fixtures;
+using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixture<ApiApplicationFactory>
 {

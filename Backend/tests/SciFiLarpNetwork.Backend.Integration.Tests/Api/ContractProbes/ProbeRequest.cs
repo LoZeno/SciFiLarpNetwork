@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
 
 public sealed class ProbeRequest
 {

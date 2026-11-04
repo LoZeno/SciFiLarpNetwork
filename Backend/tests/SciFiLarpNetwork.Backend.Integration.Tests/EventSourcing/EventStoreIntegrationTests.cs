@@ -5,9 +5,9 @@ using Marten.Events;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Domain.Events;
-using SciFiLarpNetwork.Backend.Tests.Api.Fixtures;
+using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
-namespace SciFiLarpNetwork.Backend.Tests.EventSourcing;
+namespace SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
 public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : IClassFixture<ApiApplicationFactory>
 {
