@@ -65,6 +65,21 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task ReadinessEndpointReportsDatabaseAndProjectionDiagnosticsWithoutSecrets()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/local/health/ready");
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Healthy", body.RootElement.GetProperty("status").GetString());
+        Assert.Equal(
+            "Healthy",
+            body.RootElement.GetProperty("checks").GetProperty("event-store").GetProperty("status").GetString());
+        Assert.DoesNotContain("Password=", body.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task SirenActionFieldsMapToTypedJsonRequestProperties()
     {
         using var client = factory.CreateClient();

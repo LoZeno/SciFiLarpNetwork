@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.OpenApi;
 using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Backend.Api.ErrorResponses;
+using SciFiLarpNetwork.Backend.Infrastructure;
 using SciFiLarpNetwork.Backend.Localization.Text;
 using SciFiLarpNetwork.Common.Siren;
 
@@ -47,6 +48,7 @@ builder.Services.Configure<MvcOptions>(options =>
 
 builder.Services.AddSingleton<IApplicationText, ApplicationText>();
 builder.Services.AddSingleton<IApiErrorResponseFactory, ApiErrorResponseFactory>();
+builder.Services.AddEventStore(builder.Configuration);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication();
@@ -106,5 +108,25 @@ app.UseStatusCodePages(async statusCodeContext =>
 
 app.MapOpenApi().AllowAnonymous();
 app.MapControllers();
+app.MapHealthChecks(
+    "/health/ready",
+    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready"),
+        ResponseWriter = async (context, report) =>
+        {
+            context.Response.ContentType = "application/json";
+            await System.Text.Json.JsonSerializer.SerializeAsync(
+                context.Response.Body,
+                new
+                {
+                    status = report.Status.ToString(),
+                    checks = report.Entries.ToDictionary(
+                        entry => entry.Key,
+                        entry => new { status = entry.Value.Status.ToString(), description = entry.Value.Description })
+                },
+                cancellationToken: context.RequestAborted);
+        }
+    }).AllowAnonymous();
 
 app.Run();

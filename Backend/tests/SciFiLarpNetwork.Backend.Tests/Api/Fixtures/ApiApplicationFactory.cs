@@ -5,7 +5,10 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Marten;
+using JasperFx.Events.Projections;
 using SciFiLarpNetwork.Backend.Tests.Api.ContractProbes;
+using SciFiLarpNetwork.Backend.Tests.EventSourcing;
 
 namespace SciFiLarpNetwork.Backend.Tests.Api.Fixtures;
 
@@ -16,8 +19,16 @@ public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("PathBase", "/local");
+        builder.UseSetting(
+            "ConnectionStrings:EventStore",
+            Environment.GetEnvironmentVariable("ConnectionStrings__EventStore") ??
+            "Host=localhost;Port=5432;Database=scifilarnetwork_tests;Username=postgres;Password=postgres");
         builder.ConfigureTestServices(services =>
         {
+            services.ConfigureMarten(options =>
+            {
+                options.Projections.Add<EventStoreProbeProjection>(ProjectionLifecycle.Async);
+            });
             services
                 .AddControllers()
                 .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ApiContractProbeController).Assembly));

@@ -26,10 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SciFiLarpNetwork.Backend.csproj" />
+    <ProjectReference Include="..\..\src\Application\SciFiLarpNetwork.Backend.Application.csproj" />
+    <ProjectReference Include="..\..\src\Domain\SciFiLarpNetwork.Backend.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Host\SciFiLarpNetwork.Backend.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\SciFiLarpNetwork.Backend.Infrastructure.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/../../src/SciFiLarpNetwork.Backend.csproj')">
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/../../src/Host/SciFiLarpNetwork.Backend.csproj')">
     <Threshold>80</Threshold>
     <ThresholdType>line</ThresholdType>
     <ThresholdStat>total</ThresholdStat>

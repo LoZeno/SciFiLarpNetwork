@@ -1,7 +1,16 @@
 <Solution>
   <Folder Name="/Backend/" />
-  <Folder Name="/Backend/src/">
-    <Project Path="Backend/src/SciFiLarpNetwork.Backend.csproj" />
+  <Folder Name="/Backend/src/Domain/">
+    <Project Path="Backend/src/Domain/SciFiLarpNetwork.Backend.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Backend/src/Application/">
+    <Project Path="Backend/src/Application/SciFiLarpNetwork.Backend.Application.csproj" />
+  </Folder>
+  <Folder Name="/Backend/src/Infrastructure/">
+    <Project Path="Backend/src/Infrastructure/SciFiLarpNetwork.Backend.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Backend/src/Host/">
+    <Project Path="Backend/src/Host/SciFiLarpNetwork.Backend.csproj" />
   </Folder>
   <Folder Name="/Backend/tests/">
     <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Tests/SciFiLarpNetwork.Backend.Tests.csproj" />
