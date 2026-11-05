@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Localization.Text;
 using SciFiLarpNetwork.Common.Siren;
 
@@ -47,23 +48,52 @@ public sealed class ApiRootController(IApplicationText text) : ControllerBase
     public ActionResult<SirenEntity<ApiVersionProperties>> GetVersionOne()
     {
         var versionPath = ApiPath("/api/v1");
+        Response.Headers.CacheControl = "no-store";
+        var links = new List<SirenLink>
+        {
+            new() { Rel = ["self"], Href = versionPath },
+            new() { Rel = ["up"], Href = ApiPath("/api") },
+            new()
+            {
+                Rel = ["service-desc"],
+                Href = ApiPath("/openapi/v1.json"),
+                Type = "application/json",
+                Title = text.GetLocalizedText("api.serviceDescription")
+            }
+        };
+        if (User.IsInRole(AdministratorRoles.Reader) || User.IsInRole(AdministratorRoles.Administrator))
+        {
+            links.Add(new SirenLink
+            {
+                Rel = [SirenRelations.Navigation],
+                Href = ApiPath("/api/v1/admin/accounts"),
+                Title = text.GetLocalizedText("api.administratorAccounts")
+            });
+        }
 
         return Ok(new SirenEntity<ApiVersionProperties>
         {
             Class = ["api", "version"],
             Properties = new ApiVersionProperties("v1", text.GetLocalizedText("app.name")),
-            Links =
-            [
-                new SirenLink { Rel = ["self"], Href = versionPath },
-                new SirenLink { Rel = ["up"], Href = ApiPath("/api") },
-                new SirenLink
-                {
-                    Rel = ["service-desc"],
-                    Href = ApiPath("/openapi/v1.json"),
-                    Type = "application/json",
-                    Title = text.GetLocalizedText("api.serviceDescription")
-                }
-            ]
+            Links = links,
+            Actions = User.Identity?.IsAuthenticated == true
+                ? null
+                :
+                [
+                    new SirenAction
+                    {
+                        Name = "administrator-sign-in",
+                        Href = ApiPath("/api/v1/admin/session"),
+                        Method = "POST",
+                        Type = "application/json",
+                        Title = text.GetLocalizedText("management.signIn"),
+                        Fields =
+                        [
+                            new SirenField { Name = "userName", Title = text.GetLocalizedText("management.userName") },
+                            new SirenField { Name = "password", Type = "password", Title = text.GetLocalizedText("management.password") }
+                        ]
+                    }
+                ]
         });
     }
 

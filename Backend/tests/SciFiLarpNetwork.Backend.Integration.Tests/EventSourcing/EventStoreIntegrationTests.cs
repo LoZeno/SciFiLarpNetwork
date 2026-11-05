@@ -9,6 +9,7 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
+[Collection("Backend database integration")]
 public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : IClassFixture<ApiApplicationFactory>
 {
     [Fact]

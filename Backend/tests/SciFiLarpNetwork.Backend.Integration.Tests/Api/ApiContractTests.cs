@@ -6,6 +6,7 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
+[Collection("Backend database integration")]
 public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixture<ApiApplicationFactory>
 {
     [Fact]
@@ -150,6 +151,28 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
         Assert.Equal("errors.conflict", body.RootElement.GetProperty("properties").GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task EventAppendUsesAuthenticatedActorInsteadOfClientSuppliedActor()
+    {
+        using var client = factory.CreateClient();
+        var actorId = Guid.NewGuid().ToString("D");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/contract-test/append-event")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { streamId = Guid.NewGuid(), actorId = "forged-client-actor" }),
+                Encoding.UTF8,
+                "application/json")
+        };
+        request.Headers.Add("X-Test-Authenticated", "true");
+        request.Headers.Add("X-Test-ActorId", actorId);
+
+        using var response = await client.SendAsync(request);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(actorId, body.RootElement.GetProperty("properties").GetProperty("actorId").GetString());
     }
 
     [Fact]

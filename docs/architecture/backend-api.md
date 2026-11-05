@@ -1,6 +1,6 @@
 # Backend API baseline
 
-The backend is the .NET 10 ASP.NET Core MVC application in `Backend/src`. It currently exposes the API discovery roots and the OpenAPI document; domain/authentication workflows are added only in their SPEC-22 order.
+The backend is the .NET 10 ASP.NET Core MVC application in `Backend/src/Host`. It exposes API discovery, OpenAPI, durable event-store infrastructure, and local administrator authentication; feature-specific domain workflows follow the SPEC-22 order.
 
 ## Run and discover
 
@@ -43,4 +43,4 @@ The PostgreSQL image supports both x64 and ARM64; Compose leaves platform select
 
 Stop PostgreSQL while keeping its data with `docker compose down`. The test database is created by the initialization SQL only when PostgreSQL first initializes an empty volume. If you already have a volume from before that script was added, create `scifilarnetwork_tests` manually or, only if you are certain all local database data can be discarded, reset the service with `docker compose down -v` followed by `docker compose up -d`. Removing the volume permanently deletes both local databases. This Compose setup is for local development and tests only, not production.
 
-The optional `PathBase` configuration value mounts the application below a path prefix (for example, `/network`). It must be an absolute path without a trailing slash, query, or fragment; generated Siren and OpenAPI links preserve it. The API and local resources have no runtime internet dependency. OpenAPI generation, localization resources, and Siren serialization are included with the application. This baseline does not yet implement feature endpoints, account sign-in, session issuance, or domain persistence.
+The optional `PathBase` configuration value mounts the application below a path prefix (for example, `/network`). It must be an absolute path without a trailing slash, query, or fragment; generated Siren and OpenAPI links preserve it. The API and local resources have no runtime internet dependency. OpenAPI generation, localization resources, and Siren serialization are included with the application. See [local administrator authentication](administrator-authentication.md) for bootstrap, recovery, roles, sessions, and HTTPS requirements. Player sign-in and feature-specific endpoints remain later work.

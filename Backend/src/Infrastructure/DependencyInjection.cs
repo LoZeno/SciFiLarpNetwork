@@ -2,10 +2,15 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
+using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Domain.Events;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure;
@@ -17,6 +22,9 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("EventStore");
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
+        services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+        services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
+        services.AddSingleton<IAdministratorAuthenticationService, AdministratorAuthenticationService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -35,7 +43,12 @@ public static class DependencyInjection
         services.AddSingleton<EventUpcasterRegistry>(
             provider => new EventUpcasterRegistry(provider.GetServices<IEventUpcaster>()));
 
-        services.AddSingleton<IEventStreamStore, MartenEventStreamStore>();
+        services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();
+        services.AddSingleton<IEventStreamStore>(provider => new AuthenticatedActorEventStreamStore(
+            new MartenEventStreamStore(
+                provider.GetRequiredService<IDocumentStore>(),
+                provider.GetRequiredService<EventUpcasterRegistry>()),
+            provider.GetRequiredService<IEventActorContext>()));
         services.AddHealthChecks()
             .AddCheck<EventStoreReadinessHealthCheck>("event-store", tags: ["ready"]);
 

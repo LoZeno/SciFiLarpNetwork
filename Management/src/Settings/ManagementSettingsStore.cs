@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SciFiLarpNetwork.Common.ApiLinkPolicy;
 
 namespace SciFiLarpNetwork.Management.Settings;
 
@@ -26,6 +27,7 @@ public sealed class ManagementSettingsStore(string filePath) : IManagementSettin
 
     public void Save(ManagementSettings settings)
     {
+        _ = ApiLinkPolicy.CreateApiRoot(settings.ApiBaseUrl);
         var directory = Path.GetDirectoryName(filePath)
             ?? throw new InvalidOperationException("The settings file path must include a directory.");
         Directory.CreateDirectory(directory);

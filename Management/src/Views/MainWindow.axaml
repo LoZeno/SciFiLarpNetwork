@@ -26,12 +26,21 @@
           <TextBox
               AutomationProperties.Name="{Binding ApiAddressLabel}"
               Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
+          <TextBlock Text="{Binding UserNameLabel}" />
+          <TextBox
+              AutomationProperties.Name="{Binding UserNameLabel}"
+              Text="{Binding UserName, Mode=TwoWay}" />
+          <TextBlock Text="{Binding PasswordLabel}" />
+          <TextBox
+              AutomationProperties.Name="{Binding PasswordLabel}"
+              PasswordChar="●"
+              Text="{Binding Password, Mode=TwoWay}" />
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
             <Button
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"
-                Command="{Binding ConnectCommand}"
-                Content="{Binding ConnectLabel}" />
+                Command="{Binding SignInCommand}"
+                Content="{Binding SignInLabel}" />
             <ComboBox
                 Grid.Column="1"
                 AutomationProperties.Name="{Binding LanguageLabel}"
@@ -40,6 +49,14 @@
               <ComboBoxItem Content="Italiano" Tag="it" />
             </ComboBox>
           </Grid>
+          <Button
+              HorizontalAlignment="Stretch"
+              Command="{Binding SignOutCommand}"
+              Content="{Binding SignOutLabel}" />
+          <Button
+              HorizontalAlignment="Stretch"
+              Command="{Binding ConnectCommand}"
+              Content="{Binding ConnectLabel}" />
           <TextBlock
               AutomationProperties.LiveSetting="Polite"
               Text="{Binding StatusMessage}"

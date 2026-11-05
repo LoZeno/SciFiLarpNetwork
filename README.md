@@ -18,7 +18,7 @@ flowchart LR
 
 During local frontend development, Vite proxies `/api` requests to the backend at `http://localhost:5000`. The management app uses that same API address by default. Neither client connects directly to PostgreSQL.
 
-The implementation is in progress. The backend currently provides API discovery/OpenAPI and the durable event-store foundation; the React and Avalonia applications provide their client shells. Most player-facing workflows, feature-specific administration, and authentication are not implemented yet. Follow the [implementation order](docs/specifications/SPEC-22-implementation-order.md) for delivery status.
+The implementation is in progress. The backend provides API discovery/OpenAPI, the durable event-store foundation, and local administrator authentication; the React and Avalonia applications provide their client shells. Most player-facing workflows, player authentication, and feature-specific administration are not implemented yet. Follow the [implementation order](docs/specifications/SPEC-22-implementation-order.md) for delivery status.
 
 ## Development prerequisites
 
@@ -73,7 +73,13 @@ DOTNET_ENVIRONMENT=Development dotnet run --project Backend/src/Host/SciFiLarpNe
 
 The API discovery entry point is `http://localhost:5000/api`; the initial versioned entry point is `/api/v1`, and the OpenAPI document is `/openapi/v1.json`. The host loads `appsettings.json` and `appsettings.{Environment}.json`. Environment variables override JSON settings; for example, `ConnectionStrings__EventStore` overrides `ConnectionStrings:EventStore`. Production settings intentionally contain no database credentials and require an operator-provided connection string. Never point integration tests at development or production data.
 
-See [backend API setup and configuration](docs/architecture/backend-api.md) for API details and deployment configuration.
+To create the first local administrator, run the interactive bootstrap command from the backend host after PostgreSQL is ready. In PowerShell, use the Development environment selected above and run:
+
+```powershell
+dotnet run --project Backend/src/Host/SciFiLarpNetwork.Backend.csproj -- --bootstrap-admin
+```
+
+On Linux or macOS, prefix the same command with `DOTNET_ENVIRONMENT=Development`. Enter the account name and hidden password prompts locally; no default administrator credentials are shipped. See [local administrator authentication](docs/architecture/administrator-authentication.md) for recovery, roles, session expiry, and HTTPS requirements, and [backend API setup](docs/architecture/backend-api.md) for deployment configuration.
 
 ## Run the frontend
 
@@ -107,7 +113,7 @@ Start the backend first, then run the Avalonia desktop client from the repositor
 dotnet run --project Management/src/SciFiLarpNetwork.Management.csproj
 ```
 
-The app reads and saves `appsettings.json` beside its executable. Its default API address is `http://localhost:5000/api`; ensure the backend is listening there or change `apiBaseUrl` in the settings file beside the executable. That directory must be writable for saved settings to persist. The management client communicates only through the backend API and does not access the database directly. See the [Avalonia management app guide](docs/architecture/avalonia-management-app.md) for settings behavior and limitations.
+The app reads and saves `appsettings.json` beside its executable. Its default API address is `http://localhost:5000/api`; ensure the backend is listening there or change `apiBaseUrl` in the settings file beside the executable. After bootstrapping an administrator, sign in and select **Connect** to refresh authenticated navigation. Remote administrator connections require HTTPS. That directory must be writable for saved settings to persist. The management client communicates only through the backend API and does not access the database directly. See the [Avalonia management app guide](docs/architecture/avalonia-management-app.md) for settings behavior and limitations.
 
 ## Run tests
 
@@ -131,6 +137,7 @@ See the [testing strategy](docs/architecture/testing-strategy.md) for test-proje
 - [Architecture and project layout](docs/architecture/project-layout.md)
 - [Product scope and domain language](docs/architecture/domain-language-and-scope.md)
 - [Backend API](docs/architecture/backend-api.md)
+- [Local administrator authentication](docs/architecture/administrator-authentication.md)
 - [React web client](docs/architecture/react-web-client.md)
 - [Avalonia management app](docs/architecture/avalonia-management-app.md)
 - [Datastore decision](docs/architecture/datastore-assessment.md)

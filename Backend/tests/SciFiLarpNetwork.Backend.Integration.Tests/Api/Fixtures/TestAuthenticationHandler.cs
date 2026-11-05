@@ -20,7 +20,13 @@ public sealed class TestAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Name, "contract-test")], SchemeName);
+        var claims = new List<Claim> { new(ClaimTypes.Name, "contract-test") };
+        if (Request.Headers.TryGetValue("X-Test-ActorId", out var actorId) && !string.IsNullOrWhiteSpace(actorId))
+        {
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, actorId.ToString()));
+        }
+
+        var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);
 

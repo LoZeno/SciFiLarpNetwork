@@ -18,7 +18,7 @@ docker compose up -d
 dotnet test SciFiLarpNetwork.slnx --configuration Release
 ```
 
-Compose initializes separate `scifilarnetwork_dev` and `scifilarnetwork_tests` databases. The integration test fixture defaults to the test database; its connection can be overridden with `ConnectionStrings__EventStore`. Never point that setting at development or production data. The same Docker Compose commands work on Windows, Linux, and macOS, with Docker selecting the native x64 or ARM64 PostgreSQL image.
+Compose initializes separate `scifilarnetwork_dev` and `scifilarnetwork_tests` databases. The integration test fixture defaults to the test database; its connection can be overridden with `ConnectionStrings__EventStore`. Never point that setting at development or production data. Authentication tests create and remove a uniquely named schema and require permission to do so; database-backed test classes run serially to avoid competing projection daemons. The same Docker Compose commands work on Windows, Linux, and macOS, with Docker selecting the native x64 or ARM64 PostgreSQL image.
 
 The Backend Integration test project collects line coverage and writes Cobertura XML and JSON reports under its `TestResults/coverage/` directory; it enforces an 80% line threshold. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded.
 
@@ -32,7 +32,7 @@ npm run check
 
 The frontend check includes coverage collection. Vitest measures all executable TypeScript under `src/`, writes text, LCOV, and HTML reports under `Frontend/coverage/`, and enforces 80% for both statements and lines.
 
-The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`, and uploads each platform's reports as workflow artifacts. The backend API and React SPA now have production code and active coverage thresholds; the management test project remains an empty scaffold. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented.
+The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`, and uploads each platform's reports as workflow artifacts. The backend, React SPA, and management application have active tests and coverage thresholds. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented.
 
 ## Test design
 

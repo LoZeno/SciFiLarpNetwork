@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using SciFiLarpNetwork.Common.ApiLinkPolicy;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
@@ -19,6 +20,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string _statusKey = "navigation.empty";
     private string? _apiErrorCode;
     private bool _isBusy;
+    private bool _isAuthenticated;
+    private string _userName = string.Empty;
+    private string _password = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
 
@@ -35,6 +39,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
+        SignInCommand = new AsyncCommand(SignInAsync, HandleCommandException, () => !IsBusy && !IsAuthenticated);
+        SignOutCommand = new AsyncCommand(SignOutAsync, HandleCommandException, () => !IsBusy && IsAuthenticated);
         OpenResourceCommand = new AsyncCommand(
             OpenResourceAsync,
             HandleCommandException,
@@ -43,6 +49,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
     }
 
     public AsyncCommand ConnectCommand { get; }
+
+    public AsyncCommand SignInCommand { get; }
+
+    public AsyncCommand SignOutCommand { get; }
 
     public AsyncCommand OpenResourceCommand { get; }
 
@@ -119,7 +129,56 @@ public sealed class MainWindowViewModel : ObservableViewModel
             _isBusy = value;
             OnPropertyChanged();
             ConnectCommand.NotifyCanExecuteChanged();
+            SignInCommand.NotifyCanExecuteChanged();
+            SignOutCommand.NotifyCanExecuteChanged();
             OpenResourceCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public bool IsAuthenticated
+    {
+        get => _isAuthenticated;
+        private set
+        {
+            if (_isAuthenticated == value)
+            {
+                return;
+            }
+
+            _isAuthenticated = value;
+            OnPropertyChanged();
+            SignInCommand.NotifyCanExecuteChanged();
+            SignOutCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public string UserName
+    {
+        get => _userName;
+        set
+        {
+            if (_userName == value)
+            {
+                return;
+            }
+
+            _userName = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string Password
+    {
+        get => _password;
+        set
+        {
+            if (_password == value)
+            {
+                return;
+            }
+
+            _password = value;
+            OnPropertyChanged();
         }
     }
 
@@ -130,6 +189,14 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public string ApiAddressLabel => _localizer.Translate("management.apiAddress", Locale);
 
     public string ConnectLabel => _localizer.Translate("management.connect", Locale);
+
+    public string UserNameLabel => _localizer.Translate("management.userName", Locale);
+
+    public string PasswordLabel => _localizer.Translate("management.password", Locale);
+
+    public string SignInLabel => _localizer.Translate("management.signIn", Locale);
+
+    public string SignOutLabel => _localizer.Translate("management.signOut", Locale);
 
     public string LanguageLabel => _localizer.Translate("common.language", Locale);
 
@@ -169,6 +236,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         try
         {
+            _ = ApiLinkPolicy.CreateApiRoot(ApiBaseUrl);
             _settingsStore.Save(new ManagementSettings(ApiBaseUrl, Locale));
             var discovery = await _apiClient.DiscoverAsync(ApiBaseUrl, Locale);
             foreach (var link in discovery.NavigationLinks)
@@ -210,6 +278,64 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
     }
 
+    private async Task SignInAsync()
+    {
+        IsBusy = true;
+        SetStatus("management.signingIn");
+        try
+        {
+            await _apiClient.SignInAsync(ApiBaseUrl, UserName, Password, Locale);
+            Password = string.Empty;
+            IsAuthenticated = true;
+            SetStatus("management.signedIn");
+        }
+        catch (ManagementApiException exception)
+        {
+            _apiErrorCode = exception.ErrorCode;
+            OnPropertyChanged(nameof(StatusMessage));
+        }
+        catch (HttpRequestException)
+        {
+            SetStatus("app.connectionError");
+        }
+        catch (UriFormatException)
+        {
+            SetStatus("validation.invalid");
+        }
+        catch (JsonException)
+        {
+            SetStatus("common.error");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SignOutAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            await _apiClient.SignOutAsync(ApiBaseUrl, Locale);
+            SetStatus("management.signedOut");
+        }
+        catch (ManagementApiException exception)
+        {
+            _apiErrorCode = exception.ErrorCode;
+            OnPropertyChanged(nameof(StatusMessage));
+        }
+        catch (HttpRequestException)
+        {
+            SetStatus("app.connectionError");
+        }
+        finally
+        {
+            ClearSessionState();
+            IsBusy = false;
+        }
+    }
+
     private async Task OpenResourceAsync()
     {
         if (SelectedNavigationItem is not { } item)
@@ -227,6 +353,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
         catch (ManagementApiException exception)
         {
+            if (exception.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                ClearSessionState();
+            }
+
             _apiErrorCode = exception.ErrorCode;
             OnPropertyChanged(nameof(StatusMessage));
         }
@@ -265,6 +396,19 @@ public sealed class MainWindowViewModel : ObservableViewModel
             }
         }
 
+        OnPropertyChanged(nameof(ResourceTitle));
+        OnPropertyChanged(nameof(ResourceSummary));
+        OnPropertyChanged(nameof(HasAvailableActions));
+    }
+
+    private void ClearSessionState()
+    {
+        IsAuthenticated = false;
+        Password = string.Empty;
+        NavigationItems.Clear();
+        SelectedNavigationItem = null;
+        AvailableActions.Clear();
+        _selectedResource = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
         OnPropertyChanged(nameof(HasAvailableActions));
@@ -332,7 +476,12 @@ public sealed class MainWindowViewModel : ObservableViewModel
     {
         try
         {
+            _ = ApiLinkPolicy.CreateApiRoot(ApiBaseUrl);
             _settingsStore.Save(new ManagementSettings(ApiBaseUrl, Locale));
+        }
+        catch (UriFormatException)
+        {
+            SetStatus("validation.invalid");
         }
         catch (IOException)
         {
@@ -363,6 +512,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(ConnectionHeading));
         OnPropertyChanged(nameof(ApiAddressLabel));
         OnPropertyChanged(nameof(ConnectLabel));
+        OnPropertyChanged(nameof(UserNameLabel));
+        OnPropertyChanged(nameof(PasswordLabel));
+        OnPropertyChanged(nameof(SignInLabel));
+        OnPropertyChanged(nameof(SignOutLabel));
         OnPropertyChanged(nameof(LanguageLabel));
         OnPropertyChanged(nameof(LocaleIndex));
         OnPropertyChanged(nameof(NavigationHeading));
