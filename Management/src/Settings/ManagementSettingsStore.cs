@@ -10,10 +10,7 @@ public sealed class ManagementSettingsStore(string filePath) : IManagementSettin
     };
 
     public static string DefaultSettingsPath =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "SciFiLarpNetwork",
-            "management-settings.json");
+        Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
     public ManagementSettings Load()
     {

@@ -22,6 +22,9 @@
     <None Include="..\..\..\Shared\SciFiLarpNetwork.ApiLinkPolicy\test-cases.json"
           Link="test-cases.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\src\appsettings.json"
+          Link="appsettings.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

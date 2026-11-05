@@ -18,6 +18,17 @@ public sealed class ManagementSettingsStoreTests
     public void DefaultSettingsPathIsAnAbsolutePath()
     {
         Assert.True(Path.IsPathFullyQualified(ManagementSettingsStore.DefaultSettingsPath));
+        Assert.Equal(
+            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+            ManagementSettingsStore.DefaultSettingsPath);
+    }
+
+    [Fact]
+    public void LoadReadsDefaultsFromAppSettingsFileBesideExecutable()
+    {
+        var store = new ManagementSettingsStore(ManagementSettingsStore.DefaultSettingsPath);
+
+        Assert.Equal(new ManagementSettings(), store.Load());
     }
 
     [Fact]
