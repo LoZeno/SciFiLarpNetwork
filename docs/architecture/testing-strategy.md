@@ -2,18 +2,25 @@
 
 ## Test projects and commands
 
-Backend and Avalonia management tests use xUnit with the .NET 10 test SDK. Test projects live with their application:
+Backend and Avalonia management tests use xUnit with the .NET 10 test SDK. Backend tests are separated by layer, with database-backed tests clearly identified as integration tests:
 
-- `Backend/tests/SciFiLarpNetwork.Backend.Tests`
+- `Backend/tests/SciFiLarpNetwork.Backend.Domain.Tests`
+- `Backend/tests/SciFiLarpNetwork.Backend.Application.Tests`
+- `Backend/tests/SciFiLarpNetwork.Backend.Infrastructure.Tests`
+- `Backend/tests/SciFiLarpNetwork.Backend.Host.Tests`
+- `Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests`
 - `Management/tests/SciFiLarpNetwork.Management.Tests`
 
-Run all .NET tests from the repository root:
+The integration tests require PostgreSQL. From the repository root, start the local database service before running all .NET tests:
 
 ```powershell
+docker compose up -d
 dotnet test SciFiLarpNetwork.slnx --configuration Release
 ```
 
-The .NET test projects collect line coverage and write Cobertura XML and JSON reports under each project's `TestResults/coverage/` directory. The console summary is the human-readable report. The 80% line threshold is enforced for each application test project when its corresponding production project (`Backend/src/SciFiLarpNetwork.Backend.csproj` or `Management/src/SciFiLarpNetwork.Management.csproj`) is introduced. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded.
+Compose initializes separate `scifilarnetwork_dev` and `scifilarnetwork_tests` databases. The integration test fixture defaults to the test database; its connection can be overridden with `ConnectionStrings__EventStore`. Never point that setting at development or production data. The same Docker Compose commands work on Windows, Linux, and macOS, with Docker selecting the native x64 or ARM64 PostgreSQL image.
+
+The Backend Integration test project collects line coverage and writes Cobertura XML and JSON reports under its `TestResults/coverage/` directory; it enforces an 80% line threshold. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded.
 
 Run the frontend's TypeScript tests and checks separately:
 
@@ -31,7 +38,7 @@ The GitHub Actions workflow runs both command paths on pull requests and pushes 
 
 - Keep domain tests deterministic and fast; test observable behavior and game-rule boundaries, not implementation details.
 - Use xUnit for .NET unit, integration, and backend contract tests. Keep frontend tests in the frontend's TypeScript-compatible Vitest suite.
-- Integration tests own their data and service lifetime. Use a unique temporary directory/database or isolated test container per test run, clean it up reliably, and never depend on a developer's local event store, credentials, DNS, or machine-specific paths.
+- Integration tests own their data and service lifetime. Use the dedicated `scifilarnetwork_tests` database from the local Compose service (or an isolated test container), keep test data isolated from development and production, and never depend on credentials, DNS, or machine-specific paths beyond the documented prerequisites.
 - Do not share mutable test state across concurrently executing tests. Avoid timing assumptions, public network calls, real external services, and order-dependent fixtures.
 - Exercise the persisted event source, projection rebuilds, optimistic concurrency, MVC behavior, and contracts at appropriate integration boundaries when those implementations exist.
 - Event-sourcing test obligations are defined in [event-sourced domain](event-sourced-domain.md): PostgreSQL/Marten store and projection integration cases accompany backend persistence implementation, and aggregate transition cases accompany the relevant feature work. The provider decision is recorded in [datastore decision](datastore-assessment.md).
