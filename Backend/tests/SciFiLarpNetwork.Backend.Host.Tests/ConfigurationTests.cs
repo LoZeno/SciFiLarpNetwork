@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.EnvironmentVariables;
 
 namespace SciFiLarpNetwork.Backend.Tests.Host;
 
@@ -9,7 +10,7 @@ public sealed class ConfigurationTests
     [Fact]
     public void DevelopmentLoadsLocalEventStoreConnectionString()
     {
-        var configuration = CreateConfiguration("Development");
+        var configuration = CreateConfiguration("Development", includeEnvironmentVariables: false);
 
         Assert.Equal(
             "Host=localhost;Port=5432;Database=scifilarnetwork_dev;Username=postgres;Password=postgres",
@@ -19,7 +20,7 @@ public sealed class ConfigurationTests
     [Fact]
     public void ProductionDoesNotInheritDevelopmentConnectionString()
     {
-        var configuration = CreateConfiguration("Production");
+        var configuration = CreateConfiguration("Production", includeEnvironmentVariables: false);
 
         Assert.Equal(string.Empty, configuration.GetConnectionString("EventStore"));
     }
@@ -45,7 +46,9 @@ public sealed class ConfigurationTests
         }
     }
 
-    private static ConfigurationManager CreateConfiguration(string environmentName)
+    private static ConfigurationManager CreateConfiguration(
+        string environmentName,
+        bool includeEnvironmentVariables = true)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -53,6 +56,16 @@ public sealed class ConfigurationTests
             ContentRootPath = AppContext.BaseDirectory,
             EnvironmentName = environmentName
         });
+
+        if (!includeEnvironmentVariables)
+        {
+            foreach (var source in builder.Configuration.Sources
+                         .OfType<EnvironmentVariablesConfigurationSource>()
+                         .ToArray())
+            {
+                builder.Configuration.Sources.Remove(source);
+            }
+        }
 
         return builder.Configuration;
     }
