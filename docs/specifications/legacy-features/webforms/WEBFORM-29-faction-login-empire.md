@@ -12,4 +12,4 @@ Sets legacy network/faction value 2 and a corresponding theme; the route itself 
 - The selected network is checked against server configuration and character authorization before establishing a session.
 - Theme/branding is data-driven and is not used as a security boundary.
 - A failed/unauthorized sign-in clears the attempted identity and network context and shows a recoverable message.
-- Do not expose a production simulated-intrusion flow from this sign-in route; any such workflow is deferred to Phase F and must follow CROSSCUT-03.
+- Do not expose a production simulated-intrusion flow from this sign-in route; any such workflow is deferred to Phase G and must follow CROSSCUT-03.

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>SciFiLarpNetwork.Backend.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Marten" Version="9.57.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\SciFiLarpNetwork.Backend.Application.csproj" />
+    <ProjectReference Include="..\Domain\SciFiLarpNetwork.Backend.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

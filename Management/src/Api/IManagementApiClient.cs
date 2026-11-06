@@ -5,6 +5,23 @@ namespace SciFiLarpNetwork.Management.Api;
 
 public interface IManagementApiClient
 {
+    Task<ManagementSession> SignInAsync(
+        string apiBaseUrl,
+        string userName,
+        string password,
+        string locale,
+        CancellationToken cancellationToken = default);
+
+    Task SignOutAsync(
+        string apiBaseUrl,
+        string locale,
+        CancellationToken cancellationToken = default);
+
+    Task<ManagementSession> RenewSessionAsync(
+        string apiBaseUrl,
+        string locale,
+        CancellationToken cancellationToken = default);
+
     Task<ApiDiscovery> DiscoverAsync(
         string apiBaseUrl,
         string locale,
@@ -23,3 +40,5 @@ public interface IManagementApiClient
         string locale,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record ManagementSession(string UserName, string Role, DateTimeOffset ExpiresAtUtc);

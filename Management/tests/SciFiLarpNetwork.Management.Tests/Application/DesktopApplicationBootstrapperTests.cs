@@ -47,6 +47,26 @@ public sealed class DesktopApplicationBootstrapperTests(AvaloniaHeadlessFixture 
 
     private sealed class TestApiClient : IManagementApiClient
     {
+        public Task<ManagementSession> SignInAsync(
+            string apiBaseUrl,
+            string userName,
+            string password,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<ManagementSession>(new NotImplementedException());
+
+        public Task SignOutAsync(
+            string apiBaseUrl,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException(new NotImplementedException());
+
+        public Task<ManagementSession> RenewSessionAsync(
+            string apiBaseUrl,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<ManagementSession>(new NotImplementedException());
+
         public Task<ApiDiscovery> DiscoverAsync(
             string apiBaseUrl,
             string locale,

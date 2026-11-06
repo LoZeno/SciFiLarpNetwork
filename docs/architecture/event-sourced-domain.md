@@ -1,5 +1,7 @@
 # Event-sourced domain
 
+The backend project dependency and folder boundaries are defined in [backend DDD structure](backend-ddd-structure.md).
+
 ## Authority and responsibilities
 
 The append-only event history is the authoritative record of accepted domain changes. A projection, snapshot, cache, or user-interface view is derived state: it may be discarded and rebuilt, and it must never be treated as the only surviving record of a change.

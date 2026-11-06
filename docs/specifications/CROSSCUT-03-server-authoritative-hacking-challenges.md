@@ -2,9 +2,9 @@
 
 ## Purpose and dependencies
 
-Provide the durable, server-authoritative challenge workflow consumed by the fictional interaction in [CROSSCUT-02](CROSSCUT-02-cinematic-hacking.md) and by the Phase F Web Forms-derived features. This specification owns challenge rules and lifecycle; each consuming feature still owns its target eligibility, permitted outcome, and any scoped in-game access it grants.
+Provide the durable, server-authoritative challenge workflow consumed by the fictional interaction in [CROSSCUT-02](CROSSCUT-02-cinematic-hacking.md) and by the Phase G Web Forms-derived features. This specification owns challenge rules and lifecycle; each consuming feature still owns its target eligibility, permitted outcome, and any scoped in-game access it grants.
 
-Implement this after the character, skill, event/network, authentication, and event-store capabilities required by it are available, and before WEBFORM-16 starts a production challenge. Use the ASP.NET Core MVC/Siren API and PostgreSQL/Marten event store. Do not introduce placeholder player, character, network-account, or authentication models solely to bypass those dependencies.
+Implement this after the character, skill, event/network, authentication, and durable event-store capabilities required by it are available, and before WEBFORM-16 starts a production challenge. Use the ASP.NET Core MVC/Siren API and PostgreSQL/Marten event store. Do not introduce placeholder player, character, network-account, or authentication models solely to bypass those dependencies.
 
 The challenge is a LARP mechanic, not a real security boundary. It must not be used to protect real infrastructure, application credentials, or operating-system resources.
 

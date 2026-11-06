@@ -18,6 +18,17 @@ public sealed class ManagementSettingsStoreTests
     public void DefaultSettingsPathIsAnAbsolutePath()
     {
         Assert.True(Path.IsPathFullyQualified(ManagementSettingsStore.DefaultSettingsPath));
+        Assert.Equal(
+            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+            ManagementSettingsStore.DefaultSettingsPath);
+    }
+
+    [Fact]
+    public void LoadReadsDefaultsFromAppSettingsFileBesideExecutable()
+    {
+        var store = new ManagementSettingsStore(ManagementSettingsStore.DefaultSettingsPath);
+
+        Assert.Equal(new ManagementSettings(), store.Load());
     }
 
     [Fact]
@@ -30,6 +41,21 @@ public sealed class ManagementSettingsStoreTests
         store.Save(settings);
 
         Assert.Equal(settings, store.Load());
+    }
+
+    [Theory]
+    [InlineData("http://user:secret@localhost:5000/api")]
+    [InlineData("http://localhost:5000/api?token=secret")]
+    public void SaveRejectsUrlsContainingCredentialsWithoutReplacingSettings(string apiBaseUrl)
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new ManagementSettingsStore(Path.Combine(directory.Path, "settings.json"));
+        var original = new ManagementSettings();
+        store.Save(original);
+
+        Assert.Throws<UriFormatException>(() => store.Save(new ManagementSettings(apiBaseUrl, "en")));
+
+        Assert.Equal(original, store.Load());
     }
 
     [Fact]

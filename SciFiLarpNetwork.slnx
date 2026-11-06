@@ -1,10 +1,31 @@
 <Solution>
   <Folder Name="/Backend/" />
-  <Folder Name="/Backend/src/">
-    <Project Path="Backend/src/SciFiLarpNetwork.Backend.csproj" />
+  <Folder Name="/Backend/src/Domain/">
+    <Project Path="Backend/src/Domain/SciFiLarpNetwork.Backend.Domain.csproj" />
   </Folder>
-  <Folder Name="/Backend/tests/">
-    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Tests/SciFiLarpNetwork.Backend.Tests.csproj" />
+  <Folder Name="/Backend/src/Application/">
+    <Project Path="Backend/src/Application/SciFiLarpNetwork.Backend.Application.csproj" />
+  </Folder>
+  <Folder Name="/Backend/src/Infrastructure/">
+    <Project Path="Backend/src/Infrastructure/SciFiLarpNetwork.Backend.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Backend/src/Host/">
+    <Project Path="Backend/src/Host/SciFiLarpNetwork.Backend.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/Domain/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Domain.Tests/SciFiLarpNetwork.Backend.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/Application/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Application.Tests/SciFiLarpNetwork.Backend.Application.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/Infrastructure/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Infrastructure.Tests/SciFiLarpNetwork.Backend.Infrastructure.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/Host/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Host.Tests/SciFiLarpNetwork.Backend.Host.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Backend/tests/Integration/">
+    <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests/SciFiLarpNetwork.Backend.Integration.Tests.csproj" />
   </Folder>
   <Folder Name="/Shared/" />
   <Folder Name="/Shared/SciFiLarpNetwork.ApiLinkPolicy/">

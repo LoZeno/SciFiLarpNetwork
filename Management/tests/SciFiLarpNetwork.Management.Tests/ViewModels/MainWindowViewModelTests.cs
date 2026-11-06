@@ -219,6 +219,71 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SignInCommandClearsPasswordAndDoesNotPersistSessionCredentials()
+    {
+        var apiClient = new StubApiClient();
+        var settingsStore = new StubSettingsStore();
+        var viewModel = CreateViewModel(apiClient, settingsStore);
+        viewModel.UserName = "operator";
+        viewModel.Password = "a-long-local-password";
+
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        Assert.True(viewModel.IsAuthenticated);
+        Assert.Empty(viewModel.Password);
+        Assert.Equal("a-long-local-password", apiClient.LastSignInPassword);
+        Assert.Null(settingsStore.SavedSettings);
+    }
+
+    [Fact]
+    public async Task CredentialBearingApiAddressIsNotSaved()
+    {
+        var settingsStore = new StubSettingsStore();
+        var viewModel = CreateViewModel(new StubApiClient(), settingsStore);
+        viewModel.ApiBaseUrl = "http://user:secret@localhost:5000/api";
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+        viewModel.Locale = "it";
+
+        Assert.Null(settingsStore.SavedSettings);
+        Assert.Equal("Inserisci un valore valido.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ExpiredSessionClearsAuthenticatedUiState()
+    {
+        var apiClient = new StubApiClient
+        {
+            ResourceException = new ManagementApiException("errors.unauthorized", HttpStatusCode.Unauthorized)
+        };
+        var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+        viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        await viewModel.OpenResourceCommand.ExecuteAsync();
+
+        Assert.False(viewModel.IsAuthenticated);
+        Assert.Empty(viewModel.NavigationItems);
+        Assert.Equal("Sign in to continue.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task SignOutClearsSessionAndProtectedNavigation()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+        viewModel.NavigationItems.Add(new NavigationItem("Accounts", "/api/v1/admin/accounts"));
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        Assert.False(viewModel.IsAuthenticated);
+        Assert.Empty(viewModel.NavigationItems);
+        Assert.Null(viewModel.SelectedNavigationItem);
+    }
+
+    [Fact]
     public async Task OpenResourceCommandDoesNothingWithoutSelection()
     {
         var apiClient = new StubApiClient();
@@ -270,11 +335,41 @@ public sealed class MainWindowViewModelTests
 
         public Exception? DiscoveryException { get; init; }
 
+        public Exception? ResourceException { get; init; }
+
+        public Exception? SignInException { get; init; }
+
         public Task<ApiDiscovery>? DiscoveryTask { get; init; }
 
         public SirenEntity Resource { get; init; } = MainWindowViewModelTests.Resource("{}");
 
         public string? LastResourceHref { get; private set; }
+
+        public string? LastSignInPassword { get; private set; }
+
+        public Task<ManagementSession> SignInAsync(
+            string apiBaseUrl,
+            string userName,
+            string password,
+            string locale,
+            CancellationToken cancellationToken = default)
+        {
+            LastSignInPassword = password;
+            return SignInException is not null
+                ? Task.FromException<ManagementSession>(SignInException)
+                : Task.FromResult(new ManagementSession(userName, "administrator", DateTimeOffset.UtcNow.AddHours(8)));
+        }
+
+        public Task SignOutAsync(
+            string apiBaseUrl,
+            string locale,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<ManagementSession> RenewSessionAsync(
+            string apiBaseUrl,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ManagementSession("operator", "administrator", DateTimeOffset.UtcNow.AddHours(8)));
 
         public Task<ApiDiscovery> DiscoverAsync(
             string apiBaseUrl,
@@ -296,7 +391,9 @@ public sealed class MainWindowViewModelTests
             CancellationToken cancellationToken = default)
         {
             LastResourceHref = href;
-            return Task.FromResult(Resource);
+            return ResourceException is null
+                ? Task.FromResult(Resource)
+                : Task.FromException<SirenEntity>(ResourceException);
         }
 
         public Task<SirenEntity> SubmitActionAsync(
