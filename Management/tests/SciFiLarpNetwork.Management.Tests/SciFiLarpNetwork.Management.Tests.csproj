@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
+    <PackageReference Include="ProTest.Avalonia.Headless.XUnit.v4" Version="12.1.4" />
     <PackageReference Include="coverlet.MTP" Version="10.1.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

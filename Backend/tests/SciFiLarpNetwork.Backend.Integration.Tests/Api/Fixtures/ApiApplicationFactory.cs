@@ -49,4 +49,5 @@ public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
             });
         });
     }
+
 }
