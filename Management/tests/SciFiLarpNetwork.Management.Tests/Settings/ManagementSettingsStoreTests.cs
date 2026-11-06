@@ -17,7 +17,6 @@ public sealed class ManagementSettingsStoreTests
     [Fact]
     public void DefaultSettingsPathIsAnAbsolutePath()
     {
-        Assert.True(Path.IsPathFullyQualified(ManagementSettingsStore.DefaultSettingsPath));
         Assert.Equal(
             Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
             ManagementSettingsStore.DefaultSettingsPath);
@@ -46,14 +45,31 @@ public sealed class ManagementSettingsStoreTests
     [Theory]
     [InlineData("http://user:secret@localhost:5000/api")]
     [InlineData("http://localhost:5000/api?token=secret")]
-    public void SaveRejectsUrlsContainingCredentialsWithoutReplacingSettings(string apiBaseUrl)
+    public void SaveRejectsUrlsContainingCredentials(string apiBaseUrl)
+    {
+        using var directory = new TemporaryDirectory();
+        var store = new ManagementSettingsStore(Path.Combine(directory.Path, "settings.json"));
+
+        Assert.Throws<UriFormatException>(() => store.Save(new ManagementSettings(apiBaseUrl, "en")));
+    }
+
+    [Theory]
+    [InlineData("http://user:secret@localhost:5000/api")]
+    [InlineData("http://localhost:5000/api?token=secret")]
+    public void SaveWithCredentialBearingUrlDoesNotReplaceExistingSettings(string apiBaseUrl)
     {
         using var directory = new TemporaryDirectory();
         var store = new ManagementSettingsStore(Path.Combine(directory.Path, "settings.json"));
         var original = new ManagementSettings();
         store.Save(original);
 
-        Assert.Throws<UriFormatException>(() => store.Save(new ManagementSettings(apiBaseUrl, "en")));
+        try
+        {
+            store.Save(new ManagementSettings(apiBaseUrl, "en"));
+        }
+        catch (UriFormatException)
+        {
+        }
 
         Assert.Equal(original, store.Load());
     }

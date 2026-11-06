@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
@@ -69,13 +69,24 @@ describe('React application shell', () => {
 
     renderApp();
 
-    expect(await screen.findByText('API connection established')).toBeTruthy();
+    const connectionStatus = await screen.findByText('API connection established');
+    const connectionStatusText = connectionStatus.textContent;
     fireEvent.click(screen.getByRole('link', { name: 'News' }));
 
-    expect(await screen.findByRole('heading', { name: 'Network news' })).toBeTruthy();
-    expect(screen.getByText('A new transmission')).toBeTruthy();
-    expect(request).toHaveBeenCalledTimes(3);
-    expect(request.mock.calls[2]?.[0]).toEqual(new URL('http://localhost:3000/api/v1/news'));
+    const heading = await screen.findByRole('heading', { name: 'Network news' });
+    expect({
+      connectionStatus: connectionStatusText,
+      heading: heading.textContent,
+      headline: screen.getByText('A new transmission').textContent,
+      requestCount: request.mock.calls.length,
+      resourceUrl: String(request.mock.calls[2]?.[0]),
+    }).toEqual({
+      connectionStatus: 'API connection established',
+      heading: 'Network news',
+      headline: 'A new transmission',
+      requestCount: 3,
+      resourceUrl: 'http://localhost:3000/api/v1/news',
+    });
   });
 
   it('submits an advertised action using only its typed fields', async () => {
@@ -105,21 +116,31 @@ describe('React application shell', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'News' }));
     const message = await screen.findByRole('textbox', { name: 'Message' });
     fireEvent.change(message, { target: { value: 'Hello network' } });
+    const submittedMessage = (message as HTMLInputElement).value;
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
       target: { value: 'it' },
     });
-    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveProperty(
-      'value',
-      'Hello network',
-    );
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
-    expect(await screen.findByRole('heading', { name: 'Sent' })).toBeTruthy();
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(4));
-    expect(request.mock.calls[3]?.[1]).toMatchObject({
-      method: 'POST',
-      body: JSON.stringify({ body: 'Hello network' }),
-      headers: { 'Accept-Language': 'it' },
+    const heading = await screen.findByRole('heading', { name: 'Sent' });
+    expect({
+      message: submittedMessage,
+      sentHeading: heading.textContent,
+      requestCount: request.mock.calls.length,
+      request: request.mock.calls[3]?.[1],
+    }).toEqual({
+      message: 'Hello network',
+      sentHeading: 'Sent',
+      requestCount: 4,
+      request: expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ body: 'Hello network' }),
+        headers: {
+          Accept: sirenMediaType,
+          'Accept-Language': 'it',
+          'Content-Type': 'application/json',
+        },
+      }),
     });
   });
 
@@ -153,8 +174,11 @@ describe('React application shell', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
-    expect(await screen.findByText('Action completed.')).toBeTruthy();
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(5));
+    const feedback = await screen.findByText('Action completed.');
+    expect({ feedback: feedback.textContent, requestCount: request.mock.calls.length }).toEqual({
+      feedback: 'Action completed.',
+      requestCount: 5,
+    });
   });
 
   it('localizes a stable API error code after language selection', async () => {
@@ -167,22 +191,37 @@ describe('React application shell', () => {
       );
 
     renderApp();
-    expect(await screen.findByText('API connection established')).toBeTruthy();
+    await screen.findByText('API connection established');
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
       target: { value: 'it' },
     });
     fireEvent.click(await screen.findByRole('link', { name: 'News' }));
 
-    expect(
-      await screen.findByText('Non è stato possibile trovare le informazioni richieste.'),
-    ).toBeTruthy();
-    expect(document.documentElement.lang).toBe('it');
-    expect(request.mock.calls[2]?.[1]).toMatchObject({
-      headers: { Accept: sirenMediaType, 'Accept-Language': 'it' },
+    const message = await screen.findByText(
+      'Non è stato possibile trovare le informazioni richieste.',
+    );
+    expect({
+      message: message.textContent,
+      documentLanguage: document.documentElement.lang,
+      requestHeaders: request.mock.calls[2]?.[1]?.headers,
+    }).toEqual({
+      message: 'Non è stato possibile trovare le informazioni richieste.',
+      documentLanguage: 'it',
+      requestHeaders: { Accept: sirenMediaType, 'Accept-Language': 'it' },
     });
   });
 
-  it('shows a translated connection error and retries the API root', async () => {
+  it('shows a translated connection error when the API is offline', async () => {
+    const request = vi.mocked(fetch);
+    request.mockRejectedValueOnce(new TypeError('offline'));
+
+    renderApp();
+    const alert = await screen.findByRole('alert');
+
+    expect(alert.textContent).toContain('The network service is unavailable');
+  });
+
+  it('retries API discovery after the retry action', async () => {
     const request = vi.mocked(fetch);
     request
       .mockRejectedValueOnce(new TypeError('offline'))
@@ -190,10 +229,14 @@ describe('React application shell', () => {
       .mockResolvedValueOnce(sirenResponse(versionRoot()));
 
     renderApp();
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    await screen.findByRole('alert');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
-    expect(await screen.findByText('API connection established')).toBeTruthy();
+    const status = await screen.findByText('API connection established');
+    expect({ status: status.textContent, requestCount: request.mock.calls.length }).toEqual({
+      status: 'API connection established',
+      requestCount: 3,
+    });
   });
 
   it('does not render an unsupported action as an executable form', async () => {
@@ -220,7 +263,13 @@ describe('React application shell', () => {
     renderApp();
     fireEvent.click(await screen.findByRole('link', { name: 'News' }));
 
-    expect(await screen.findByText(/uses fields or a request format/i)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Unsupported action' })).toBeNull();
+    const warning = await screen.findByText(/uses fields or a request format/i);
+    expect({
+      warning: warning.textContent,
+      executableButton: screen.queryByRole('button', { name: 'Unsupported action' }),
+    }).toEqual({
+      warning: expect.stringMatching(/uses fields or a request format/i),
+      executableButton: null,
+    });
   });
 });

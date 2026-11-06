@@ -36,15 +36,24 @@ describe('QR capture test page', () => {
     vi.stubGlobal('fetch', request);
     renderTestPage();
 
-    expect(await screen.findByRole('heading', { name: 'Scan a QR code' })).toBeTruthy();
-    expect(screen.getByRole('textbox', { name: 'Decoded QR code' })).toHaveProperty('value', '');
-    expect(request).not.toHaveBeenCalled();
-    expect(document.querySelector('.application-shell')).toBeNull();
+    const heading = await screen.findByRole('heading', { name: 'Scan a QR code' });
+    expect({
+      heading: heading.textContent,
+      decodedValue: (screen.getByRole('textbox', { name: 'Decoded QR code' }) as HTMLInputElement)
+        .value,
+      requestCount: request.mock.calls.length,
+      applicationShell: document.querySelector('.application-shell'),
+    }).toEqual({
+      heading: 'Scan a QR code',
+      decodedValue: '',
+      requestCount: 0,
+      applicationShell: null,
+    });
   });
 
-  it('shows decoded content below the scanner and clears it on request', () => {
+  it('shows decoded content below the scanner after explicit submission', () => {
     const scanner = createScanner();
-    const { unmount } = render(
+    render(
       <LocaleProvider>
         <QrCaptureTestPage scanner={scanner} />
       </LocaleProvider>,
@@ -54,13 +63,33 @@ describe('QR capture test page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use code' }));
 
     const result = screen.getByRole('textbox', { name: 'Decoded QR code' });
-    expect(result).toHaveProperty('value', 'decoded-test-code');
-    expect(
-      result.compareDocumentPosition(screen.getByRole('button', { name: 'Clear result' })),
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const clearButton = screen.getByRole('button', { name: 'Clear result' });
+    const followsResult =
+      result.compareDocumentPosition(clearButton) === Node.DOCUMENT_POSITION_FOLLOWING;
 
+    expect({
+      decodedValue: (result as HTMLInputElement).value,
+      clearButtonFollowsResult: followsResult,
+    }).toEqual({
+      decodedValue: 'decoded-test-code',
+      clearButtonFollowsResult: true,
+    });
+  });
+
+  it('clears previously decoded content on request', () => {
+    const scanner = createScanner();
+    render(
+      <LocaleProvider>
+        <QrCaptureTestPage scanner={scanner} />
+      </LocaleProvider>,
+    );
+    fireEvent.change(screen.getByLabelText('Enter a code or use a keyboard-wedge scanner'), {
+      target: { value: 'decoded-test-code' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Use code' }));
+    const result = screen.getByRole('textbox', { name: 'Decoded QR code' }) as HTMLInputElement;
     fireEvent.click(screen.getByRole('button', { name: 'Clear result' }));
-    expect(result).toHaveProperty('value', '');
-    unmount();
+
+    expect(result.value).toBe('');
   });
 });

@@ -42,10 +42,10 @@ jobs:
         with:
           name: dotnet-coverage
           path: |
-            Backend/tests/**/TestResults/coverage/coverage.cobertura.xml
-            Backend/tests/**/TestResults/coverage/coverage.json
-            Management/tests/**/TestResults/coverage/coverage.cobertura.xml
-            Management/tests/**/TestResults/coverage/coverage.json
+            Backend/tests/**/TestResults/coverage/*.cobertura.*.xml
+            Backend/tests/**/TestResults/coverage/*.json
+            Management/tests/**/TestResults/coverage/*.cobertura.*.xml
+            Management/tests/**/TestResults/coverage/*.json
           if-no-files-found: error
 
   frontend-checks:

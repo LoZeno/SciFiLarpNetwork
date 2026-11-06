@@ -17,6 +17,6 @@ public sealed class AsyncCommandTests
 
         ((ICommand)command).Execute(null);
 
-        Assert.Same(exception, await reportedException.Task.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.Same(exception, await reportedException.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken));
     }
 }

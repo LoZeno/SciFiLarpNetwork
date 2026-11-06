@@ -30,18 +30,27 @@ public sealed class ManagementApiClientTests : IDisposable
             };
         });
 
-        var discovery = await client.DiscoverAsync("http://localhost:5000/api", "it");
+        var discovery = await client.DiscoverAsync("http://localhost:5000/api", "it", TestContext.Current.CancellationToken);
 
-        Assert.Equal("api-version", discovery.ApiResource.Class![0]);
-        var link = Assert.Single(discovery.NavigationLinks);
-        Assert.Equal("Messages", link.Title);
-        Assert.Equal(2, requests.Count);
-        Assert.All(requests, request =>
-        {
-            Assert.Contains(request.Headers.Accept, header =>
-                header.MediaType == "application/vnd.siren+json");
-            Assert.Equal("it", Assert.Single(request.Headers.AcceptLanguage).Value);
-        });
+        Assert.Equal(
+            new
+            {
+                ApiClass = "api-version",
+                Navigation = "Messages|/api/v1/messages",
+                RequestCount = 2,
+                AcceptedMediaTypes = "application/vnd.siren+json,application/vnd.siren+json",
+                AcceptedLanguages = "it,it"
+            },
+            new
+            {
+                ApiClass = discovery.ApiResource.Class![0],
+                Navigation = string.Join('|', discovery.NavigationLinks.Select(link => $"{link.Title}|{link.Href}")),
+                RequestCount = requests.Count,
+                AcceptedMediaTypes = string.Join(',', requests.Select(request =>
+                    string.Join(',', request.Headers.Accept.Select(header => header.MediaType)))),
+                AcceptedLanguages = string.Join(',', requests.Select(request =>
+                    string.Join(',', request.Headers.AcceptLanguage.Select(header => header.Value))))
+            });
     }
 
     [Fact]
@@ -55,11 +64,16 @@ public sealed class ManagementApiClientTests : IDisposable
                 """{"class":["api"],"links":[{"rel":["urn:scifilarnetwork:rels:latest-version"],"href":"https://outside.invalid/api/v1"}]}""");
         });
 
-        var discovery = await client.DiscoverAsync("http://localhost/api", "en");
+        var discovery = await client.DiscoverAsync("http://localhost/api", "en", TestContext.Current.CancellationToken);
 
-        Assert.Equal("api", discovery.ApiResource.Class![0]);
-        Assert.Empty(discovery.NavigationLinks);
-        Assert.Equal(1, requestCount);
+        Assert.Equal(
+            new { ApiClass = "api", NavigationCount = 0, RequestCount = 1 },
+            new
+            {
+                ApiClass = discovery.ApiResource.Class![0],
+                NavigationCount = discovery.NavigationLinks.Count,
+                RequestCount = requestCount
+            });
     }
 
     [Theory]
@@ -73,7 +87,7 @@ public sealed class ManagementApiClientTests : IDisposable
         var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
 
         await Assert.ThrowsAsync<UriFormatException>(() =>
-            client.DiscoverAsync(apiBaseUrl, "en"));
+            client.DiscoverAsync(apiBaseUrl, "en", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -82,7 +96,7 @@ public sealed class ManagementApiClientTests : IDisposable
         var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.GetResourceAsync("http://localhost/api", "/api-other/messages", "en"));
+            client.GetResourceAsync("http://localhost/api", "/api-other/messages", "en", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -93,11 +107,14 @@ public sealed class ManagementApiClientTests : IDisposable
                 """{"class":["error"],"properties":{"code":"errors.forbidden"}}""",
                 HttpStatusCode.Forbidden));
 
-        var exception = await Assert.ThrowsAsync<ManagementApiException>(() =>
-            client.DiscoverAsync("http://localhost/api", "en"));
+        var exception = await Record.ExceptionAsync(() =>
+            client.DiscoverAsync("http://localhost/api", "en", TestContext.Current.CancellationToken));
 
-        Assert.Equal("errors.forbidden", exception.ErrorCode);
-        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.Equal(
+            new ManagementApiExceptionSnapshot("errors.forbidden", HttpStatusCode.Forbidden),
+            exception is ManagementApiException apiException
+                ? new ManagementApiExceptionSnapshot(apiException.ErrorCode, apiException.StatusCode)
+                : null);
     }
 
     [Fact]
@@ -110,7 +127,7 @@ public sealed class ManagementApiClientTests : IDisposable
             });
 
         await Assert.ThrowsAsync<JsonException>(() =>
-            client.GetResourceAsync("http://localhost/api", "/api/v1", "en"));
+            client.GetResourceAsync("http://localhost/api", "/api/v1", "en", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -123,7 +140,7 @@ public sealed class ManagementApiClientTests : IDisposable
             });
 
         await Assert.ThrowsAsync<JsonException>(() =>
-            client.GetResourceAsync("http://localhost/api", "/api/v1", "en"));
+            client.GetResourceAsync("http://localhost/api", "/api/v1", "en", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -134,7 +151,7 @@ public sealed class ManagementApiClientTests : IDisposable
         var client = CreateClient(request =>
         {
             sentRequest = request;
-            sentBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            sentBody = request.Content!.ReadAsStringAsync(TestContext.Current.CancellationToken).GetAwaiter().GetResult();
             return SirenResponse("""{"class":["message"]}""");
         });
         using var body = JsonDocument.Parse("""{"message":"hello"}""");
@@ -152,39 +169,49 @@ public sealed class ManagementApiClientTests : IDisposable
             "http://localhost/api",
             action,
             body.RootElement,
-            "it");
+            "it",
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal("message", result.Class![0]);
-        Assert.NotNull(sentRequest);
-        Assert.Equal(HttpMethod.Post, sentRequest.Method);
-        Assert.Equal("it", Assert.Single(sentRequest.Headers.AcceptLanguage).Value);
-        Assert.Equal("""{"message":"hello"}""", sentBody);
+        Assert.Equal(
+            new { ResourceClass = "message", Method = "POST", Language = "it", Body = """{"message":"hello"}""" },
+            new
+            {
+                ResourceClass = result.Class![0],
+                Method = sentRequest?.Method.Method ?? string.Empty,
+                Language = sentRequest?.Headers.AcceptLanguage.SingleOrDefault()?.Value ?? string.Empty,
+                Body = sentBody ?? string.Empty
+            });
     }
 
-    [Fact]
-    public async Task SubmitActionAsyncRejectsUnsupportedMethodsAndPayloadTypes()
+    [Theory]
+    [InlineData("method")]
+    [InlineData("payload-type")]
+    [InlineData("href")]
+    public async Task SubmitActionAsyncRejectsUnsupportedMethodsAndPayloadTypes(string invalidPart)
     {
         var client = CreateClient(_ => throw new InvalidOperationException("No request expected."));
         using var body = JsonDocument.Parse("""{"value":1}""");
-        var unsupportedMethod = new SirenAction { Name = "submit", Href = "/api/v1", Method = "TRACE" };
-        var unsupportedType = new SirenAction
+        var action = invalidPart switch
         {
-            Name = "submit",
-            Href = "/api/v1",
-            Method = "POST",
-            Type = "text/plain"
+            "method" => new SirenAction { Name = "submit", Href = "/api/v1", Method = "TRACE" },
+            "payload-type" => new SirenAction
+            {
+                Name = "submit",
+                Href = "/api/v1",
+                Method = "POST",
+                Type = "text/plain"
+            },
+            "href" => new SirenAction { Name = "submit", Href = "", Method = "POST" },
+            _ => throw new ArgumentOutOfRangeException(nameof(invalidPart))
         };
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.SubmitActionAsync("http://localhost/api", unsupportedMethod, null, "en"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.SubmitActionAsync("http://localhost/api", unsupportedType, body.RootElement, "en"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
             client.SubmitActionAsync(
                 "http://localhost/api",
-                new SirenAction { Name = "submit", Href = "", Method = "POST" },
-                null,
-                "en"));
+                action,
+                invalidPart == "payload-type" ? body.RootElement : null,
+                "en",
+                TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -201,7 +228,7 @@ public sealed class ManagementApiClientTests : IDisposable
         };
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            client.SubmitActionAsync("http://localhost/api", action, body.RootElement, "en"));
+            client.SubmitActionAsync("http://localhost/api", action, body.RootElement, "en", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -216,29 +243,46 @@ public sealed class ManagementApiClientTests : IDisposable
             Title = "Message"
         };
 
-        Assert.Equal("message", field.Name);
-        Assert.Equal("text", field.Type);
-        Assert.Equal("Hello", field.Value?.GetString());
-        Assert.Equal("Message", field.Title);
+        Assert.Equal(
+            new { Name = "message", Type = "text", Value = "Hello", Title = "Message" },
+            new { field.Name, field.Type, Value = field.Value?.GetString() ?? string.Empty, field.Title });
     }
 
-    [Fact]
-    public void ApiLinkPolicyMatchesSharedConformanceCases()
+    [Theory]
+    [MemberData(nameof(ApiLinkPolicyCases))]
+    public void ApiLinkPolicyMatchesSharedConformanceCases(
+        string name,
+        string apiBaseUrl,
+        string href,
+        string? expectedHref)
     {
-        var fixturePath = Path.Combine(AppContext.BaseDirectory, "test-cases.json");
-        var testCases = JsonSerializer.Deserialize<ApiLinkPolicyTestCase[]>(
-            File.ReadAllText(fixturePath),
-            FixtureJsonOptions)!;
+        _ = name;
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        var resolved = ApiLinkPolicy.TryResolve(apiRoot, href, out var target);
 
-        foreach (var testCase in testCases)
+        Assert.Equal(expectedHref, resolved ? target.AbsoluteUri : null);
+    }
+
+    public static IEnumerable<object[]> ApiLinkPolicyCases
+    {
+        get
         {
-            var apiRoot = ApiLinkPolicy.CreateApiRoot(testCase.ApiBaseUrl);
-            var resolved = ApiLinkPolicy.TryResolve(apiRoot, testCase.Href, out var target);
+            var fixturePath = Path.Combine(AppContext.BaseDirectory, "test-cases.json");
+            var testCases = JsonSerializer.Deserialize<ApiLinkPolicyTestCase[]>(
+                File.ReadAllText(fixturePath),
+                FixtureJsonOptions)!;
 
-            Assert.Equal(testCase.ExpectedHref is not null, resolved);
-            Assert.Equal(testCase.ExpectedHref, resolved ? target.AbsoluteUri : null);
+            return testCases.Select(testCase => new object[]
+            {
+                testCase.Name,
+                testCase.ApiBaseUrl,
+                testCase.Href,
+                testCase.ExpectedHref!
+            });
         }
     }
+
+    private sealed record ManagementApiExceptionSnapshot(string ErrorCode, HttpStatusCode StatusCode);
 
     private sealed record ApiLinkPolicyTestCase(
         string Name,

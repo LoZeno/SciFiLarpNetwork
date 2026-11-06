@@ -61,25 +61,32 @@ describe('theatrical hacking simulation control', () => {
     vi.useRealTimers();
   });
 
-  it('surfaces attempt and hint failures without reporting success', async () => {
+  it('surfaces an attempt failure without reporting success', async () => {
     renderSimulation({
       onAttempt: vi.fn(async () => {
         throw new Error('Local simulation failure.');
       }),
+    });
+
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Fictional terminal display' }), {
+      key: 'Q',
+    });
+
+    expect(
+      await screen.findByText('The challenge could not process that input. Try again.'),
+    ).toBeTruthy();
+  });
+
+  it('surfaces a hint failure without reporting success', async () => {
+    renderSimulation({
       onRequestHint: vi.fn(async () => {
         throw new Error('Local hint failure.');
       }),
       showTestOnlyFeatures: true,
     });
 
-    fireEvent.keyDown(screen.getByRole('group', { name: 'Fictional terminal display' }), {
-      key: 'Q',
-    });
-    expect(
-      await screen.findByText('The challenge could not process that input. Try again.'),
-    ).toBeTruthy();
-
     fireEvent.click(screen.getByRole('button', { name: 'Request a hint' }));
+
     expect(await screen.findByText('A hint is not available for this simulation.')).toBeTruthy();
   });
 
@@ -95,8 +102,7 @@ describe('theatrical hacking simulation control', () => {
       await vi.advanceTimersByTimeAsync(1_000);
     });
 
-    expect(onExpired).toHaveBeenCalledOnce();
-    expect(onExpired).toHaveBeenCalledWith('demo-challenge');
+    expect(onExpired.mock.calls).toEqual([['demo-challenge']]);
   });
 
   it('does not accept input after a challenge has completed', () => {
@@ -110,23 +116,39 @@ describe('theatrical hacking simulation control', () => {
       onAttempt,
     });
 
-    expect(screen.getByText('ACCESS GRANTED')).toBeTruthy();
-    expect(
-      screen.getByRole('group', { name: 'Fictional terminal display' }).getAttribute('tabindex'),
-    ).toBe('-1');
-    expect(screen.queryByRole('button', { name: 'Request a hint' })).toBeNull();
-    expect(screen.queryByRole('group', { name: 'Penalty characters' })).toBeNull();
-    expect(onAttempt).not.toHaveBeenCalled();
+    expect({
+      accessGranted: screen.getByText('ACCESS GRANTED').textContent,
+      terminalTabIndex: screen
+        .getByRole('group', { name: 'Fictional terminal display' })
+        .getAttribute('tabindex'),
+      hintButton: screen.queryByRole('button', { name: 'Request a hint' }),
+      penaltyGroup: screen.queryByRole('group', { name: 'Penalty characters' }),
+      attempts: onAttempt.mock.calls,
+    }).toEqual({
+      accessGranted: 'ACCESS GRANTED',
+      terminalTabIndex: '-1',
+      hintButton: null,
+      penaltyGroup: null,
+      attempts: [],
+    });
   });
 
   it('hides test-only penalties and hints in the reusable control by default', () => {
     renderSimulation();
 
-    expect(screen.queryByRole('group', { name: 'Penalty characters' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Request a hint' })).toBeNull();
-    expect(screen.getByRole('progressbar', { name: 'Access progress' })).toBeTruthy();
-    expect(screen.queryByText(/0\s*\/\s*2/)).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Restricted Network Access' })).toBeTruthy();
+    expect({
+      penalties: screen.queryByRole('group', { name: 'Penalty characters' }),
+      hintButton: screen.queryByRole('button', { name: 'Request a hint' }),
+      progressBar: screen.getByRole('progressbar', { name: 'Access progress' }) !== null,
+      testCounter: screen.queryByText(/0\s*\/\s*2/),
+      title: screen.getByRole('heading', { name: 'Restricted Network Access' }).textContent,
+    }).toEqual({
+      penalties: null,
+      hintButton: null,
+      progressBar: true,
+      testCounter: null,
+      title: 'Restricted Network Access',
+    });
   });
 
   it('prevents Firefox quick-find from opening for apostrophe input', async () => {
@@ -138,17 +160,24 @@ describe('theatrical hacking simulation control', () => {
     renderSimulation({ onAttempt });
     const terminal = screen.getByRole('group', { name: 'Fictional terminal display' });
 
-    expect(fireEvent.keyDown(terminal, { key: "'" })).toBe(false);
-    expect(document.activeElement).toBe(terminal);
-    expect(onAttempt).toHaveBeenCalledWith('demo-challenge', "'");
+    const defaultPrevented = fireEvent.keyDown(terminal, { key: "'" });
+
+    expect({
+      defaultPrevented,
+      terminalRetainsFocus: document.activeElement === terminal,
+      attemptCalls: onAttempt.mock.calls,
+    }).toEqual({
+      defaultPrevented: false,
+      terminalRetainsFocus: true,
+      attemptCalls: [['demo-challenge', "'"]],
+    });
   });
 
   it('scrolls the code viewport as characters are revealed', () => {
     renderSimulation();
     const viewport = document.querySelector('.hacking-code-viewport');
-    expect(viewport).not.toBeNull();
-    if (viewport === null) {
-      return;
+    if (!(viewport instanceof HTMLElement)) {
+      throw new Error('The hacking code viewport is missing.');
     }
 
     Object.defineProperty(viewport, 'scrollHeight', { configurable: true, value: 640 });

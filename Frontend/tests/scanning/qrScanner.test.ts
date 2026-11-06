@@ -18,18 +18,28 @@ afterEach(() => {
 });
 
 describe('browser QR scanner adapter', () => {
-  it('distinguishes secure camera support from insecure and unsupported contexts', () => {
+  it('reports an insecure context as unavailable for camera use', () => {
     const scanner = createBrowserQrScanner();
     Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false });
-    expect(scanner.getCameraAvailability()).toBe('insecure-context');
 
+    expect(scanner.getCameraAvailability()).toBe('insecure-context');
+  });
+
+  it('reports missing media-device support as unsupported', () => {
+    const scanner = createBrowserQrScanner();
     Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
     vi.stubGlobal('navigator', {});
-    expect(scanner.getCameraAvailability()).toBe('unsupported');
 
+    expect(scanner.getCameraAvailability()).toBe('unsupported');
+  });
+
+  it('reports camera support when secure media devices are available', () => {
+    const scanner = createBrowserQrScanner();
+    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
     vi.stubGlobal('navigator', {
       mediaDevices: { getUserMedia: vi.fn() },
     });
+
     expect(scanner.getCameraAvailability()).toBe('available');
   });
 
@@ -43,34 +53,55 @@ describe('browser QR scanner adapter', () => {
     ]);
   });
 
-  it('passes camera selection through and forwards decoded strings without retry noise', async () => {
-    const controls: IScannerControls = { stop: vi.fn() };
-    let decode: DecodeCallback | undefined;
+  it('passes the selected camera through to the decoder', async () => {
     const start = vi
       .spyOn(BrowserQRCodeReader.prototype, 'decodeFromVideoDevice')
-      .mockImplementation(async (_deviceId, _video, callback) => {
+      .mockResolvedValue({ stop: vi.fn() });
+    const video = document.createElement('video');
+    await createBrowserQrScanner().startCamera(video, 'rear-camera', vi.fn(), vi.fn());
+
+    expect(start).toHaveBeenCalledWith('rear-camera', video, expect.any(Function));
+  });
+
+  it('forwards decoded strings and ignores retry-noise errors', async () => {
+    const controls: IScannerControls = { stop: vi.fn() };
+    let decode: DecodeCallback | undefined;
+    vi.spyOn(BrowserQRCodeReader.prototype, 'decodeFromVideoDevice').mockImplementation(
+      async (_deviceId, _video, callback) => {
         decode = callback;
         return controls;
-      });
-    const video = document.createElement('video');
+      },
+    );
     const onDecoded = vi.fn();
     const onError = vi.fn();
-    const session = await createBrowserQrScanner().startCamera(
-      video,
+    await createBrowserQrScanner().startCamera(
+      document.createElement('video'),
       'rear-camera',
       onDecoded,
       onError,
     );
-
-    expect(start).toHaveBeenCalledWith('rear-camera', video, expect.any(Function));
     const result = new Result('untrusted-code', new Uint8Array(), 0, [], BarcodeFormat.QR_CODE);
     decode?.(result, undefined, controls);
     decode?.(undefined, NotFoundException.getNotFoundInstance(), controls);
 
-    expect(onDecoded).toHaveBeenCalledOnce();
-    expect(onDecoded).toHaveBeenCalledWith('untrusted-code');
-    expect(onError).not.toHaveBeenCalled();
+    expect({ decoded: onDecoded.mock.calls, errors: onError.mock.calls }).toEqual({
+      decoded: [['untrusted-code']],
+      errors: [],
+    });
+  });
+
+  it('stops the browser controls when its scan session is stopped', async () => {
+    const controls: IScannerControls = { stop: vi.fn() };
+    vi.spyOn(BrowserQRCodeReader.prototype, 'decodeFromVideoDevice').mockResolvedValue(controls);
+    const session = await createBrowserQrScanner().startCamera(
+      document.createElement('video'),
+      'rear-camera',
+      vi.fn(),
+      vi.fn(),
+    );
+
     session.stop();
+
     expect(controls.stop).toHaveBeenCalledOnce();
   });
 
@@ -107,10 +138,19 @@ describe('browser QR scanner adapter', () => {
       );
     const image = new File(['image'], 'code.png', { type: 'image/png' });
 
-    await expect(createBrowserQrScanner().decodeImage(image)).resolves.toBe('untrusted-image-code');
-    expect(createUrl).toHaveBeenCalledWith(image);
-    expect(decodeImage).toHaveBeenCalledWith('blob:local-image');
-    expect(revokeUrl).toHaveBeenCalledWith('blob:local-image');
+    const decoded = await createBrowserQrScanner().decodeImage(image);
+
+    expect({
+      decoded,
+      createdUrlFor: createUrl.mock.calls[0]?.[0],
+      decodedUrl: decodeImage.mock.calls[0]?.[0],
+      revokedUrl: revokeUrl.mock.calls[0]?.[0],
+    }).toEqual({
+      decoded: 'untrusted-image-code',
+      createdUrlFor: image,
+      decodedUrl: 'blob:local-image',
+      revokedUrl: 'blob:local-image',
+    });
   });
 
   it('revokes the image URL when decoding fails', async () => {
@@ -120,9 +160,18 @@ describe('browser QR scanner adapter', () => {
       new Error('Unreadable image.'),
     );
 
-    await expect(
-      createBrowserQrScanner().decodeImage(new File(['image'], 'code.png', { type: 'image/png' })),
-    ).rejects.toThrow('Unreadable image.');
-    expect(revokeUrl).toHaveBeenCalledWith('blob:unreadable');
+    let errorMessage: string | undefined;
+    try {
+      await createBrowserQrScanner().decodeImage(
+        new File(['image'], 'code.png', { type: 'image/png' }),
+      );
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : String(error);
+    }
+
+    expect({ errorMessage, revokedUrl: revokeUrl.mock.calls[0]?.[0] }).toEqual({
+      errorMessage: 'Unreadable image.',
+      revokedUrl: 'blob:unreadable',
+    });
   });
 });

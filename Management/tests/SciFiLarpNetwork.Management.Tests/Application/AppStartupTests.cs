@@ -9,29 +9,35 @@ namespace SciFiLarpNetwork.Management.Tests.Application;
 public sealed class AppStartupTests(AvaloniaHeadlessFixture avalonia)
 {
     [Fact]
-    public Task CreateMainWindowLoadsPersistedSettings()
-    {
-        using var directory = new TemporaryDirectory();
-        using var httpClient = new HttpClient();
-
-        return avalonia.Session.Dispatch(() =>
+    public Task CreateMainWindowLoadsPersistedSettings() =>
+        avalonia.Session.Dispatch(() =>
         {
+            using var directory = new TemporaryDirectory();
+            using var httpClient = new HttpClient();
             var settingsPath = Path.Combine(directory.Path, "settings.json");
             new ManagementSettingsStore(settingsPath)
                 .Save(new ManagementSettings("http://localhost:6000/api", "it"));
 
             var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
-            var viewModel = Assert.IsType<MainWindowViewModel>(window.DataContext);
+            var viewModel = (MainWindowViewModel)window.DataContext!;
 
-            Assert.IsType<MainWindow>(window);
             window.Show();
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal("Sci-Fi LARP Network", window.Title);
-            Assert.Equal("http://localhost:6000/api", viewModel.ApiBaseUrl);
-            Assert.Equal("it", viewModel.Locale);
+            var actual = new MainWindowStartupSnapshot(
+                window.GetType(),
+                window.Title ?? string.Empty,
+                new ManagementSettings(viewModel.ApiBaseUrl, viewModel.Locale),
+                viewModel.StatusMessage);
             window.Close();
+
+            Assert.Equal(
+                new MainWindowStartupSnapshot(
+                    typeof(MainWindow),
+                    "Sci-Fi LARP Network",
+                    new ManagementSettings("http://localhost:6000/api", "it"),
+                    "Al momento non sono disponibili destinazioni."),
+                actual);
         }, CancellationToken.None);
-    }
 
     [Fact]
     public Task CreateMainWindowReportsMalformedSettingsAndUsesDefaults() =>
@@ -43,13 +49,28 @@ public sealed class AppStartupTests(AvaloniaHeadlessFixture avalonia)
             File.WriteAllText(settingsPath, "{");
 
             var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
-            var viewModel = Assert.IsType<MainWindowViewModel>(window.DataContext);
-
-            Assert.Equal(new ManagementSettings().ApiBaseUrl, viewModel.ApiBaseUrl);
-            Assert.Equal(
-                "Management settings could not be loaded. Defaults are being used.",
+            var viewModel = (MainWindowViewModel)window.DataContext!;
+            var actual = new MainWindowStartupSnapshot(
+                window.GetType(),
+                window.Title ?? string.Empty,
+                new ManagementSettings(viewModel.ApiBaseUrl, viewModel.Locale),
                 viewModel.StatusMessage);
+            window.Close();
+
+            Assert.Equal(
+                new MainWindowStartupSnapshot(
+                    typeof(MainWindow),
+                    "Sci-Fi LARP Network",
+                    new ManagementSettings(),
+                    "Management settings could not be loaded. Defaults are being used."),
+                actual);
         }, CancellationToken.None);
+
+    private sealed record MainWindowStartupSnapshot(
+        Type WindowType,
+        string Title,
+        ManagementSettings Settings,
+        string StatusMessage);
 
     private sealed class TemporaryDirectory : IDisposable
     {

@@ -18,9 +18,14 @@ using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 [Collection("Backend database integration")]
-public sealed class AdministratorAuthenticationTests(
-    AdministratorAuthenticationFactory factory) : IClassFixture<AdministratorAuthenticationFactory>
+public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 {
+    private readonly AdministratorAuthenticationFactory factory = new();
+
+    public ValueTask InitializeAsync() => factory.InitializeAsync();
+
+    public ValueTask DisposeAsync() => factory.DisposeAsync();
+
     [Fact]
     public async Task ConcurrentFirstUseInitializesAuthenticationSchemaSafely()
     {
@@ -36,474 +41,660 @@ public sealed class AdministratorAuthenticationTests(
         Assert.All(credentials, credential => Assert.False(string.IsNullOrWhiteSpace(credential)));
     }
 
-    [Fact]
-    public async Task BootstrapSessionsRolesRecoveryAndAuditingAreSecure()
+    [Theory]
+    [InlineData("GET", "/local/api/v1/admin/accounts", null, HttpStatusCode.Unauthorized, "errors.unauthorized")]
+    [InlineData("POST", "/local/api/v1/admin/accounts", "{\"userName\":\"unauthorized\",\"password\":\"unauthorized-password\",\"role\":\"reader\"}", HttpStatusCode.Unauthorized, "errors.unauthorized")]
+    [InlineData("PUT", "/local/api/v1/admin/accounts/00000000-0000-0000-0000-000000000001/role", "{\"role\":\"administrator\"}", HttpStatusCode.Unauthorized, "errors.unauthorized")]
+    [InlineData("POST", "/local/api/v1/admin/bootstrap", "{}", HttpStatusCode.NotFound, null)]
+    [InlineData("POST", "/local/api/v1/admin/recovery", "{}", HttpStatusCode.NotFound, null)]
+    public async Task AnonymousRequestsEnforceAuthenticationAndHideLocalOperations(
+        string method, string path, string? content, HttpStatusCode expectedStatus, string? expectedCode)
     {
         using var client = factory.CreateClient();
-        var authenticationService = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
-        await PrepareEmptyAuthenticationStoreAsync(authenticationService);
-
-        try
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        if (content is not null)
         {
-            using (var anonymousResponse = await client.GetAsync("/local/api/v1/admin/accounts"))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
-                await AssertSirenError(anonymousResponse, "errors.unauthorized");
-            }
-
-            using (var anonymousCreate = await PostJsonAsync(client, "/local/api/v1/admin/accounts", new
-                   {
-                       userName = "unauthorized",
-                       password = "unauthorized-password",
-                       role = AdministratorRoles.Reader
-                   }))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, anonymousCreate.StatusCode);
-                await AssertSirenError(anonymousCreate, "errors.unauthorized");
-            }
-
-            using (var anonymousRoleChange = await client.PutAsync(
-                       $"/local/api/v1/admin/accounts/{Guid.NewGuid():D}/role",
-                       new StringContent("""{"role":"administrator"}""", Encoding.UTF8, "application/json")))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, anonymousRoleChange.StatusCode);
-                await AssertSirenError(anonymousRoleChange, "errors.unauthorized");
-            }
-
-            using (var noPublicBootstrap = await PostJsonAsync(client, "/local/api/v1/admin/bootstrap", new { }))
-            {
-                Assert.Equal(HttpStatusCode.NotFound, noPublicBootstrap.StatusCode);
-            }
-
-            using (var noPublicRecovery = await PostJsonAsync(client, "/local/api/v1/admin/recovery", new { }))
-            {
-                Assert.Equal(HttpStatusCode.NotFound, noPublicRecovery.StatusCode);
-            }
-
-            var expiredBootstrapCredential = await authenticationService.IssueBootstrapCredentialAsync();
-            await ExecuteSqlAsync(
-                "UPDATE scifi_administrator_grants SET expires_at_utc = NOW() - INTERVAL '1 minute' WHERE id = 1");
-            var expiredBootstrapResult = await authenticationService.BootstrapAsync(
-                expiredBootstrapCredential,
-                "local-admin",
-                "local-admin-password-1");
-            Assert.Equal(AdministratorOperationResult.InvalidGrant, expiredBootstrapResult);
-
-            var bootstrapCredential = await authenticationService.IssueBootstrapCredentialAsync();
-            var bootstrapCredentialHash = await ReadScalarAsync<string>(
-                "SELECT token_hash FROM scifi_administrator_grants WHERE id = 1");
-            Assert.NotEqual(bootstrapCredential, bootstrapCredentialHash);
-            const string administratorPassword = "local-admin-password-1";
-            var bootstrapResponses = await Task.WhenAll(
-                authenticationService.BootstrapAsync(bootstrapCredential, "local-admin", administratorPassword),
-                authenticationService.BootstrapAsync(bootstrapCredential, "local-admin", administratorPassword));
-            Assert.Single(bootstrapResponses, result => result == AdministratorOperationResult.Succeeded);
-            Assert.Single(bootstrapResponses, result => result == AdministratorOperationResult.InvalidGrant);
-
-            using (var forgedSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-                   {
-                       userName = "local-admin",
-                       password = administratorPassword,
-                       role = AdministratorRoles.Administrator
-                   }))
-            {
-                Assert.Equal(HttpStatusCode.BadRequest, forgedSignIn.StatusCode);
-                await AssertSirenError(forgedSignIn, "errors.validation");
-            }
-
-            using (var invalidSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-                   {
-                       userName = "local-admin",
-                       password = "incorrect-password"
-                   }))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, invalidSignIn.StatusCode);
-                await AssertSirenError(invalidSignIn, "errors.unauthorized");
-            }
-
-            using var administratorSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-            {
-                userName = "LOCAL-ADMIN",
-                password = administratorPassword
-            });
-            Assert.Equal(HttpStatusCode.OK, administratorSignIn.StatusCode);
-            var administratorToken = AssertBearerToken(administratorSignIn);
-            var administratorSessionBody = await administratorSignIn.Content.ReadAsStringAsync();
-            Assert.DoesNotContain(administratorToken, administratorSessionBody, StringComparison.Ordinal);
-            Assert.DoesNotContain(administratorPassword, administratorSessionBody, StringComparison.Ordinal);
-            using var administratorSessionDocument = JsonDocument.Parse(administratorSessionBody);
-            var administratorId = administratorSessionDocument.RootElement
-                .GetProperty("properties")
-                .GetProperty("accountId")
-                .GetGuid();
-            Assert.Contains(
-                administratorSessionDocument.RootElement.GetProperty("links").EnumerateArray(),
-                link => link.GetProperty("href").GetString() == "/local/api/v1/admin/session" &&
-                        link.GetProperty("rel").EnumerateArray().Any(relation => relation.GetString() == "self"));
-            Assert.Contains(
-                administratorSessionDocument.RootElement.GetProperty("actions").EnumerateArray(),
-                action => action.GetProperty("name").GetString() == "administrator-renew-session");
-
-            using (var anonymousDiscovery = await client.GetAsync("/local/api/v1"))
-            using (var anonymousDiscoveryBody = JsonDocument.Parse(await anonymousDiscovery.Content.ReadAsStringAsync()))
-            {
-                Assert.DoesNotContain(
-                    anonymousDiscoveryBody.RootElement.GetProperty("links").EnumerateArray(),
-                    link => link.GetProperty("href").GetString() == "/local/api/v1/admin/accounts");
-                Assert.Contains(
-                    anonymousDiscoveryBody.RootElement.GetProperty("actions").EnumerateArray(),
-                    action => action.GetProperty("name").GetString() == "administrator-sign-in" &&
-                              action.GetProperty("href").GetString() == "/local/api/v1/admin/session");
-            }
-
-            using (var authenticatedDiscovery = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1",
-                       administratorToken))
-            using (var authenticatedDiscoveryBody = JsonDocument.Parse(await authenticatedDiscovery.Content.ReadAsStringAsync()))
-            {
-                Assert.Contains(
-                    authenticatedDiscoveryBody.RootElement.GetProperty("links").EnumerateArray(),
-                    link => link.GetProperty("href").GetString() == "/local/api/v1/admin/accounts");
-                Assert.False(authenticatedDiscoveryBody.RootElement.TryGetProperty("actions", out _));
-            }
-
-            using (var remoteLoginRequest = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/admin/session")
-                   {
-                       Content = new StringContent(
-                           JsonSerializer.Serialize(new { userName = "local-admin", password = administratorPassword }),
-                           Encoding.UTF8,
-                           "application/json")
-                   })
-            {
-                remoteLoginRequest.Headers.Add("X-Test-Remote", "true");
-                using var remoteLogin = await client.SendAsync(remoteLoginRequest);
-                Assert.Equal(HttpStatusCode.Forbidden, remoteLogin.StatusCode);
-            }
-
-            using (var remoteSessionRequest = new HttpRequestMessage(HttpMethod.Get, "/local/api/v1/admin/accounts"))
-            {
-                remoteSessionRequest.Headers.Add("X-Test-Remote", "true");
-                remoteSessionRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", administratorToken);
-                using var remoteSession = await client.SendAsync(remoteSessionRequest);
-                Assert.Equal(HttpStatusCode.Unauthorized, remoteSession.StatusCode);
-            }
-
-            using (var secureRemoteRequest = new HttpRequestMessage(HttpMethod.Get, "https://localhost/local/api/v1/admin/accounts"))
-            {
-                secureRemoteRequest.Headers.Add("X-Test-Remote", "true");
-                secureRemoteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", administratorToken);
-                using var secureRemoteResponse = await client.SendAsync(secureRemoteRequest);
-                Assert.Equal(HttpStatusCode.OK, secureRemoteResponse.StatusCode);
-            }
-
-            var passwordHash = await ReadScalarAsync<string>(
-                "SELECT password_hash FROM scifi_administrator_accounts WHERE id = @accountId",
-                new NpgsqlParameter("accountId", administratorId));
-            Assert.NotEqual(administratorPassword, passwordHash);
-            Assert.DoesNotContain(administratorPassword, passwordHash, StringComparison.Ordinal);
-            Assert.Equal(
-                PasswordVerificationResult.Success,
-                new PasswordHasher<object>().VerifyHashedPassword(new object(), passwordHash, administratorPassword));
-            var persistedSessionHash = await ReadScalarAsync<string>(
-                "SELECT token_hash FROM scifi_administrator_sessions WHERE account_id = @accountId",
-                new NpgsqlParameter("accountId", administratorId));
-            Assert.NotEqual(administratorToken, persistedSessionHash);
-
-            using (var directoryResponse = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       administratorToken))
-            {
-                Assert.Equal(HttpStatusCode.OK, directoryResponse.StatusCode);
-                using var directoryBody = JsonDocument.Parse(await directoryResponse.Content.ReadAsStringAsync());
-                Assert.Contains(
-                    directoryBody.RootElement.GetProperty("actions").EnumerateArray(),
-                    action => action.GetProperty("name").GetString() == "create-administrator");
-            }
-
-            const string readerPassword = "reader-account-password-1";
-            using (var forgedCreation = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Post,
-                       "/local/api/v1/admin/accounts",
-                       administratorToken,
-                       new
-                       {
-                           userName = "auditor",
-                           password = readerPassword,
-                           role = AdministratorRoles.Reader,
-                           actorAccountId = Guid.Empty
-                       }))
-            {
-                Assert.Equal(HttpStatusCode.BadRequest, forgedCreation.StatusCode);
-                await AssertSirenError(forgedCreation, "errors.validation");
-            }
-
-            using var readerCreation = await SendAuthorizedJsonAsync(
-                client,
-                HttpMethod.Post,
-                "/local/api/v1/admin/accounts",
-                administratorToken,
-                new
-                {
-                    userName = "auditor",
-                    password = readerPassword,
-                    role = AdministratorRoles.Reader
-                });
-            Assert.Equal(HttpStatusCode.Created, readerCreation.StatusCode);
-            var readerCreationBody = await readerCreation.Content.ReadAsStringAsync();
-            Assert.DoesNotContain(readerPassword, readerCreationBody, StringComparison.Ordinal);
-            using var readerCreationDocument = JsonDocument.Parse(readerCreationBody);
-            var readerId = readerCreationDocument.RootElement.GetProperty("properties").GetProperty("accountId").GetGuid();
-            Assert.Contains(
-                readerCreationDocument.RootElement.GetProperty("links").EnumerateArray(),
-                link => link.GetProperty("href").GetString() == $"/local/api/v1/admin/accounts/{readerId:D}" &&
-                        link.GetProperty("rel").EnumerateArray().Any(relation => relation.GetString() == "self"));
-
-            using var readerSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-            {
-                userName = "auditor",
-                password = readerPassword
-            });
-            Assert.Equal(HttpStatusCode.OK, readerSignIn.StatusCode);
-            var readerToken = AssertBearerToken(readerSignIn);
-
-            using (var readerDirectory = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       readerToken))
-            {
-                Assert.Equal(HttpStatusCode.OK, readerDirectory.StatusCode);
-                using var directoryBody = JsonDocument.Parse(await readerDirectory.Content.ReadAsStringAsync());
-                Assert.False(directoryBody.RootElement.TryGetProperty("actions", out _));
-            }
-
-            using (var readerAccount = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       $"/local/api/v1/admin/accounts/{readerId:D}",
-                       readerToken))
-            {
-                Assert.Equal(HttpStatusCode.OK, readerAccount.StatusCode);
-                using var readerAccountBody = JsonDocument.Parse(await readerAccount.Content.ReadAsStringAsync());
-                Assert.False(readerAccountBody.RootElement.TryGetProperty("actions", out _));
-            }
-
-            using (var readerWrite = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Put,
-                       $"/local/api/v1/admin/accounts/{readerId:D}/role",
-                       readerToken,
-                       new { role = AdministratorRoles.Administrator }))
-            {
-                Assert.Equal(HttpStatusCode.Forbidden, readerWrite.StatusCode);
-                await AssertSirenError(readerWrite, "errors.forbidden");
-            }
-
-            using (var readerCreate = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Post,
-                       "/local/api/v1/admin/accounts",
-                       readerToken,
-                       new { userName = "denied-user", password = "denied-user-password", role = AdministratorRoles.Reader }))
-            {
-                Assert.Equal(HttpStatusCode.Forbidden, readerCreate.StatusCode);
-                await AssertSirenError(readerCreate, "errors.forbidden");
-            }
-
-            using (var lastAdministrator = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Put,
-                       $"/local/api/v1/admin/accounts/{administratorId:D}/role",
-                       administratorToken,
-                       new { role = AdministratorRoles.Reader }))
-            {
-                Assert.Equal(HttpStatusCode.Conflict, lastAdministrator.StatusCode);
-            }
-
-            using (var forgedRoleChange = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Put,
-                       $"/local/api/v1/admin/accounts/{readerId:D}/role",
-                       administratorToken,
-                       new { role = AdministratorRoles.Administrator, actorAccountId = Guid.Empty }))
-            {
-                Assert.Equal(HttpStatusCode.BadRequest, forgedRoleChange.StatusCode);
-                await AssertSirenError(forgedRoleChange, "errors.validation");
-            }
-
-            using (var roleChange = await SendAuthorizedJsonAsync(
-                       client,
-                       HttpMethod.Put,
-                       $"/local/api/v1/admin/accounts/{readerId:D}/role",
-                       administratorToken,
-                       new { role = AdministratorRoles.Administrator }))
-            {
-                Assert.Equal(HttpStatusCode.OK, roleChange.StatusCode);
-            }
-
-            var auditedActorId = await ReadScalarAsync<Guid>(
-                "SELECT actor_id FROM scifi_administrator_audit_events " +
-                "WHERE target_account_id = @targetId AND event_type = 'AdministratorRoleChanged' " +
-                "ORDER BY occurred_at_utc DESC LIMIT 1",
-                new NpgsqlParameter("targetId", readerId));
-            Assert.Equal(administratorId, auditedActorId);
-            var creationActorId = await ReadScalarAsync<Guid>(
-                "SELECT actor_id FROM scifi_administrator_audit_events " +
-                "WHERE target_account_id = @targetId AND event_type = 'AdministratorAccountCreated' LIMIT 1",
-                new NpgsqlParameter("targetId", readerId));
-            Assert.Equal(administratorId, creationActorId);
-            Assert.DoesNotContain(
-                factory.LogMessages.Messages,
-                message => message.Contains(bootstrapCredential, StringComparison.Ordinal) ||
-                           message.Contains(administratorPassword, StringComparison.Ordinal) ||
-                           message.Contains(administratorToken, StringComparison.Ordinal));
-
-            using var renewal = await SendAuthorizedAsync(
-                client,
-                HttpMethod.Post,
-                "/local/api/v1/admin/session/renew",
-                administratorToken);
-            Assert.Equal(HttpStatusCode.OK, renewal.StatusCode);
-            var renewedToken = AssertBearerToken(renewal);
-            Assert.NotEqual(administratorToken, renewedToken);
-            using (var oldSession = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       administratorToken))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, oldSession.StatusCode);
-            }
-
-            await ExecuteSqlAsync(
-                "UPDATE scifi_administrator_sessions SET expires_at_utc = NOW() - INTERVAL '1 minute' " +
-                "WHERE token_hash = @tokenHash",
-                new NpgsqlParameter("tokenHash", HashSecret(renewedToken)));
-            using (var expiredSession = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       renewedToken))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, expiredSession.StatusCode);
-                await AssertSirenError(expiredSession, "errors.unauthorized");
-            }
-
-            using var recoverySignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-            {
-                userName = "local-admin",
-                password = administratorPassword
-            });
-            var recoveryTargetToken = AssertBearerToken(recoverySignIn);
-            var expiredRecoveryCredential = await authenticationService.IssueRecoveryCredentialAsync();
-            await ExecuteSqlAsync(
-                "UPDATE scifi_administrator_grants SET expires_at_utc = NOW() - INTERVAL '1 minute' WHERE id = 1");
-            var expiredRecovery = await authenticationService.RecoverAsync(
-                expiredRecoveryCredential,
-                "local-admin",
-                "replacement-password-1");
-            Assert.Equal(AdministratorOperationResult.InvalidGrant, expiredRecovery);
-
-            var recoveryCredential = await authenticationService.IssueRecoveryCredentialAsync();
-            var recoveryResult = await authenticationService.RecoverAsync(
-                recoveryCredential,
-                "local-admin",
-                "replacement-password-1");
-            Assert.Equal(AdministratorOperationResult.Succeeded, recoveryResult);
-
-            using (var revokedSession = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       recoveryTargetToken))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, revokedSession.StatusCode);
-            }
-
-            using (var oldPasswordSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-                   {
-                       userName = "local-admin",
-                       password = administratorPassword
-                   }))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, oldPasswordSignIn.StatusCode);
-            }
-
-            using var newPasswordSignIn = await PostJsonAsync(client, "/local/api/v1/admin/session", new
-            {
-                userName = "local-admin",
-                password = "replacement-password-1"
-            });
-            Assert.Equal(HttpStatusCode.OK, newPasswordSignIn.StatusCode);
-            var logoutToken = AssertBearerToken(newPasswordSignIn);
-            using (var logout = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Delete,
-                       "/local/api/v1/admin/session",
-                       logoutToken))
-            {
-                Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
-            }
-
-            using (var loggedOutRequest = await SendAuthorizedAsync(
-                       client,
-                       HttpMethod.Get,
-                       "/local/api/v1/admin/accounts",
-                       logoutToken))
-            {
-                Assert.Equal(HttpStatusCode.Unauthorized, loggedOutRequest.StatusCode);
-            }
-
-            var replayedRecovery = await authenticationService.RecoverAsync(
-                recoveryCredential,
-                "local-admin",
-                "another-replacement-password-1");
-            Assert.Equal(AdministratorOperationResult.InvalidGrant, replayedRecovery);
-            var leakedEventCount = await ReadScalarAsync<long>(
-                "SELECT COUNT(*) FROM public.mt_events WHERE data::text LIKE '%' || @bootstrap || '%' " +
-                "OR data::text LIKE '%' || @password || '%' OR data::text LIKE '%' || @token || '%' " +
-                "OR data::text LIKE '%' || @recovery || '%'",
-                new NpgsqlParameter("bootstrap", bootstrapCredential),
-                new NpgsqlParameter("password", administratorPassword),
-                new NpgsqlParameter("token", administratorToken),
-                new NpgsqlParameter("recovery", recoveryCredential));
-            Assert.Equal(0, leakedEventCount);
-            Assert.DoesNotContain(
-                factory.LogMessages.Messages,
-                message => message.Contains(recoveryCredential, StringComparison.Ordinal) ||
-                           message.Contains("replacement-password-1", StringComparison.Ordinal));
+            request.Content = new StringContent(content, Encoding.UTF8, "application/json");
         }
-        finally
+
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        var actual = (response.StatusCode, MediaType: (string?)null, Code: (string?)null);
+        if (expectedCode is not null)
         {
-            await ClearAuthenticationStoreAsync();
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+            actual = (response.StatusCode, response.Content.Headers.ContentType?.MediaType,
+                body.RootElement.GetProperty("properties").GetProperty("code").GetString());
         }
+
+        Assert.Equal((expectedStatus, expectedCode is null ? null : "application/vnd.siren+json", expectedCode), actual);
     }
 
-    private async Task PrepareEmptyAuthenticationStoreAsync(IAdministratorAuthenticationService service)
+    [Fact]
+    public async Task ExpiredBootstrapCredentialIsRejected()
     {
-        try
-        {
-            await service.IssueBootstrapCredentialAsync();
-        }
-        catch (InvalidOperationException)
-        {
-            // Existing test accounts are removed immediately below.
-        }
+        using var client = factory.CreateClient();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await ExecuteSqlAsync(
+            "UPDATE scifi_administrator_grants SET expires_at_utc = NOW() - INTERVAL '1 minute' WHERE id = 1");
 
-        await ClearAuthenticationStoreAsync();
+        var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
     }
 
-    private async Task ClearAuthenticationStoreAsync() =>
+    [Fact]
+    public async Task BootstrapCredentialIsStoredAsAHash()
+    {
+        using var client = factory.CreateClient();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+
+        var hash = await ReadScalarAsync<string>("SELECT token_hash FROM scifi_administrator_grants WHERE id = 1");
+
+        Assert.NotEqual(credential, hash);
+    }
+
+    [Fact]
+    public async Task ConcurrentBootstrapConsumesCredentialExactlyOnce()
+    {
+        using var client = factory.CreateClient();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+
+        var results = await Task.WhenAll(
+            service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken),
+            service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            new[] { AdministratorOperationResult.Succeeded, AdministratorOperationResult.InvalidGrant }.OrderBy(x => x),
+            results.OrderBy(x => x));
+    }
+
+    [Theory]
+    [InlineData("{\"userName\":\"local-admin\",\"password\":\"local-admin-password-1\",\"role\":\"administrator\"}", HttpStatusCode.BadRequest, "errors.validation")]
+    [InlineData("{\"userName\":\"local-admin\",\"password\":\"incorrect-password\"}", HttpStatusCode.Unauthorized, "errors.unauthorized")]
+    public async Task InvalidSignInReturnsSirenError(string content, HttpStatusCode expectedStatus, string expectedCode)
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+
+        using var response = await client.PostAsync(
+            "/local/api/v1/admin/session", new StringContent(content, Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            (expectedStatus, "application/vnd.siren+json", expectedCode),
+            (response.StatusCode, response.Content.Headers.ContentType?.MediaType,
+                body.RootElement.GetProperty("properties").GetProperty("code").GetString()));
+    }
+
+    [Fact]
+    public async Task ExpiredRecoveryCredentialIsRejected()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
         await ExecuteSqlAsync(
-            "DELETE FROM scifi_administrator_audit_events; " +
-            "DELETE FROM scifi_administrator_sessions; " +
-            "DELETE FROM scifi_administrator_grants; " +
-            "DELETE FROM scifi_administrator_accounts");
+            "UPDATE scifi_administrator_grants SET expires_at_utc = NOW() - INTERVAL '1 minute' WHERE id = 1");
+
+        var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
+    }
+
+    [Fact]
+    public async Task RecoverySucceedsWithValidCredential()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
+
+        var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.Succeeded, result);
+    }
+
+    [Fact]
+    public async Task RecoveryRevokesExistingSessions()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        await RecoverAdministratorAsync();
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("local-admin-password-1", HttpStatusCode.Unauthorized)]
+    [InlineData("replacement-password-1", HttpStatusCode.OK)]
+    public async Task RecoveryReplacesPassword(string password, HttpStatusCode expectedStatus)
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        await RecoverAdministratorAsync();
+
+        using var response = await PostJsonAsync(client, "/local/api/v1/admin/session", new
+        {
+            userName = "local-admin",
+            password
+        });
+        var parsed = AuthenticationHeaderValue.TryParse(
+            response.Headers.TryGetValues("Authorization", out var values) ? values.SingleOrDefault() : null,
+            out var authorization);
+
+        Assert.Equal(
+            (expectedStatus, expectedStatus == HttpStatusCode.OK, expectedStatus == HttpStatusCode.OK ? "Bearer" : null,
+                expectedStatus == HttpStatusCode.OK),
+            (response.StatusCode, parsed, authorization?.Scheme, !string.IsNullOrWhiteSpace(authorization?.Parameter)));
+    }
+
+    [Fact]
+    public async Task RecoveryCredentialCannotBeReplayed()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var credential = await RecoverAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+
+        var result = await service.RecoverAsync(credential, "local-admin", "another-replacement-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
+    }
+
+    [Fact]
+    public async Task LogoutReturnsNoContent()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        await RecoverAdministratorAsync();
+        var token = await SignInAsync(client, "replacement-password-1");
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Delete, "/local/api/v1/admin/session", token);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task LogoutRevokesSession()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        await RecoverAdministratorAsync();
+        var token = await SignInAsync(client, "replacement-password-1");
+        using var logout = await SendAuthorizedAsync(client, HttpMethod.Delete, "/local/api/v1/admin/session", token);
+        logout.EnsureSuccessStatusCode();
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RenewalReturnsNewBearerToken()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Post, "/local/api/v1/admin/session/renew", token);
+        var parsed = AuthenticationHeaderValue.TryParse(
+            response.Headers.TryGetValues("Authorization", out var values) ? values.SingleOrDefault() : null,
+            out var authorization);
+
+        Assert.Equal((HttpStatusCode.OK, true, "Bearer", true, true),
+            (response.StatusCode, parsed, authorization?.Scheme, !string.IsNullOrWhiteSpace(authorization?.Parameter),
+                authorization?.Parameter != token));
+    }
+
+    [Fact]
+    public async Task RenewalRevokesPreviousSession()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        await RenewSessionAsync(client, token);
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExpiredRenewedSessionReturnsSirenUnauthorized()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        var renewedToken = await RenewSessionAsync(client, token);
+        await ExecuteSqlAsync(
+            "UPDATE scifi_administrator_sessions SET expires_at_utc = NOW() - INTERVAL '1 minute' " +
+            "WHERE token_hash = @tokenHash", new NpgsqlParameter("tokenHash", HashSecret(renewedToken)));
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", renewedToken);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal((HttpStatusCode.Unauthorized, "application/vnd.siren+json", "errors.unauthorized"),
+            (response.StatusCode, response.Content.Headers.ContentType?.MediaType,
+                body.RootElement.GetProperty("properties").GetProperty("code").GetString()));
+    }
+
+    [Theory]
+    [InlineData("POST", "http://localhost/local/api/v1/admin/session", HttpStatusCode.Forbidden)]
+    [InlineData("GET", "http://localhost/local/api/v1/admin/accounts", HttpStatusCode.Unauthorized)]
+    [InlineData("GET", "https://localhost/local/api/v1/admin/accounts", HttpStatusCode.OK)]
+    public async Task RemoteAuthenticationRequiresSecureTransport(string method, string uri, HttpStatusCode expectedStatus)
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        using var request = new HttpRequestMessage(new HttpMethod(method), uri);
+        request.Headers.Add("X-Test-Remote", "true");
+        if (method == "POST")
+        {
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
+                Encoding.UTF8, "application/json");
+        }
+        else
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false, false, true, true)]
+    [InlineData(true, true, false, false)]
+    public async Task DiscoveryReflectsAuthentication(
+        bool authenticated, bool accountsLink, bool signInAction, bool actionsPresent)
+    {
+        using var client = factory.CreateClient();
+        string? token = null;
+        if (authenticated)
+        {
+            await BootstrapAdministratorAsync();
+            token = await SignInAsync(client, "local-admin-password-1");
+        }
+
+        using var response = authenticated
+            ? await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1", token!)
+            : await client.GetAsync("/local/api/v1", TestContext.Current.CancellationToken);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        var root = body.RootElement;
+        var hasActions = root.TryGetProperty("actions", out var actions);
+
+        Assert.Equal((accountsLink, signInAction, actionsPresent),
+            (root.GetProperty("links").EnumerateArray().Any(link =>
+                    link.GetProperty("href").GetString() == "/local/api/v1/admin/accounts"),
+                hasActions && actions.EnumerateArray().Any(action =>
+                    action.GetProperty("name").GetString() == "administrator-sign-in" &&
+                    action.GetProperty("href").GetString() == "/local/api/v1/admin/session"),
+                hasActions));
+    }
+
+    [Fact]
+    public async Task AdministratorSignInReturnsSafeDiscoverableSession()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        const string password = "local-admin-password-1";
+
+        using var response = await PostJsonAsync(client, "/local/api/v1/admin/session", new
+        {
+            userName = "LOCAL-ADMIN",
+            password
+        });
+        var parsed = AuthenticationHeaderValue.TryParse(
+            response.Headers.TryGetValues("Authorization", out var values) ? values.SingleOrDefault() : null,
+            out var authorization);
+        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        using var body = JsonDocument.Parse(text);
+        var root = body.RootElement;
+        var accountId = root.GetProperty("properties").GetProperty("accountId").GetGuid();
+
+        Assert.Equal((HttpStatusCode.OK, true, "Bearer", true, false, false, true, true, true),
+            (response.StatusCode, parsed, authorization?.Scheme, !string.IsNullOrWhiteSpace(authorization?.Parameter),
+                authorization?.Parameter is not null && text.Contains(authorization.Parameter, StringComparison.Ordinal),
+                text.Contains(password, StringComparison.Ordinal),
+                root.GetProperty("links").EnumerateArray().Any(link =>
+                    link.GetProperty("href").GetString() == "/local/api/v1/admin/session" &&
+                    link.GetProperty("rel").EnumerateArray().Any(relation => relation.GetString() == "self")),
+                root.GetProperty("actions").EnumerateArray().Any(action =>
+                    action.GetProperty("name").GetString() == "administrator-renew-session"),
+                accountId != Guid.Empty));
+    }
+
+    [Fact]
+    public async Task AdministratorPasswordIsStoredAsVerifiableHash()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        const string password = "local-admin-password-1";
+
+        var hash = await ReadScalarAsync<string>("SELECT password_hash FROM scifi_administrator_accounts");
+
+        Assert.Equal((false, false, PasswordVerificationResult.Success),
+            (hash == password, hash.Contains(password, StringComparison.Ordinal),
+                new PasswordHasher<object>().VerifyHashedPassword(new object(), hash, password)));
+    }
+
+    [Fact]
+    public async Task AdministratorSessionTokenIsStoredAsHash()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+
+        var hash = await ReadScalarAsync<string>("SELECT token_hash FROM scifi_administrator_sessions");
+
+        Assert.NotEqual(token, hash);
+    }
+
+    [Fact]
+    public async Task AdministratorDirectoryOffersAccountCreation()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal((HttpStatusCode.OK, true), (response.StatusCode,
+            body.RootElement.GetProperty("actions").EnumerateArray().Any(action =>
+                action.GetProperty("name").GetString() == "create-administrator")));
+    }
+
+    [Fact]
+    public async Task ForgedAccountCreationActorIsRejected()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "auditor", password = "reader-account-password-1", role = AdministratorRoles.Reader, actorAccountId = Guid.Empty });
+
+        Assert.Equal((HttpStatusCode.BadRequest, "application/vnd.siren+json", "errors.validation"), await ErrorSnapshotAsync(response));
+    }
+
+    [Fact]
+    public async Task CreatedReaderAccountHasSafeSelfLink()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        const string password = "reader-account-password-1";
+
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "auditor", password, role = AdministratorRoles.Reader });
+        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        using var body = JsonDocument.Parse(text);
+        var readerId = body.RootElement.GetProperty("properties").GetProperty("accountId").GetGuid();
+
+        Assert.Equal((HttpStatusCode.Created, false, true), (response.StatusCode, text.Contains(password, StringComparison.Ordinal),
+            body.RootElement.GetProperty("links").EnumerateArray().Any(link =>
+                link.GetProperty("href").GetString() == $"/local/api/v1/admin/accounts/{readerId:D}" &&
+                link.GetProperty("rel").EnumerateArray().Any(relation => relation.GetString() == "self"))));
+    }
+
+    [Fact]
+    public async Task ReaderCanSignIn()
+    {
+        using var client = factory.CreateClient();
+        await PrepareReaderAsync(client);
+
+        using var response = await PostJsonAsync(client, "/local/api/v1/admin/session", new
+        {
+            userName = "auditor", password = "reader-account-password-1"
+        });
+        var parsed = AuthenticationHeaderValue.TryParse(
+            response.Headers.TryGetValues("Authorization", out var values) ? values.SingleOrDefault() : null,
+            out var authorization);
+
+        Assert.Equal((HttpStatusCode.OK, true, "Bearer", true),
+            (response.StatusCode, parsed, authorization?.Scheme, !string.IsNullOrWhiteSpace(authorization?.Parameter)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReaderCanViewAccountsWithoutWriteActions(bool singleAccount)
+    {
+        using var client = factory.CreateClient();
+        var (_, readerId) = await PrepareReaderAsync(client);
+        var readerToken = await SignInReaderAsync(client);
+        var path = singleAccount ? $"/local/api/v1/admin/accounts/{readerId:D}" : "/local/api/v1/admin/accounts";
+
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Get, path, readerToken);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal((HttpStatusCode.OK, false), (response.StatusCode, body.RootElement.TryGetProperty("actions", out _)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReaderCannotModifyAccounts(bool changeRole)
+    {
+        using var client = factory.CreateClient();
+        var (_, readerId) = await PrepareReaderAsync(client);
+        var readerToken = await SignInReaderAsync(client);
+        var method = changeRole ? HttpMethod.Put : HttpMethod.Post;
+        var path = changeRole ? $"/local/api/v1/admin/accounts/{readerId:D}/role" : "/local/api/v1/admin/accounts";
+        object payload = changeRole ? new { role = AdministratorRoles.Administrator } :
+            new { userName = "denied-user", password = "denied-user-password", role = AdministratorRoles.Reader };
+
+        using var response = await SendAuthorizedJsonAsync(client, method, path, readerToken, payload);
+
+        Assert.Equal((HttpStatusCode.Forbidden, "application/vnd.siren+json", "errors.forbidden"), await ErrorSnapshotAsync(response));
+    }
+
+    [Fact]
+    public async Task LastAdministratorCannotBeDemoted()
+    {
+        using var client = factory.CreateClient();
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        var administratorId = await ReadScalarAsync<Guid>("SELECT id FROM scifi_administrator_accounts");
+
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{administratorId:D}/role", token, new { role = AdministratorRoles.Reader });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ForgedRoleChangeActorIsRejected()
+    {
+        using var client = factory.CreateClient();
+        var (token, readerId) = await PrepareReaderAsync(client);
+
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", token,
+            new { role = AdministratorRoles.Administrator, actorAccountId = Guid.Empty });
+
+        Assert.Equal((HttpStatusCode.BadRequest, "application/vnd.siren+json", "errors.validation"), await ErrorSnapshotAsync(response));
+    }
+
+    [Fact]
+    public async Task AdministratorCanChangeReaderRole()
+    {
+        using var client = factory.CreateClient();
+        var (token, readerId) = await PrepareReaderAsync(client);
+
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("AdministratorAccountCreated")]
+    [InlineData("AdministratorRoleChanged")]
+    public async Task AccountAuditAttributesActionToAuthenticatedAdministrator(string eventType)
+    {
+        using var client = factory.CreateClient();
+        var (token, readerId) = await PrepareReaderAsync(client);
+        var administratorId = await ReadScalarAsync<Guid>(
+            "SELECT id FROM scifi_administrator_accounts WHERE id <> @readerId", new NpgsqlParameter("readerId", readerId));
+        if (eventType == "AdministratorRoleChanged")
+        {
+            using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+                $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
+            response.EnsureSuccessStatusCode();
+        }
+
+        var actorId = await ReadScalarAsync<Guid>(
+            "SELECT actor_id FROM scifi_administrator_audit_events WHERE target_account_id = @targetId " +
+            "AND event_type = @eventType ORDER BY occurred_at_utc DESC LIMIT 1",
+            new NpgsqlParameter("targetId", readerId), new NpgsqlParameter("eventType", eventType));
+
+        Assert.Equal(administratorId, actorId);
+    }
+
+    [Fact]
+    public async Task AuthenticationLifecycleDoesNotLeakSecretsIntoEvents()
+    {
+        using var client = factory.CreateClient();
+        var secrets = await ExerciseAuthenticationLifecycleAsync(client);
+
+        var leakedEventCount = await ReadScalarAsync<long>(
+            "SELECT COUNT(*) FROM public.mt_events WHERE EXISTS " +
+            "(SELECT 1 FROM unnest(@secrets) AS secret WHERE data::text LIKE '%' || secret || '%')",
+            new NpgsqlParameter("secrets", secrets));
+
+        Assert.Equal(0, leakedEventCount);
+    }
+
+    [Fact]
+    public async Task AuthenticationLifecycleDoesNotLeakSecretsIntoLogs()
+    {
+        using var client = factory.CreateClient();
+        var secrets = await ExerciseAuthenticationLifecycleAsync(client);
+
+        Assert.DoesNotContain(factory.LogMessages.Messages,
+            message => secrets.Any(secret => message.Contains(secret, StringComparison.Ordinal)));
+    }
+
+    private async Task<(string Token, Guid ReaderId)> PrepareReaderAsync(HttpClient client)
+    {
+        await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, "local-admin-password-1");
+        using var response = await SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "auditor", password = "reader-account-password-1", role = AdministratorRoles.Reader });
+        response.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return (token, body.RootElement.GetProperty("properties").GetProperty("accountId").GetGuid());
+    }
+
+    private static async Task<string> SignInReaderAsync(HttpClient client)
+    {
+        using var response = await PostJsonAsync(client, "/local/api/v1/admin/session", new
+        {
+            userName = "auditor", password = "reader-account-password-1"
+        });
+        response.EnsureSuccessStatusCode();
+        return AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter
+               ?? throw new InvalidOperationException("Expected a reader session token.");
+    }
+
+    private static async Task<(HttpStatusCode Status, string? MediaType, string? Code)> ErrorSnapshotAsync(HttpResponseMessage response)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return (response.StatusCode, response.Content.Headers.ContentType?.MediaType,
+            body.RootElement.GetProperty("properties").GetProperty("code").GetString());
+    }
+
+    private async Task<string[]> ExerciseAuthenticationLifecycleAsync(HttpClient client)
+    {
+        const string password = "local-admin-password-1";
+        const string replacementPassword = "replacement-password-1";
+        var bootstrap = await BootstrapAdministratorAsync();
+        var token = await SignInAsync(client, password);
+        using var created = await SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "auditor", password = "reader-account-password-1", role = AdministratorRoles.Reader });
+        created.EnsureSuccessStatusCode();
+        using var createdBody = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
+        var readerId = createdBody.RootElement.GetProperty("properties").GetProperty("accountId").GetGuid();
+        var readerToken = await SignInReaderAsync(client);
+        using var denied = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", readerToken, new { role = AdministratorRoles.Administrator });
+        using var roleChange = await SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
+        roleChange.EnsureSuccessStatusCode();
+        var renewedToken = await RenewSessionAsync(client, token);
+        using var previousSession = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+        await ExecuteSqlAsync(
+            "UPDATE scifi_administrator_sessions SET expires_at_utc = NOW() - INTERVAL '1 minute' WHERE token_hash = @tokenHash",
+            new NpgsqlParameter("tokenHash", HashSecret(renewedToken)));
+        using var expired = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", renewedToken);
+        var recovery = await RecoverAdministratorAsync();
+        var replacementToken = await SignInAsync(client, replacementPassword);
+        using var logout = await SendAuthorizedAsync(client, HttpMethod.Delete, "/local/api/v1/admin/session", replacementToken);
+        logout.EnsureSuccessStatusCode();
+        using var replayedSession = await SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", replacementToken);
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        await service.RecoverAsync(recovery, "local-admin", "another-replacement-password-1");
+        return [bootstrap, password, token, "reader-account-password-1", readerToken, renewedToken, recovery,
+            replacementPassword, replacementToken, "another-replacement-password-1"];
+    }
+
+    private async Task<string> BootstrapAdministratorAsync()
+    {
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync();
+        var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1");
+        if (result != AdministratorOperationResult.Succeeded)
+        {
+            throw new InvalidOperationException($"Failed to prepare administrator: {result}");
+        }
+
+        return credential;
+    }
+
+    private async Task<string> RecoverAdministratorAsync()
+    {
+        var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueRecoveryCredentialAsync();
+        var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1");
+        if (result != AdministratorOperationResult.Succeeded)
+        {
+            throw new InvalidOperationException($"Failed to prepare recovery: {result}");
+        }
+
+        return credential;
+    }
+
+    private static async Task<string> SignInAsync(HttpClient client, string password)
+    {
+        using var response = await PostJsonAsync(client, "/local/api/v1/admin/session", new
+        {
+            userName = "local-admin",
+            password
+        });
+        response.EnsureSuccessStatusCode();
+        return AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter
+               ?? throw new InvalidOperationException("Expected a session token.");
+    }
+
+    private static async Task<string> RenewSessionAsync(HttpClient client, string token)
+    {
+        using var response = await SendAuthorizedAsync(client, HttpMethod.Post, "/local/api/v1/admin/session/renew", token);
+        response.EnsureSuccessStatusCode();
+        return AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter
+               ?? throw new InvalidOperationException("Expected a renewed session token.");
+    }
+
 
     private async Task ExecuteSqlAsync(string sql, params NpgsqlParameter[] parameters)
     {
@@ -554,23 +745,6 @@ public sealed class AdministratorAuthenticationTests(
         return await client.SendAsync(request);
     }
 
-    private static string AssertBearerToken(HttpResponseMessage response)
-    {
-        var rawHeader = response.Headers.TryGetValues("Authorization", out var values)
-            ? values.SingleOrDefault()
-            : null;
-        Assert.True(AuthenticationHeaderValue.TryParse(rawHeader, out var authorization));
-        Assert.Equal("Bearer", authorization.Scheme);
-        Assert.False(string.IsNullOrWhiteSpace(authorization.Parameter));
-        return authorization.Parameter!;
-    }
-
-    private static async Task AssertSirenError(HttpResponseMessage response, string expectedCode)
-    {
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(expectedCode, body.RootElement.GetProperty("properties").GetProperty("code").GetString());
-    }
 
     private static string HashSecret(string secret) =>
         Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
@@ -588,7 +762,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
 
     public CapturingLoggerProvider LogMessages { get; } = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var connection = new NpgsqlConnection(BaseConnectionString);
         await connection.OpenAsync();
@@ -600,7 +774,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         }.ConnectionString;
     }
 
-    async Task IAsyncLifetime.DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
         await using var connection = new NpgsqlConnection(BaseConnectionString);

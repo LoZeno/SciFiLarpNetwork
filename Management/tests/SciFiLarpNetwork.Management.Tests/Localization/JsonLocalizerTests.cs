@@ -5,11 +5,18 @@ namespace SciFiLarpNetwork.Management.Tests.Localization;
 public sealed class JsonLocalizerTests
 {
     [Fact]
-    public void TranslateReturnsEnglishByDefaultAndItalianWhenRequested()
+    public void TranslateReturnsEnglishWhenEnglishIsRequested()
     {
         var localizer = new JsonLocalizer();
 
         Assert.Equal("Connect", localizer.Translate("management.connect", "en"));
+    }
+
+    [Fact]
+    public void TranslateReturnsItalianWhenItalianIsRequested()
+    {
+        var localizer = new JsonLocalizer();
+
         Assert.Equal("Connetti", localizer.Translate("management.connect", "it"));
     }
 

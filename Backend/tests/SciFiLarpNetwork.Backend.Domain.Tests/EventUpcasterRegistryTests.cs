@@ -17,14 +17,28 @@ public sealed class EventUpcasterRegistryTests
         var oldPayload = JsonSerializer.SerializeToElement(new { name = "Test" });
 
         var first = registry.Upcast("character.registered", 1, oldPayload);
+
+        Assert.Equal(
+            new { SchemaVersion = 3, Payload = """{"displayName":"Test","status":"active"}""" },
+            new { first.SchemaVersion, Payload = first.Payload.GetRawText() });
+    }
+
+    [Fact]
+    public void RepeatedUpcastingProducesTheSameVersionAndPayload()
+    {
+        var registry = new EventUpcasterRegistry(
+        [
+            new RenameNamePropertyUpcaster(1, 2),
+            new AddStatusPropertyUpcaster(2, 3)
+        ]);
+        var oldPayload = JsonSerializer.SerializeToElement(new { name = "Test" });
+
+        var first = registry.Upcast("character.registered", 1, oldPayload);
         var second = registry.Upcast("character.registered", 1, oldPayload);
 
-        Assert.Equal(3, first.SchemaVersion);
-        Assert.Equal(first.SchemaVersion, second.SchemaVersion);
-        Assert.Equal(first.Payload.GetRawText(), second.Payload.GetRawText());
-        Assert.Equal("Test", first.Payload.GetProperty("displayName").GetString());
-        Assert.Equal("active", first.Payload.GetProperty("status").GetString());
-        Assert.False(first.Payload.TryGetProperty("name", out _));
+        Assert.Equal(
+            new { first.SchemaVersion, Payload = first.Payload.GetRawText() },
+            new { second.SchemaVersion, Payload = second.Payload.GetRawText() });
     }
 
     [Fact]

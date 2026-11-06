@@ -20,37 +20,44 @@ public sealed class DomainEventTests
         Assert.Equal("original", domainEvent.Payload.GetProperty("value").GetString());
     }
 
-    [Fact]
-    public void RejectsInvalidEventIdentityAndVersion()
+    [Theory]
+    [InlineData("empty-id", typeof(ArgumentException))]
+    [InlineData("blank-event-type", typeof(ArgumentException))]
+    [InlineData("zero-version", typeof(ArgumentOutOfRangeException))]
+    public void RejectsInvalidEventIdentityAndVersion(string scenario, Type expectedExceptionType)
     {
         var payload = JsonSerializer.SerializeToElement(new { value = "test" });
 
-        Assert.Throws<ArgumentException>(() =>
-            new DomainEvent(Guid.Empty, "network.created", 1, DateTimeOffset.UtcNow, payload));
-        Assert.Throws<ArgumentException>(() =>
-            new DomainEvent(Guid.NewGuid(), " ", 1, DateTimeOffset.UtcNow, payload));
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new DomainEvent(Guid.NewGuid(), "network.created", 0, DateTimeOffset.UtcNow, payload));
+        var exception = Record.Exception(() =>
+        {
+            _ = scenario switch
+            {
+                "empty-id" => new DomainEvent(Guid.Empty, "network.created", 1, DateTimeOffset.UtcNow, payload),
+                "blank-event-type" => new DomainEvent(Guid.NewGuid(), " ", 1, DateTimeOffset.UtcNow, payload),
+                "zero-version" => new DomainEvent(Guid.NewGuid(), "network.created", 0, DateTimeOffset.UtcNow, payload),
+                _ => throw new ArgumentOutOfRangeException(nameof(scenario))
+            };
+        });
+
+        Assert.Equal(expectedExceptionType, exception?.GetType());
     }
 
-    [Fact]
-    public void RejectsNonUtcOrUndefinedPayload()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RejectsNonUtcOrUndefinedPayload(bool undefinedPayload)
     {
         var payload = JsonSerializer.SerializeToElement(new { value = "test" });
 
-        Assert.Throws<ArgumentException>(() =>
-            new DomainEvent(
-                Guid.NewGuid(),
-                "network.created",
-                1,
-                new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.FromHours(2)),
-                payload));
-        Assert.Throws<ArgumentException>(() =>
-            new DomainEvent(
-                Guid.NewGuid(),
-                "network.created",
-                1,
-                DateTimeOffset.UtcNow,
-                default));
+        var exception = Record.Exception(() => new DomainEvent(
+            Guid.NewGuid(),
+            "network.created",
+            1,
+            undefinedPayload
+                ? DateTimeOffset.UtcNow
+                : new DateTimeOffset(2025, 1, 1, 12, 0, 0, TimeSpan.FromHours(2)),
+            undefinedPayload ? default : payload));
+
+        Assert.Equal(typeof(ArgumentException), exception?.GetType());
     }
 }
