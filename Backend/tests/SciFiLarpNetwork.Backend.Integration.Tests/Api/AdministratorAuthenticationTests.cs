@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using SciFiLarpNetwork.Backend.Application.Administration;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
@@ -20,6 +21,21 @@ namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 public sealed class AdministratorAuthenticationTests(
     AdministratorAuthenticationFactory factory) : IClassFixture<AdministratorAuthenticationFactory>
 {
+    [Fact]
+    public async Task ConcurrentFirstUseInitializesAuthenticationSchemaSafely()
+    {
+        using var dataSource = NpgsqlDataSource.Create(factory.ConnectionString);
+        using var authenticationService = new AdministratorAuthenticationService(
+            dataSource,
+            new PasswordHasher<object>());
+
+        var credentials = await Task.WhenAll(
+            Enumerable.Range(0, 8)
+                .Select(_ => authenticationService.IssueBootstrapCredentialAsync()));
+
+        Assert.All(credentials, credential => Assert.False(string.IsNullOrWhiteSpace(credential)));
+    }
+
     [Fact]
     public async Task BootstrapSessionsRolesRecoveryAndAuditingAreSecure()
     {

@@ -22,7 +22,7 @@ public sealed class AdministratorAuthenticationService(
     private readonly SemaphoreSlim _schemaInitializationLock = new(1, 1);
     private readonly object _passwordSubject = new();
     private readonly string _dummyPasswordHash = passwordHasher.HashPassword(new object(), CreateRandomToken());
-    private bool _schemaInitialized;
+    private volatile bool _schemaInitialized;
 
     public void Dispose() => _schemaInitializationLock.Dispose();
 

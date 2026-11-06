@@ -22,7 +22,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("EventStore");
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddSingleton(NpgsqlDataSource.Create(connectionString));
+        services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<IAdministratorAuthenticationService, AdministratorAuthenticationService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
