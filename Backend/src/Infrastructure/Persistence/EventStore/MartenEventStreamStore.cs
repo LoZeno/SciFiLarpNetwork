@@ -91,7 +91,7 @@ internal sealed class MartenEventStreamStore(IDocumentStore documentStore, Event
             domainEvent.CausationId,
             domainEvent.Payload.Clone())).ToArray();
 
-        var stream = session.Events.Append(streamId, expectedVersion + events.Count, persistedEvents);
+        var stream = session.Events.Append(streamId, expectedVersion, persistedEvents);
         foreach (var (eventEnvelope, domainEvent) in stream.Events.Zip(events))
         {
             eventEnvelope.Id = domainEvent.EventId;

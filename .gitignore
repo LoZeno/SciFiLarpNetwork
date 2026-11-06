@@ -221,3 +221,5 @@ pip-log.txt
 **/node_modules/
 **/coverage/
 **/dist/
+
+marten-llms.txt

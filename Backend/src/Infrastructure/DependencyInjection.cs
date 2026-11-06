@@ -1,12 +1,13 @@
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Npgsql;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Domain.Events;
@@ -22,7 +23,6 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("EventStore");
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<IAdministratorAuthenticationService, AdministratorAuthenticationService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
@@ -31,11 +31,20 @@ public static class DependencyInjection
             options.Connection(connectionString);
             options.AutoCreateSchemaObjects = AutoCreate.None;
             options.Events.StreamIdentity = StreamIdentity.AsGuid;
+            options.Events.AppendMode = EventAppendMode.Rich;
             options.Events.MetadataConfig.EnableAll();
             options.Events.MetadataConfig.UserNameEnabled = true;
             options.Events.AddEventType<PersistedDomainEvent>();
             options.Schema.For<CommandReceiptDocument>();
             options.Schema.For<GlobalEventIdDocument>();
+            options.Schema.For<AdministratorAccountDocument>();
+            options.Schema.For<AdministratorSessionDocument>();
+            options.Schema.For<AdministratorGrantDocument>();
+            options.Schema.For<AdministratorAuditDocument>();
+            options.Projections.Add<AdministratorAccountProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<AdministratorSessionProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<AdministratorGrantProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<AdministratorAuditProjection>(ProjectionLifecycle.Async);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         // Register an empty upcaster registry by default. Feature modules add upcasters by
