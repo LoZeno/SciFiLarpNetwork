@@ -13,7 +13,7 @@ Maintain at least 80% automated code coverage for hand-written production code. 
 
 ## Baseline implementation
 
-- Backend and management xUnit projects use Coverlet MSBuild to measure `SciFiLarpNetwork.*` production assemblies, excluding test assemblies and compiler-generated code. They emit Cobertura XML and JSON reports plus a readable console summary, and enforce 80% total line coverage when the corresponding production project is present.
+- Backend Integration and Management xUnit.net v3 projects use Coverlet's MTP extension to measure `SciFiLarpNetwork.*` production assemblies, excluding test assemblies and compiler-generated code. They emit uniquely named Cobertura XML and JSON reports plus a readable console summary, and enforce 80% total line coverage. The .NET 10 SDK uses the MTP `dotnet test` runner selected in `global.json`.
 - Vitest uses its V8 provider to measure all `Frontend/src/**/*.ts` and `Frontend/src/**/*.tsx` files, excluding declaration-only `.d.ts` files. It emits text, LCOV, and HTML reports and enforces 80% statements and lines.
 - The CI workflow uploads coverage reports from each platform as artifacts.
-- Backend production code and the React SPA now have active coverage thresholds; running `npm run check` from `Frontend` currently reports 88.32% statement and 87.8% line coverage. Management remains an empty scaffold and does not claim measured production-code coverage until its implementation exists.
+- Backend production code, the management application, and the React SPA have active coverage thresholds. Run `dotnet test SciFiLarpNetwork.slnx --configuration Release` from the repository root for .NET tests and coverage; run `npm run check` from `Frontend` for TypeScript tests and coverage.

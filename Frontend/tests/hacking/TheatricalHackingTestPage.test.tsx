@@ -14,10 +14,66 @@ function renderTestPage() {
   );
 }
 
+function startSimulation(difficulty?: string, attackerLevel?: string) {
+  renderTestPage();
+  if (difficulty !== undefined) {
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Challenge difficulty (1–10)' }), {
+      target: { value: difficulty },
+    });
+  }
+  if (attackerLevel !== undefined) {
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Attacker hacking level' }), {
+      target: { value: attackerLevel },
+    });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Start hacking simulation' }));
+  return screen.getByRole('group', { name: 'Fictional terminal display' });
+}
+
+async function requestHint(previousCharacter?: string) {
+  await waitFor(() => {
+    if ((screen.getByRole('button', { name: 'Request a hint' }) as HTMLButtonElement).disabled) {
+      throw new Error('The hint button is still disabled.');
+    }
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Request a hint' }));
+  return waitFor(() => {
+    const character =
+      screen
+        .getByText(/The challenge character is/)
+        .textContent?.trim()
+        .at(-1) ?? '';
+    if (!/^[A-Z0-9]$/.test(character) || character === previousCharacter) {
+      throw new Error('The next valid hint is not available yet.');
+    }
+    return character;
+  });
+}
+
+function progressValue() {
+  return (screen.getByRole('progressbar', { name: 'Access progress' }) as HTMLProgressElement)
+    .value;
+}
+
+async function waitForProgress(value: number) {
+  await waitFor(() => {
+    if (progressValue() !== value) {
+      throw new Error('The access progress has not reached the expected value yet.');
+    }
+  });
+}
+
+function penaltyKeys() {
+  return within(screen.getByRole('group', { name: 'Penalty characters' }))
+    .getAllByText(/^[A-Z0-9]$/)
+    .map((element) => element.textContent ?? '');
+}
+
 describe('theatrical hacking test page', () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('is directly addressable, local-only, and starts with a one-hit minimum', async () => {
@@ -25,83 +81,96 @@ describe('theatrical hacking test page', () => {
     vi.stubGlobal('fetch', request);
     renderTestPage();
 
-    expect(await screen.findByText(/Local test page only/)).toBeTruthy();
-    expect(screen.getByRole('spinbutton', { name: 'Minimum required hits' })).toHaveProperty(
-      'value',
-      '1',
-    );
-    expect(request).not.toHaveBeenCalled();
-    expect(document.querySelector('.application-shell')).toBeNull();
+    const notice = await screen.findByText(/Local test page only/);
+    expect({
+      notice: notice.textContent,
+      minimumHits: (
+        screen.getByRole('spinbutton', { name: 'Minimum required hits' }) as HTMLInputElement
+      ).value,
+      requestCount: request.mock.calls.length,
+      applicationShell: document.querySelector('.application-shell'),
+    }).toEqual({
+      notice: expect.stringMatching(/Local test page only/),
+      minimumHits: '1',
+      requestCount: 0,
+      applicationShell: null,
+    });
   });
 
-  it('only advances for the secret character and completes after the formula count', async () => {
-    renderTestPage();
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Challenge difficulty (1–10)' }), {
-      target: { value: '5' },
-    });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Attacker hacking level' }), {
-      target: { value: '1' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Start hacking simulation' }));
+  it('focuses an empty terminal when a simulation starts', () => {
+    const terminal = startSimulation('5', '1');
 
-    const terminal = screen.getByRole('group', { name: 'Fictional terminal display' });
-    expect(document.activeElement).toBe(terminal);
-    expect(document.querySelector('.hacking-code')?.textContent).toBe('');
+    expect({
+      focused: document.activeElement === terminal,
+      codeLength: document.querySelector('.hacking-code')?.textContent?.length,
+    }).toEqual({ focused: true, codeLength: 0 });
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Request a hint' }));
-    const hint = await screen.findByText(/The challenge character is/);
-    const secretCharacter = hint.textContent?.trim().at(-1);
-    expect(secretCharacter).toMatch(/^[A-Z0-9]$/);
-
-    const wrongCharacter = secretCharacter === 'A' ? 'B' : 'A';
+  it('reveals code without advancing for an incorrect character', async () => {
+    const terminal = startSimulation('5', '1');
+    const secretCharacter = await requestHint();
     terminal.focus();
-    fireEvent.keyDown(terminal, { key: wrongCharacter });
-    expect(document.querySelector('.hacking-code')?.textContent).toHaveLength(1);
-    fireEvent.keyDown(terminal, { key: secretCharacter, repeat: true });
-    fireEvent.keyUp(terminal, { key: secretCharacter });
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Request a hint' }), {
-      key: secretCharacter,
-    });
-    expect(document.querySelector('.hacking-code')?.textContent).toHaveLength(1);
-    expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty('value', 0);
 
-    let previousCharacter = secretCharacter;
-    for (let hit = 0; hit < 5; hit += 1) {
-      if (hit > 0) {
-        await waitFor(() => {
-          expect(screen.getByRole('button', { name: 'Request a hint' })).toHaveProperty(
-            'disabled',
-            false,
-          );
+    fireEvent.keyDown(terminal, { key: secretCharacter === 'A' ? 'B' : 'A' });
+
+    expect({
+      codeLength: document.querySelector('.hacking-code')?.textContent?.length,
+      progress: progressValue(),
+    }).toEqual({ codeLength: 1, progress: 0 });
+  });
+
+  it.each(['repeated keydown', 'keyup', 'outside terminal'] as const)(
+    'ignores %s input',
+    async (input) => {
+      const terminal = startSimulation('5', '1');
+      const secretCharacter = await requestHint();
+      terminal.focus();
+      fireEvent.keyDown(terminal, { key: secretCharacter === 'A' ? 'B' : 'A' });
+
+      if (input === 'repeated keydown') {
+        fireEvent.keyDown(terminal, { key: secretCharacter, repeat: true });
+      } else if (input === 'keyup') {
+        fireEvent.keyUp(terminal, { key: secretCharacter });
+      } else {
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Request a hint' }), {
+          key: secretCharacter,
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Request a hint' }));
-        let nextCharacter: string | undefined;
-        await waitFor(() => {
-          const nextHint = screen.getByText(/The challenge character is/);
-          nextCharacter = nextHint.textContent?.trim().at(-1);
-          expect(nextCharacter).not.toBe(previousCharacter);
-        });
-        expect(nextCharacter).toMatch(/^[A-Z0-9]$/);
-        previousCharacter = nextCharacter;
       }
 
-      fireEvent.keyDown(terminal, { key: previousCharacter });
-      await waitFor(() => {
-        expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
-          'value',
-          hit + 1,
-        );
-      });
+      expect({
+        codeLength: document.querySelector('.hacking-code')?.textContent?.length,
+        progress: progressValue(),
+      }).toEqual({ codeLength: 1, progress: 0 });
+    },
+  );
+
+  it('advances for the disclosed challenge character', async () => {
+    const terminal = startSimulation('5', '1');
+    const secretCharacter = await requestHint();
+    terminal.focus();
+
+    fireEvent.keyDown(terminal, { key: secretCharacter });
+    await waitForProgress(1);
+
+    expect(progressValue()).toBe(1);
+  });
+
+  it('completes after the required number of correct characters', async () => {
+    const terminal = startSimulation('5', '1');
+    let character = await requestHint();
+    terminal.focus();
+
+    for (let hit = 0; hit < 5; hit += 1) {
+      if (hit > 0) character = await requestHint(character);
+      fireEvent.keyDown(terminal, { key: character });
+      await waitForProgress(hit + 1);
     }
 
-    await waitFor(() => {
-      expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
-        'value',
-        5,
-      );
-    });
-    expect(document.querySelector('.hacking-code')?.textContent).toHaveLength(6);
-    expect(screen.getByText('ACCESS GRANTED')).toBeTruthy();
+    expect({
+      progress: progressValue(),
+      codeLength: document.querySelector('.hacking-code')?.textContent?.length,
+      outcome: screen.queryByText('ACCESS GRANTED')?.textContent,
+    }).toEqual({ progress: 5, codeLength: 5, outcome: 'ACCESS GRANTED' });
   });
 
   it('provides a non-keyboard keypad for the disclosed challenge character', async () => {
@@ -114,55 +183,72 @@ describe('theatrical hacking test page', () => {
     fireEvent.click(screen.getByRole('button', { name: `Enter character ${secretCharacter}` }));
 
     await waitFor(() => {
-      expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
-        'value',
-        1,
-      );
+      if (
+        (screen.getByRole('progressbar', { name: 'Access progress' }) as HTMLProgressElement)
+          .value !== 1
+      ) {
+        throw new Error('The keypad input has not advanced access progress yet.');
+      }
+    });
+
+    expect(
+      (screen.getByRole('progressbar', { name: 'Access progress' }) as HTMLProgressElement).value,
+    ).toBe(1);
+  });
+
+  it('rotates four penalty characters when progress advances', async () => {
+    const terminal = startSimulation();
+    const initialPenaltyKeys = penaltyKeys();
+    const initialTarget = await requestHint();
+    terminal.focus();
+
+    fireEvent.keyDown(terminal, { key: initialTarget });
+    await waitForProgress(1);
+
+    const forwardPenaltyKeys = penaltyKeys();
+    expect({
+      initialCount: initialPenaltyKeys.length,
+      initialUniqueCount: new Set(initialPenaltyKeys).size,
+      forwardCount: forwardPenaltyKeys.length,
+      forwardUniqueCount: new Set(forwardPenaltyKeys).size,
+      forwardHasNoPreviousKey: forwardPenaltyKeys.every((key) => !initialPenaltyKeys.includes(key)),
+      progress: progressValue(),
+    }).toEqual({
+      initialCount: 4,
+      initialUniqueCount: 4,
+      forwardCount: 4,
+      forwardUniqueCount: 4,
+      forwardHasNoPreviousKey: true,
+      progress: 1,
     });
   });
 
-  it('rotates four penalty characters whenever progress advances or reverses', async () => {
-    renderTestPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Start hacking simulation' }));
-    const terminal = screen.getByRole('group', { name: 'Fictional terminal display' });
-    const penaltyKeys = () =>
-      within(screen.getByRole('group', { name: 'Penalty characters' }))
-        .getAllByText(/^[A-Z0-9]$/)
-        .map((element) => element.textContent ?? '');
-
-    const initialPenaltyKeys = penaltyKeys();
-    expect(initialPenaltyKeys).toHaveLength(4);
-    expect(new Set(initialPenaltyKeys).size).toBe(4);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Request a hint' }));
-    const initialTarget = (await screen.findByText(/The challenge character is/)).textContent
-      ?.trim()
-      .at(-1);
+  it('rotates four penalty characters when progress reverses', async () => {
+    const terminal = startSimulation();
+    const initialTarget = await requestHint();
     terminal.focus();
     fireEvent.keyDown(terminal, { key: initialTarget });
-    await waitFor(() => {
-      expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
-        'value',
-        1,
-      );
-    });
-
+    await waitForProgress(1);
     const forwardPenaltyKeys = penaltyKeys();
-    expect(forwardPenaltyKeys).toHaveLength(4);
-    expect(new Set(forwardPenaltyKeys).size).toBe(4);
-    expect(forwardPenaltyKeys.some((key) => initialPenaltyKeys.includes(key))).toBe(false);
 
     fireEvent.keyDown(terminal, { key: forwardPenaltyKeys[0] });
-    await waitFor(() => {
-      expect(screen.getByRole('progressbar', { name: 'Access progress' })).toHaveProperty(
-        'value',
-        0,
-      );
-    });
+    await waitForProgress(0);
 
     const reversePenaltyKeys = penaltyKeys();
-    expect(reversePenaltyKeys).toHaveLength(4);
-    expect(new Set(reversePenaltyKeys).size).toBe(4);
-    expect(reversePenaltyKeys.some((key) => forwardPenaltyKeys.includes(key))).toBe(false);
+    expect({
+      forwardCount: forwardPenaltyKeys.length,
+      forwardUniqueCount: new Set(forwardPenaltyKeys).size,
+      reverseCount: reversePenaltyKeys.length,
+      reverseUniqueCount: new Set(reversePenaltyKeys).size,
+      reverseHasNoPreviousKey: reversePenaltyKeys.every((key) => !forwardPenaltyKeys.includes(key)),
+      progress: progressValue(),
+    }).toEqual({
+      forwardCount: 4,
+      forwardUniqueCount: 4,
+      reverseCount: 4,
+      reverseUniqueCount: 4,
+      reverseHasNoPreviousKey: true,
+      progress: 0,
+    });
   });
 });

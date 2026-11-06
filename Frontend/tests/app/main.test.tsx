@@ -18,14 +18,16 @@ describe('SPA entry point', () => {
 
     await import('../../src/main');
 
-    expect(createRoot).toHaveBeenCalledWith(document.getElementById('root'));
     const root = createRoot.mock.results[0]?.value;
-    expect(root).toBeDefined();
-    if (root === undefined) {
-      throw new Error('The SPA did not create its React root.');
-    }
-
-    expect(vi.mocked(root.render)).toHaveBeenCalledOnce();
+    expect({
+      mountElement: createRoot.mock.calls[0]?.[0],
+      rootCreated: root !== undefined,
+      renderCount: root === undefined ? 0 : vi.mocked(root.render).mock.calls.length,
+    }).toEqual({
+      mountElement: document.getElementById('root'),
+      rootCreated: true,
+      renderCount: 1,
+    });
   });
 
   it('fails clearly when the mount element is absent', async () => {

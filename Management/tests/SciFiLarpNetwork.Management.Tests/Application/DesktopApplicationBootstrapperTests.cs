@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Headless.XUnit;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Application;
 using SciFiLarpNetwork.Management.Localization;
@@ -10,40 +11,37 @@ using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
-[Collection(AvaloniaHeadlessTestGroup.Name)]
-public sealed class DesktopApplicationBootstrapperTests(AvaloniaHeadlessFixture avalonia)
+public sealed class DesktopApplicationBootstrapperTests
 {
-    [Fact]
-    public Task ConfigureWithDesktopLifetimeCreatesAndAssignsMainWindow() =>
-        avalonia.Session.Dispatch(() =>
+    [AvaloniaFact]
+    public void ConfigureWithDesktopLifetimeCreatesAndAssignsMainWindow()
+    {
+        var viewModel = new MainWindowViewModel(
+            new TestApiClient(),
+            new TestSettingsStore(),
+            new JsonLocalizer(),
+            new ManagementSettings());
+        var window = new MainWindow(viewModel);
+        var lifetime = new ClassicDesktopStyleApplicationLifetime();
+        var bootstrapper = new DesktopApplicationBootstrapper(() => window);
+
+        bootstrapper.Configure(lifetime);
+
+        Assert.Same(window, lifetime.MainWindow);
+    }
+
+    [AvaloniaFact]
+    public void ConfigureWithoutDesktopLifetimeDoesNotCreateMainWindow()
+    {
+        var factoryCalled = false;
+        var bootstrapper = new DesktopApplicationBootstrapper(() =>
         {
-            var viewModel = new MainWindowViewModel(
-                new TestApiClient(),
-                new TestSettingsStore(),
-                new JsonLocalizer(),
-                new ManagementSettings());
-            var window = new MainWindow(viewModel);
-            var lifetime = new ClassicDesktopStyleApplicationLifetime();
-            var bootstrapper = new DesktopApplicationBootstrapper(() => window);
-
-            bootstrapper.Configure(lifetime);
-
-            Assert.Same(window, lifetime.MainWindow);
-        }, CancellationToken.None);
-
-    [Fact]
-    public Task ConfigureWithoutDesktopLifetimeDoesNotCreateMainWindow() =>
-        avalonia.Session.Dispatch(() =>
-        {
-            var factoryCalled = false;
-            var bootstrapper = new DesktopApplicationBootstrapper(() =>
-            {
-                factoryCalled = true;
-                throw new InvalidOperationException("The desktop window must not be created.");
-            });
-            bootstrapper.Configure(null);
-            Assert.False(factoryCalled);
-        }, CancellationToken.None);
+            factoryCalled = true;
+            throw new InvalidOperationException("The desktop window must not be created.");
+        });
+        bootstrapper.Configure(null);
+        Assert.False(factoryCalled);
+    }
 
     private sealed class TestApiClient : IManagementApiClient
     {

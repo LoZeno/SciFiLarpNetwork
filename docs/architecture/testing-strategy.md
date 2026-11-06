@@ -2,7 +2,7 @@
 
 ## Test projects and commands
 
-Backend and Avalonia management tests use xUnit with the .NET 10 test SDK. Backend tests are separated by layer, with database-backed tests clearly identified as integration tests:
+Backend and Avalonia management tests use xUnit.net v3 with Microsoft Testing Platform (MTP) and the .NET 10 SDK. `global.json` selects MTP for `dotnet test`; test projects use the standard `xunit.v3` package without the VSTest SDK or Visual Studio adapter. Backend tests are separated by layer, with database-backed tests clearly identified as integration tests:
 
 - `Backend/tests/SciFiLarpNetwork.Backend.Domain.Tests`
 - `Backend/tests/SciFiLarpNetwork.Backend.Application.Tests`
@@ -20,7 +20,7 @@ dotnet test SciFiLarpNetwork.slnx --configuration Release
 
 Compose initializes separate `scifilarnetwork_dev` and `scifilarnetwork_tests` databases. The integration test fixture defaults to the test database; its connection can be overridden with `ConnectionStrings__EventStore`. Never point that setting at development or production data. Authentication tests create and remove a uniquely named schema and require permission to do so; database-backed test classes run serially to avoid competing projection daemons. The same Docker Compose commands work on Windows, Linux, and macOS, with Docker selecting the native x64 or ARM64 PostgreSQL image.
 
-The Backend Integration test project collects line coverage and writes Cobertura XML and JSON reports under its `TestResults/coverage/` directory; it enforces an 80% line threshold. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded.
+The Backend Integration and Management test projects collect coverage through Coverlet's MTP extension. They write uniquely named Cobertura XML and JSON reports under their `TestResults/coverage/` directories and enforce an 80% total line threshold. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded. Running the documented solution-wide `dotnet test` command collects coverage and enforces both gates.
 
 Run the frontend's TypeScript tests and checks separately:
 
@@ -37,7 +37,7 @@ The GitHub Actions workflow runs both command paths on pull requests and pushes 
 ## Test design
 
 - Keep domain tests deterministic and fast; test observable behavior and game-rule boundaries, not implementation details.
-- Use xUnit for .NET unit, integration, and backend contract tests. Keep frontend tests in the frontend's TypeScript-compatible Vitest suite.
+- Use xUnit.net v3 on Microsoft Testing Platform for .NET unit, integration, and backend contract tests. Keep frontend tests in the frontend's TypeScript-compatible Vitest suite.
 - Integration tests own their data and service lifetime. Use the dedicated `scifilarnetwork_tests` database from the local Compose service (or an isolated test container), keep test data isolated from development and production, and never depend on credentials, DNS, or machine-specific paths beyond the documented prerequisites.
 - Do not share mutable test state across concurrently executing tests. Avoid timing assumptions, public network calls, real external services, and order-dependent fixtures.
 - Exercise the persisted event source, projection rebuilds, optimistic concurrency, MVC behavior, and contracts at appropriate integration boundaries when those implementations exist.

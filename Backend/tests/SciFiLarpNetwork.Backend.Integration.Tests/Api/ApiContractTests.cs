@@ -13,22 +13,28 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
     public async Task ApiRootReturnsLocalizedSirenDiscoveryLinksWithPathBase()
     {
         using var client = factory.CreateClient();
-        using var response = await client.GetAsync("/local/api");
+        using var response = await client.GetAsync("/local/api", TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        Assert.Equal("api", body.RootElement.GetProperty("class")[0].GetString());
-        Assert.Equal("Sci-Fi LARP Network", body.RootElement.GetProperty("properties").GetProperty("name").GetString());
-
-        var links = body.RootElement.GetProperty("links").EnumerateArray().ToArray();
-        Assert.Contains(links, link => HasRelation(link, "self") && link.GetProperty("href").GetString() == "/local/api");
-        Assert.Contains(links, link => HasRelation(link, "urn:scifilarnetwork:rels:latest-version") &&
-            link.GetProperty("href").GetString() == "/local/api/v1");
-        Assert.Contains(links, link => HasRelation(link, "service-desc") &&
-            link.GetProperty("href").GetString() == "/local/openapi/v1.json");
-        Assert.False(body.RootElement.TryGetProperty("actions", out _));
+        Assert.Equal(
+            new
+            {
+                Status = HttpStatusCode.OK,
+                ContentType = "application/vnd.siren+json",
+                Class = "api",
+                Name = "Sci-Fi LARP Network",
+                Links = "self=/local/api|service-desc=/local/openapi/v1.json|urn:scifilarnetwork:rels:latest-version=/local/api/v1",
+                HasActions = false
+            },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                Class = body.RootElement.GetProperty("class")[0].GetString() ?? string.Empty,
+                Name = body.RootElement.GetProperty("properties").GetProperty("name").GetString() ?? string.Empty,
+                Links = LinkSnapshot(body.RootElement),
+                HasActions = body.RootElement.TryGetProperty("actions", out _)
+            });
     }
 
     [Fact]
@@ -38,70 +44,103 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
         using var request = new HttpRequestMessage(HttpMethod.Get, "/local/api/v1");
         request.Headers.AcceptLanguage.ParseAdd("it-IT");
 
-        using var response = await client.SendAsync(request);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("it", response.Content.Headers.ContentLanguage?.FirstOrDefault());
-        Assert.Equal("Sci-Fi LARP Network", body.RootElement.GetProperty("properties").GetProperty("name").GetString());
-        Assert.Contains(
-            body.RootElement.GetProperty("links").EnumerateArray(),
-            link => HasRelation(link, "service-desc") &&
-                link.GetProperty("title").GetString() == "Descrizione API");
+        var serviceDescriptionTitle = body.RootElement.GetProperty("links").EnumerateArray()
+            .Where(link => HasRelation(link, "service-desc"))
+            .Select(link => link.GetProperty("title").GetString())
+            .SingleOrDefault();
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, Language = "it", Name = "Sci-Fi LARP Network", ServiceDescriptionTitle = "Descrizione API" },
+            new
+            {
+                Status = response.StatusCode,
+                Language = response.Content.Headers.ContentLanguage?.FirstOrDefault() ?? string.Empty,
+                Name = body.RootElement.GetProperty("properties").GetProperty("name").GetString() ?? string.Empty,
+                ServiceDescriptionTitle = serviceDescriptionTitle ?? string.Empty
+            });
     }
 
     [Fact]
     public async Task OpenApiDocumentIsAvailableAsJson()
     {
         using var client = factory.CreateClient();
-        using var response = await client.GetAsync("/local/openapi/v1.json");
+        using var response = await client.GetAsync("/local/openapi/v1.json", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-        Assert.True(body.RootElement.TryGetProperty("openapi", out _));
-        Assert.Contains("/api", body.RootElement.GetProperty("paths").EnumerateObject().Select(path => path.Name));
-        Assert.Equal("/local", body.RootElement.GetProperty("servers")[0].GetProperty("url").GetString());
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, ContentType = "application/json", HasOpenApi = true, HasApiPath = true, ServerUrl = "/local" },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                HasOpenApi = body.RootElement.TryGetProperty("openapi", out _),
+                HasApiPath = body.RootElement.GetProperty("paths").EnumerateObject()
+                    .Any(path => path.Name.Contains("/api", StringComparison.Ordinal)),
+                ServerUrl = body.RootElement.GetProperty("servers")[0].GetProperty("url").GetString() ?? string.Empty
+            });
     }
 
     [Fact]
     public async Task ReadinessEndpointReportsDatabaseAndProjectionDiagnosticsWithoutSecrets()
     {
         using var client = factory.CreateClient();
-        using var response = await client.GetAsync("/local/health/ready");
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.GetAsync("/local/health/ready", TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Healthy", body.RootElement.GetProperty("status").GetString());
         Assert.Equal(
-            "Healthy",
-            body.RootElement.GetProperty("checks").GetProperty("event-store").GetProperty("status").GetString());
-        Assert.DoesNotContain("Password=", body.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+            new { Status = HttpStatusCode.OK, Overall = "Healthy", EventStore = "Healthy", ExposesPassword = false },
+            new
+            {
+                Status = response.StatusCode,
+                Overall = body.RootElement.GetProperty("status").GetString() ?? string.Empty,
+                EventStore = body.RootElement.GetProperty("checks").GetProperty("event-store").GetProperty("status").GetString() ?? string.Empty,
+                ExposesPassword = body.RootElement.GetRawText().Contains("Password=", StringComparison.OrdinalIgnoreCase)
+            });
     }
 
     [Fact]
-    public async Task SirenActionFieldsMapToTypedJsonRequestProperties()
+    public async Task SirenActionAdvertisesTypedJsonRequestFields()
     {
         using var client = factory.CreateClient();
-        using var formResponse = await client.GetAsync("/local/api/v1/contract-test/message-action");
-        using var formBody = await JsonDocument.ParseAsync(await formResponse.Content.ReadAsStreamAsync());
+        using var formResponse = await client.GetAsync("/local/api/v1/contract-test/message-action", TestContext.Current.CancellationToken);
+        using var formBody = await JsonDocument.ParseAsync(await formResponse.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
         var action = formBody.RootElement.GetProperty("actions")[0];
 
-        Assert.Equal("submit-message", action.GetProperty("name").GetString());
-        Assert.Equal("POST", action.GetProperty("method").GetString());
-        Assert.Equal("application/json", action.GetProperty("type").GetString());
-        Assert.Equal("name", action.GetProperty("fields")[0].GetProperty("name").GetString());
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, Name = "submit-message", Method = "POST", Type = "application/json", FieldName = "name" },
+            new
+            {
+                Status = formResponse.StatusCode,
+                Name = action.GetProperty("name").GetString() ?? string.Empty,
+                Method = action.GetProperty("method").GetString() ?? string.Empty,
+                Type = action.GetProperty("type").GetString() ?? string.Empty,
+                FieldName = action.GetProperty("fields")[0].GetProperty("name").GetString() ?? string.Empty
+            });
+    }
+
+    [Fact]
+    public async Task AdvertisedJsonActionAcceptsTypedRequestProperties()
+    {
+        using var client = factory.CreateClient();
+        using var formResponse = await client.GetAsync("/local/api/v1/contract-test/message-action", TestContext.Current.CancellationToken);
+        using var formBody = await JsonDocument.ParseAsync(await formResponse.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
+        var actionHref = formBody.RootElement.GetProperty("actions")[0].GetProperty("href").GetString();
 
         using var submitResponse = await client.PostAsync(
-            action.GetProperty("href").GetString(),
-            new StringContent("{\"name\":\"test message\"}", Encoding.UTF8, "application/json"));
-        using var submitBody = await JsonDocument.ParseAsync(await submitResponse.Content.ReadAsStreamAsync());
+            actionHref,
+            new StringContent("{\"name\":\"test message\"}", Encoding.UTF8, "application/json"),
+            TestContext.Current.CancellationToken);
+        using var submitBody = await JsonDocument.ParseAsync(await submitResponse.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
         Assert.Equal(
-            "test message",
-            submitBody.RootElement.GetProperty("properties").GetProperty("name").GetString());
+            new { Status = HttpStatusCode.OK, Name = "test message" },
+            new
+            {
+                Status = submitResponse.StatusCode,
+                Name = submitBody.RootElement.GetProperty("properties").GetProperty("name").GetString() ?? string.Empty
+            });
     }
 
     [Fact]
@@ -115,42 +154,63 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
         request.Headers.AcceptLanguage.ParseAdd("it");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.siren+json"));
 
-        using var response = await client.SendAsync(request);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
         var properties = body.RootElement.GetProperty("properties");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("errors.validation", properties.GetProperty("code").GetString());
-        Assert.Equal("La richiesta contiene valori non validi.", properties.GetProperty("detail").GetString());
-        Assert.Equal("Inserisci un valore valido.", properties.GetProperty("errors").GetProperty("Name")[0].GetString());
-        Assert.Contains(
-            body.RootElement.GetProperty("links").EnumerateArray(),
-            link => HasRelation(link, "self"));
+        Assert.Equal(
+            new
+            {
+                Status = HttpStatusCode.BadRequest,
+                ContentType = "application/vnd.siren+json",
+                Code = "errors.validation",
+                Detail = "La richiesta contiene valori non validi.",
+                NameError = "Inserisci un valore valido.",
+                HasSelfLink = true
+            },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                Code = properties.GetProperty("code").GetString() ?? string.Empty,
+                Detail = properties.GetProperty("detail").GetString() ?? string.Empty,
+                NameError = properties.GetProperty("errors").GetProperty("Name")[0].GetString() ?? string.Empty,
+                HasSelfLink = body.RootElement.GetProperty("links").EnumerateArray().Any(link => HasRelation(link, "self"))
+            });
     }
 
     [Fact]
     public async Task MissingRouteReturnsSirenNotFoundError()
     {
         using var client = factory.CreateClient();
-        using var response = await client.GetAsync("/local/api/v1/not-implemented");
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.GetAsync("/local/api/v1/not-implemented", TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("errors.notFound", body.RootElement.GetProperty("properties").GetProperty("code").GetString());
+        Assert.Equal(
+            new { Status = HttpStatusCode.NotFound, ContentType = "application/vnd.siren+json", Code = "errors.notFound" },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                Code = body.RootElement.GetProperty("properties").GetProperty("code").GetString() ?? string.Empty
+            });
     }
 
     [Fact]
     public async Task ApiExceptionReturnsStableConflictCode()
     {
         using var client = factory.CreateClient();
-        using var response = await client.PostAsync("/local/api/v1/contract-test/conflict", null);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.PostAsync("/local/api/v1/contract-test/conflict", null, TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("errors.conflict", body.RootElement.GetProperty("properties").GetProperty("code").GetString());
+        Assert.Equal(
+            new { Status = HttpStatusCode.Conflict, ContentType = "application/vnd.siren+json", Code = "errors.conflict" },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                Code = body.RootElement.GetProperty("properties").GetProperty("code").GetString() ?? string.Empty
+            });
     }
 
     [Fact]
@@ -168,38 +228,60 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
         request.Headers.Add("X-Test-Authenticated", "true");
         request.Headers.Add("X-Test-ActorId", actorId);
 
-        using var response = await client.SendAsync(request);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(actorId, body.RootElement.GetProperty("properties").GetProperty("actorId").GetString());
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, ActorId = actorId },
+            new
+            {
+                Status = response.StatusCode,
+                ActorId = body.RootElement.GetProperty("properties").GetProperty("actorId").GetString() ?? string.Empty
+            });
     }
 
     [Fact]
     public async Task UnexpectedExceptionIsLoggedAndDetailsAreNotDisclosed()
     {
         using var client = factory.CreateClient();
-        using var response = await client.GetAsync("/local/api/v1/contract-test/unexpected-error");
-        var bodyText = await response.Content.ReadAsStringAsync();
+        using var response = await client.GetAsync("/local/api/v1/contract-test/unexpected-error", TestContext.Current.CancellationToken);
+        var bodyText = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Contains("errors.internalServerError", bodyText, StringComparison.Ordinal);
-        Assert.DoesNotContain("This message must not reach the client.", bodyText, StringComparison.Ordinal);
+        Assert.Equal(
+            new { Status = HttpStatusCode.InternalServerError, ContainsGenericError = true, LeaksException = false },
+            new
+            {
+                Status = response.StatusCode,
+                ContainsGenericError = bodyText.Contains("errors.internalServerError", StringComparison.Ordinal),
+                LeaksException = bodyText.Contains("This message must not reach the client.", StringComparison.Ordinal)
+            });
     }
 
     [Fact]
-    public async Task ProtectedActionRejectsAnonymousRequestAndAcceptsAuthenticatedPrincipal()
+    public async Task ProtectedActionRejectsAnonymousRequest()
     {
         using var client = factory.CreateClient();
-        using var anonymousResponse = await client.PostAsync("/local/api/v1/contract-test/protected-action", null);
+        using var anonymousResponse = await client.PostAsync("/local/api/v1/contract-test/protected-action", null, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new { Status = HttpStatusCode.Unauthorized, ContentType = "application/vnd.siren+json" },
+            new
+            {
+                Status = anonymousResponse.StatusCode,
+                ContentType = anonymousResponse.Content.Headers.ContentType?.MediaType ?? string.Empty
+            });
+    }
+
+    [Fact]
+    public async Task ProtectedActionAcceptsAuthenticatedPrincipal()
+    {
+        using var client = factory.CreateClient();
         using var authenticatedRequest = new HttpRequestMessage(
             HttpMethod.Post,
             "/local/api/v1/contract-test/protected-action");
         authenticatedRequest.Headers.Add("X-Test-Authenticated", "true");
-        using var authenticatedResponse = await client.SendAsync(authenticatedRequest);
+        using var authenticatedResponse = await client.SendAsync(authenticatedRequest, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
-        Assert.Equal("application/vnd.siren+json", anonymousResponse.Content.Headers.ContentType?.MediaType);
         Assert.Equal(HttpStatusCode.OK, authenticatedResponse.StatusCode);
     }
 
@@ -210,13 +292,23 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
         using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/contract-test/admin-action");
         request.Headers.Add("X-Test-Authenticated", "true");
 
-        using var response = await client.SendAsync(request);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal("application/vnd.siren+json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("errors.forbidden", body.RootElement.GetProperty("properties").GetProperty("code").GetString());
+        Assert.Equal(
+            new { Status = HttpStatusCode.Forbidden, ContentType = "application/vnd.siren+json", Code = "errors.forbidden" },
+            new
+            {
+                Status = response.StatusCode,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
+                Code = body.RootElement.GetProperty("properties").GetProperty("code").GetString() ?? string.Empty
+            });
     }
+
+    private static string LinkSnapshot(JsonElement entity) =>
+        string.Join('|', entity.GetProperty("links").EnumerateArray()
+            .Select(link => $"{string.Join(',', link.GetProperty("rel").EnumerateArray().Select(rel => rel.GetString()))}={link.GetProperty("href").GetString()}")
+            .OrderBy(value => value, StringComparer.Ordinal));
 
     private static bool HasRelation(JsonElement link, string relation) =>
         link.GetProperty("rel").EnumerateArray().Any(value => value.GetString() == relation);

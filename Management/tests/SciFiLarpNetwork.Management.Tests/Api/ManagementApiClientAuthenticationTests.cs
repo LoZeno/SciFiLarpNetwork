@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text;
-using System.Text.Json;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Common.Siren;
 
@@ -18,62 +17,341 @@ public sealed class ManagementApiClientAuthenticationTests
     private const string Resource = """{"class":["resource"],"properties":{}}""";
 
     [Fact]
-    public async Task SignInUsesResponseHeaderAndProtectedRequestsAttachToken()
+    public async Task SignInReturnsTheAdvertisedSessionRecord()
     {
-        var handler = new RecordingHandler((request, _) => Task.FromResult(
-            request.Method == HttpMethod.Post
-                ? CreateSirenResponse(SessionResource, "session-token")
-                : CreateSirenResponse(Resource)));
+        var handler = CreateStandardHandler("session-token");
         using var client = new HttpClient(handler);
         var apiClient = new ManagementApiClient(client);
 
-        var session = await apiClient.SignInAsync(ApiBaseUrl, "operator", "not-persisted-password", "en");
-        await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en");
+        var session = await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en", TestContext.Current.CancellationToken);
 
-        Assert.Equal("operator", session.UserName);
-        Assert.Equal("administrator", session.Role);
-        Assert.Equal("http://localhost:5000/api/v2/auth/login", handler.Requests[2].Uri?.ToString());
-        using var requestBody = JsonDocument.Parse(handler.Requests[2].Body!);
         Assert.Equal(
-            "not-persisted-password",
-            requestBody.RootElement.GetProperty("password").GetString());
-        Assert.Null(handler.Requests[2].Authorization);
-        Assert.Equal("Bearer session-token", handler.Requests[3].Authorization);
+            new ManagementSession("operator", "administrator", new DateTimeOffset(2026, 11, 5, 6, 25, 0, TimeSpan.Zero)),
+            session);
     }
 
     [Fact]
-    public async Task RenewSessionRotatesTokenAndLogoutClearsIt()
+    public async Task SignInPostsCredentialsToTheAdvertisedLoginAction()
     {
-        var handler = new RecordingHandler((request, _) => Task.FromResult(
+        var handler = CreateStandardHandler("session-token");
+        using var client = new HttpClient(handler);
+        var apiClient = new ManagementApiClient(client);
+        await apiClient.SignInAsync(ApiBaseUrl, "operator", "not-persisted-password", "en", TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new RecordedRequest(
+                HttpMethod.Post,
+                new Uri("http://localhost:5000/api/v2/auth/login"),
+                null,
+                """{"userName":"operator","password":"not-persisted-password"}"""),
+            handler.Requests[2]);
+    }
+
+    [Fact]
+    public async Task ProtectedRequestAttachesTheSessionToken()
+    {
+        var handler = CreateStandardHandler("session-token");
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Get,
+                    new Uri("http://localhost:5000/api/v1/admin/accounts"),
+                    "Bearer session-token",
+                    null),
+                handler.Requests[3]);
+        }
+    }
+
+    [Fact]
+    public async Task RenewSessionSendsTheCurrentSessionToken()
+    {
+        var handler = CreateRenewalHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.RenewSessionAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Post,
+                    new Uri("http://localhost:5000/api/v2/auth/refresh"),
+                    "Bearer initial-token",
+                    null),
+                handler.Requests[3]);
+        }
+    }
+
+    [Fact]
+    public async Task ProtectedRequestAfterRenewalUsesTheRotatedToken()
+    {
+        var handler = CreateRenewalHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.RenewSessionAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+            await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Get,
+                    new Uri("http://localhost:5000/api/v1/admin/accounts"),
+                    "Bearer renewed-token",
+                    null),
+                handler.Requests[4]);
+        }
+    }
+
+    [Fact]
+    public async Task SignOutSendsTheCurrentSessionToken()
+    {
+        var handler = CreateRenewalHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.SignOutAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Delete,
+                    new Uri("http://localhost:5000/api/v2/auth/logout"),
+                    "Bearer initial-token",
+                    null),
+                handler.Requests[3]);
+        }
+    }
+
+    [Fact]
+    public async Task SignOutAfterRenewalSendsTheRotatedSessionToken()
+    {
+        var handler = CreateRenewalHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.RenewSessionAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+
+            await apiClient.SignOutAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Delete,
+                    new Uri("http://localhost:5000/api/v2/auth/logout"),
+                    "Bearer renewed-token",
+                    null),
+                handler.Requests[4]);
+        }
+    }
+
+    [Fact]
+    public async Task ProtectedRequestAfterSignOutHasNoSessionToken()
+    {
+        var handler = CreateRenewalHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.SignOutAsync(ApiBaseUrl, "en", TestContext.Current.CancellationToken);
+            await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Get,
+                    new Uri("http://localhost:5000/api/v1/admin/accounts"),
+                    null,
+                    null),
+                handler.Requests[4]);
+        }
+    }
+
+    [Fact]
+    public async Task UnauthorizedProtectedRequestThrowsManagementApiException()
+    {
+        var handler = CreateUnauthorizedHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            var exception = await Record.ExceptionAsync(() =>
+                apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken));
+
+            Assert.Equal(
+                new RequestFailureSnapshot(
+                    typeof(ManagementApiException),
+                    new RecordedRequest(
+                        HttpMethod.Get,
+                        new Uri("http://localhost:5000/api/v1/admin/accounts"),
+                        "Bearer expired-token",
+                        null)),
+                new RequestFailureSnapshot(exception?.GetType(), handler.Requests[3]));
+        }
+    }
+
+    [Fact]
+    public async Task ProtectedRequestAfterUnauthorizedResponseHasNoSessionToken()
+    {
+        var handler = CreateUnauthorizedHandler();
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            try
+            {
+                await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+            }
+            catch (ManagementApiException)
+            {
+            }
+
+            await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Get,
+                    new Uri("http://localhost:5000/api/v1/admin/accounts"),
+                    null,
+                    null),
+                handler.Requests[4]);
+        }
+    }
+
+    [Fact]
+    public async Task SignInRejectsRemoteCleartext()
+    {
+        var handler = CreateStandardHandler("token");
+        using var client = new HttpClient(handler);
+        var apiClient = new ManagementApiClient(client);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            apiClient.SignInAsync("http://remote.example/api", "operator", "password", "en", TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task SignInDoesNotSendCredentialsOverRemoteCleartext()
+    {
+        var handler = CreateStandardHandler("token");
+        using var client = new HttpClient(handler);
+        var apiClient = new ManagementApiClient(client);
+        try
+        {
+            await apiClient.SignInAsync("http://remote.example/api", "operator", "password", "en", TestContext.Current.CancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task SessionTokenIsNotSentToAnotherApiOrigin()
+    {
+        var handler = CreateStandardHandler("original-token");
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.GetResourceAsync("https://other.example/api", "/api/v1/admin/accounts", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Get,
+                    new Uri("https://other.example/api/v1/admin/accounts"),
+                    null,
+                    null),
+                handler.Requests[3]);
+        }
+    }
+
+    [Fact]
+    public async Task RenewalRejectsAnotherApiOrigin()
+    {
+        var handler = CreateStandardHandler("original-token");
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                apiClient.RenewSessionAsync("https://other.example/api", "en", TestContext.Current.CancellationToken));
+        }
+    }
+
+    [Fact]
+    public async Task SignOutUsesTheOriginalApiOriginWhenAnotherOriginIsRequested()
+    {
+        var handler = CreateRenewalHandler("original-token");
+        var (client, apiClient) = await CreateSignedInClient(handler);
+        using (client)
+        {
+            await apiClient.SignOutAsync("https://other.example/api", "en", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                new RecordedRequest(
+                    HttpMethod.Delete,
+                    new Uri("http://localhost:5000/api/v2/auth/logout"),
+                    "Bearer original-token",
+                    null),
+                handler.Requests[3]);
+        }
+    }
+
+    [Fact]
+    public async Task SignInRejectsAdvertisedCrossOriginActionBeforeSendingCredentials()
+    {
+        const string unsafeVersion =
+            """{"class":["api","version"],"actions":[{"name":"administrator-sign-in","href":"https://other.example/login","method":"POST","type":"application/json"}]}""";
+        var handler = new RecordingHandler(
+            (_, _) => Task.FromResult(CreateSirenResponse(SessionResource, "token")),
+            unsafeVersion);
+        using var client = new HttpClient(handler);
+        var apiClient = new ManagementApiClient(client);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en", TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task SignInSendsNoCredentialsWhenAdvertisedActionIsCrossOrigin()
+    {
+        const string unsafeVersion =
+            """{"class":["api","version"],"actions":[{"name":"administrator-sign-in","href":"https://other.example/login","method":"POST","type":"application/json"}]}""";
+        var handler = new RecordingHandler(
+            (_, _) => Task.FromResult(CreateSirenResponse(SessionResource, "token")),
+            unsafeVersion);
+        using var client = new HttpClient(handler);
+        var apiClient = new ManagementApiClient(client);
+        try
+        {
+            await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en", TestContext.Current.CancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        Assert.Equal(
+            "GET,GET",
+            string.Join(',', handler.Requests.Select(request => request.Method.Method)));
+    }
+
+    private static RecordingHandler CreateStandardHandler(string token) =>
+        new((request, _) => Task.FromResult(
+            request.Method == HttpMethod.Post
+                ? CreateSirenResponse(SessionResource, token)
+                : CreateSirenResponse(Resource)));
+
+    private static RecordingHandler CreateRenewalHandler(string initialToken = "initial-token") =>
+        new((request, _) => Task.FromResult(
             request.Method switch
             {
                 var method when method == HttpMethod.Post &&
                                 request.RequestUri?.AbsolutePath.EndsWith("/refresh", StringComparison.Ordinal) == true =>
                     CreateSirenResponse(SessionResource, "renewed-token"),
-                var method when method == HttpMethod.Post => CreateSirenResponse(SessionResource, "initial-token"),
+                var method when method == HttpMethod.Post => CreateSirenResponse(SessionResource, initialToken),
                 var method when method == HttpMethod.Delete => new HttpResponseMessage(HttpStatusCode.NoContent),
                 _ => CreateSirenResponse(Resource)
             }));
-        using var client = new HttpClient(handler);
-        var apiClient = new ManagementApiClient(client);
-        await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en");
 
-        await apiClient.RenewSessionAsync(ApiBaseUrl, "en");
-        await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en");
-        await apiClient.SignOutAsync(ApiBaseUrl, "en");
-        await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en");
-
-        Assert.Equal("Bearer initial-token", handler.Requests[3].Authorization);
-        Assert.Equal("Bearer renewed-token", handler.Requests[4].Authorization);
-        Assert.Equal("Bearer renewed-token", handler.Requests[5].Authorization);
-        Assert.Null(handler.Requests[6].Authorization);
-    }
-
-    [Fact]
-    public async Task UnauthorizedResponseClearsSessionToken()
+    private static RecordingHandler CreateUnauthorizedHandler()
     {
         var resourceRequests = 0;
-        var handler = new RecordingHandler((request, _) =>
+        return new RecordingHandler((request, _) =>
         {
             if (request.Method == HttpMethod.Post)
             {
@@ -89,70 +367,15 @@ public sealed class ManagementApiClientAuthenticationTests
 
             return Task.FromResult(CreateSirenResponse(Resource));
         });
-        using var client = new HttpClient(handler);
-        var apiClient = new ManagementApiClient(client);
-        await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en");
-
-        await Assert.ThrowsAsync<ManagementApiException>(() =>
-            apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en"));
-        await apiClient.GetResourceAsync(ApiBaseUrl, "/api/v1/admin/accounts", "en");
-
-        Assert.Equal("Bearer expired-token", handler.Requests[3].Authorization);
-        Assert.Null(handler.Requests[4].Authorization);
     }
 
-    [Fact]
-    public async Task SignInRejectsRemoteCleartextBeforeSendingCredentials()
+    private static async Task<(HttpClient Client, ManagementApiClient ApiClient)> CreateSignedInClient(
+        RecordingHandler handler)
     {
-        var handler = new RecordingHandler((_, _) => Task.FromResult(CreateSirenResponse(SessionResource, "token")));
-        using var client = new HttpClient(handler);
+        var client = new HttpClient(handler);
         var apiClient = new ManagementApiClient(client);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            apiClient.SignInAsync("http://remote.example/api", "operator", "password", "en"));
-
-        Assert.Empty(handler.Requests);
-    }
-
-    [Fact]
-    public async Task SessionTokenIsBoundToTheApiThatIssuedIt()
-    {
-        var handler = new RecordingHandler((request, _) => Task.FromResult(
-            request.Method == HttpMethod.Post
-                ? CreateSirenResponse(SessionResource, "original-token")
-                : request.Method == HttpMethod.Delete
-                    ? new HttpResponseMessage(HttpStatusCode.NoContent)
-                    : CreateSirenResponse(Resource)));
-        using var client = new HttpClient(handler);
-        var apiClient = new ManagementApiClient(client);
-        await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en");
-
-        await apiClient.GetResourceAsync("https://other.example/api", "/api/v1/admin/accounts", "en");
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            apiClient.RenewSessionAsync("https://other.example/api", "en"));
-        await apiClient.SignOutAsync("https://other.example/api", "en");
-
-        Assert.Null(handler.Requests[3].Authorization);
-        Assert.Equal("http://localhost:5000/api/v2/auth/logout", handler.Requests[4].Uri?.ToString());
-        Assert.Equal("Bearer original-token", handler.Requests[4].Authorization);
-    }
-
-    [Fact]
-    public async Task SignInRejectsAdvertisedCrossOriginActionBeforeSendingCredentials()
-    {
-        const string unsafeVersion =
-            """{"class":["api","version"],"actions":[{"name":"administrator-sign-in","href":"https://other.example/login","method":"POST","type":"application/json"}]}""";
-        var handler = new RecordingHandler(
-            (_, _) => Task.FromResult(CreateSirenResponse(SessionResource, "token")),
-            unsafeVersion);
-        using var client = new HttpClient(handler);
-        var apiClient = new ManagementApiClient(client);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en"));
-
-        Assert.Equal(2, handler.Requests.Count);
-        Assert.All(handler.Requests, request => Assert.Equal(HttpMethod.Get, request.Method));
+        await apiClient.SignInAsync(ApiBaseUrl, "operator", "local-password", "en", TestContext.Current.CancellationToken);
+        return (client, apiClient);
     }
 
     private static HttpResponseMessage CreateSirenResponse(
@@ -201,6 +424,8 @@ public sealed class ManagementApiClientAuthenticationTests
             return await responder(request, cancellationToken);
         }
     }
+
+    private sealed record RequestFailureSnapshot(Type? ExceptionType, RecordedRequest Request);
 
     private sealed record RecordedRequest(HttpMethod Method, Uri? Uri, string? Authorization, string? Body);
 }

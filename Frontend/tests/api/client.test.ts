@@ -25,26 +25,25 @@ describe('Siren API client', () => {
     expect(resolved?.href ?? null).toBe(testCase.expectedHref);
   });
 
-  it('resolves only same-origin targets under the configured API path', () => {
+  it.each([
+    ['/local/api/v1', 'https://network.test/local/api/v1'],
+    ['v1/news', 'https://network.test/local/api/v1/news'],
+    ['https://attacker.test/local/api', null],
+    ['/openapi/v1.json', null],
+    ['//attacker.test/local/api', null],
+    ['/local/api/v1#fragment', null],
+  ])('resolves only same-origin targets under the configured API path', (href, expectedHref) => {
     const apiBase = createApiBaseUrl('/local/api', 'https://network.test');
 
-    expect(resolveApiTarget('/local/api/v1', apiBase)?.href).toBe(
-      'https://network.test/local/api/v1',
-    );
-    expect(resolveApiTarget('v1/news', apiBase)?.href).toBe(
-      'https://network.test/local/api/v1/news',
-    );
-    expect(resolveApiTarget('https://attacker.test/local/api', apiBase)).toBeNull();
-    expect(resolveApiTarget('/openapi/v1.json', apiBase)).toBeNull();
-    expect(resolveApiTarget('//attacker.test/local/api', apiBase)).toBeNull();
-    expect(resolveApiTarget('/local/api/v1#fragment', apiBase)).toBeNull();
+    expect(resolveApiTarget(href, apiBase)?.href ?? null).toBe(expectedHref);
   });
 
-  it('rejects an API base that is not a same-origin HTTP path', () => {
-    expect(() => createApiBaseUrl('https://attacker.test/api', 'https://network.test')).toThrow();
-    expect(() => createApiBaseUrl('/api?query=1', 'https://network.test')).toThrow();
-    expect(() => createApiBaseUrl('/', 'https://network.test')).toThrow();
-  });
+  it.each(['https://attacker.test/api', '/api?query=1', '/'])(
+    'rejects an API base that is not a same-origin HTTP path: %s',
+    (apiBasePath) => {
+      expect(() => createApiBaseUrl(apiBasePath, 'https://network.test')).toThrow();
+    },
+  );
 
   it('discovers and follows the advertised latest-version link', async () => {
     const request = vi
@@ -70,16 +69,31 @@ describe('Siren API client', () => {
 
     const result = await client.discover();
 
-    expect(result.class).toEqual(['api', 'version']);
-    expect(request).toHaveBeenCalledTimes(2);
-    expect(request).toHaveBeenNthCalledWith(
-      1,
-      new URL('https://network.test/api'),
-      expect.objectContaining({
-        method: 'GET',
-        headers: { Accept: sirenMediaType, 'Accept-Language': 'it' },
-      }),
-    );
+    expect({
+      resourceClass: result.class,
+      requests: request.mock.calls.map(([url, init]) => ({
+        url: String(url),
+        method: init?.method,
+        accept: new Headers(init?.headers).get('Accept'),
+        acceptLanguage: new Headers(init?.headers).get('Accept-Language'),
+      })),
+    }).toEqual({
+      resourceClass: ['api', 'version'],
+      requests: [
+        {
+          url: 'https://network.test/api',
+          method: 'GET',
+          accept: sirenMediaType,
+          acceptLanguage: 'it',
+        },
+        {
+          url: 'https://network.test/api/v1',
+          method: 'GET',
+          accept: sirenMediaType,
+          acceptLanguage: 'it',
+        },
+      ],
+    });
   });
 
   it('submits only a supported JSON action and returns its Siren result', async () => {
@@ -97,19 +111,29 @@ describe('Siren API client', () => {
       { body: 'Hello', urgent: false },
     );
 
-    expect(result?.class).toEqual(['message']);
-    expect(request).toHaveBeenCalledWith(
-      new URL('https://network.test/api/v1/messages'),
-      expect.objectContaining({
+    const call = request.mock.calls[0];
+    const headers = new Headers(call?.[1]?.headers);
+    expect({
+      resultClass: result?.class,
+      request: {
+        url: String(call?.[0]),
+        method: call?.[1]?.method,
+        accept: headers.get('Accept'),
+        acceptLanguage: headers.get('Accept-Language'),
+        contentType: headers.get('Content-Type'),
+        body: call?.[1]?.body,
+      },
+    }).toEqual({
+      resultClass: ['message'],
+      request: {
+        url: 'https://network.test/api/v1/messages',
         method: 'POST',
-        headers: {
-          Accept: sirenMediaType,
-          'Accept-Language': 'en',
-          'Content-Type': 'application/json',
-        },
+        accept: sirenMediaType,
+        acceptLanguage: 'en',
+        contentType: 'application/json',
         body: JSON.stringify({ body: 'Hello', urgent: false }),
-      }),
-    );
+      },
+    });
   });
 
   it('accepts a successful action with no representation', async () => {
@@ -130,12 +154,13 @@ describe('Siren API client', () => {
     ).resolves.toBeNull();
   });
 
-  it('does not execute unsupported action formats or cross-boundary targets', async () => {
+  it('does not execute a cross-origin action target', async () => {
     const request = vi.fn<typeof fetch>();
     const client = createApiClient(createApiBaseUrl('/api', 'https://network.test'), request);
 
-    await expect(
-      client.submitAction(
+    let status: number | undefined;
+    try {
+      await client.submitAction(
         {
           name: 'open-external',
           title: 'Open',
@@ -144,10 +169,24 @@ describe('Siren API client', () => {
           type: 'application/json',
         },
         {},
-      ),
-    ).rejects.toMatchObject({ status: 400 });
-    await expect(
-      client.submitAction(
+      );
+    } catch (error) {
+      status = error instanceof ApiError ? error.status : undefined;
+    }
+
+    expect({ status, requestCount: request.mock.calls.length }).toEqual({
+      status: 400,
+      requestCount: 0,
+    });
+  });
+
+  it('does not execute an unsupported action format', async () => {
+    const request = vi.fn<typeof fetch>();
+    const client = createApiClient(createApiBaseUrl('/api', 'https://network.test'), request);
+    let errorName: string | undefined;
+
+    try {
+      await client.submitAction(
         {
           name: 'unsupported',
           title: 'Unsupported',
@@ -156,37 +195,55 @@ describe('Siren API client', () => {
           type: 'text/plain',
         },
         {},
-      ),
-    ).rejects.toBeInstanceOf(ApiError);
-    expect(request).not.toHaveBeenCalled();
+      );
+    } catch (error) {
+      errorName = error instanceof Error ? error.name : undefined;
+    }
+
+    expect({ errorName, requestCount: request.mock.calls.length }).toEqual({
+      errorName: 'ApiError',
+      requestCount: 0,
+    });
   });
 
-  it('maps server error codes and rejects non-Siren response bodies', async () => {
+  it('maps a Siren server error code into ApiError', async () => {
     const request = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(
+      .mockResolvedValue(
         sirenResponse({ class: ['error'], properties: { code: 'errors.conflict' } }, 409),
-      )
-      .mockResolvedValueOnce(
-        new Response('{}', { headers: { 'Content-Type': 'application/json' } }),
       );
     const client = createApiClient(createApiBaseUrl('/api', 'https://network.test'), request);
 
-    await expect(client.getResource('/api/v1')).rejects.toMatchObject({
+    let error: ApiError | undefined;
+    try {
+      await client.getResource('/api/v1');
+    } catch (caught) {
+      if (caught instanceof ApiError) error = caught;
+    }
+
+    expect({ status: error?.status, code: error?.code }).toEqual({
       status: 409,
       code: 'errors.conflict',
     });
+  });
+
+  it('rejects a successful response with a non-Siren body', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('{}', { headers: { 'Content-Type': 'application/json' } }));
+    const client = createApiClient(createApiBaseUrl('/api', 'https://network.test'), request);
+
     await expect(client.getResource('/api/v1')).rejects.toMatchObject({
       status: 200,
       code: 'errors.requestFailed',
     });
   });
 
-  it('validates incoming Siren envelopes without trusting malformed links', () => {
-    expect(
-      parseSirenEntity({ class: ['resource'], links: [{ rel: ['self'], href: '/api' }] }),
-    ).not.toBeNull();
-    expect(parseSirenEntity({ links: [{ rel: 'self', href: '/api' }] })).toBeNull();
-    expect(parseSirenEntity(null)).toBeNull();
+  it.each([
+    [{ class: ['resource'], links: [{ rel: ['self'], href: '/api' }] }, true],
+    [{ links: [{ rel: 'self', href: '/api' }] }, false],
+    [null, false],
+  ])('validates Siren envelope structure', (entity, isValid) => {
+    expect(parseSirenEntity(entity) !== null).toBe(isValid);
   });
 });

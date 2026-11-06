@@ -129,6 +129,8 @@ Start PostgreSQL with the Compose instructions above before running the complete
 dotnet test SciFiLarpNetwork.slnx --configuration Release
 ```
 
+The .NET test projects use xUnit.net v3 with Microsoft Testing Platform, selected by `global.json`. The solution test command also collects Backend Integration and Management line coverage, enforces each project's 80% threshold, and writes Cobertura XML and JSON reports under their `TestResults/coverage/` directories.
+
 Run frontend checks separately from `Frontend`:
 
 ```text

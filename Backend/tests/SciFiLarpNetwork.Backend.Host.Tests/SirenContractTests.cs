@@ -30,13 +30,10 @@ public sealed class SirenContractTests
         };
 
         using var document = JsonDocument.Parse(SirenJson.Serialize(entity));
-        var serializedAction = document.RootElement.GetProperty("actions")[0];
+        using var expected = JsonDocument.Parse(
+            """{"class":["message-form"],"actions":[{"name":"submit-message","href":"/api/v1/messages","method":"POST","title":"Submit message","type":"application/json","fields":[{"name":"body","title":"Message","type":"text"}]}]}""");
 
-        Assert.Equal("submit-message", serializedAction.GetProperty("name").GetString());
-        Assert.Equal("application/json", serializedAction.GetProperty("type").GetString());
-        Assert.Equal("body", serializedAction.GetProperty("fields")[0].GetProperty("name").GetString());
-        Assert.False(serializedAction.TryGetProperty("class", out _));
-        Assert.False(document.RootElement.TryGetProperty("properties", out _));
+        Assert.True(JsonElement.DeepEquals(expected.RootElement, document.RootElement));
     }
 
     [Fact]
@@ -55,10 +52,10 @@ public sealed class SirenContractTests
         };
 
         using var document = JsonDocument.Parse(SirenJson.Serialize(entity));
+        using var expected = JsonDocument.Parse(
+            """{"class":["api"],"entities":[{"rel":["urn:scifilarnetwork:rels:navigation"],"class":["navigation-item"],"href":"/api/v1/home"}]}""");
 
-        Assert.Equal(
-            "urn:scifilarnetwork:rels:navigation",
-            document.RootElement.GetProperty("entities")[0].GetProperty("rel")[0].GetString());
+        Assert.True(JsonElement.DeepEquals(expected.RootElement, document.RootElement));
     }
 
     [Theory]
@@ -79,8 +76,10 @@ public sealed class SirenContractTests
         }
     }
 
-    [Fact]
-    public void ApplicationTextUsesEnglishFallbackAndRejectsUnknownKey()
+    [Theory]
+    [InlineData("errors.unauthorized", "Sign in to continue.")]
+    [InlineData("missing.key", null)]
+    public void ApplicationTextUsesEnglishFallbackAndRejectsUnknownKey(string key, string? expected)
     {
         var originalCulture = CultureInfo.CurrentUICulture;
         try
@@ -88,8 +87,14 @@ public sealed class SirenContractTests
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("fr");
             var text = new ApplicationText();
 
-            Assert.Equal("Sign in to continue.", text.GetLocalizedText("errors.unauthorized"));
-            Assert.Throws<KeyNotFoundException>(() => text.GetLocalizedText("missing.key"));
+            if (expected is null)
+            {
+                Assert.Throws<KeyNotFoundException>(() => text.GetLocalizedText(key));
+            }
+            else
+            {
+                Assert.Equal(expected, text.GetLocalizedText(key));
+            }
         }
         finally
         {

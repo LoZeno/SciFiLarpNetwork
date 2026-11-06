@@ -40,12 +40,25 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.ConnectCommand.ExecuteAsync();
 
-        Assert.Equal("API connection established", viewModel.StatusMessage);
-        Assert.Equal("Administration", viewModel.ResourceTitle);
-        Assert.Equal("Choose a management area.", viewModel.ResourceSummary);
-        Assert.Equal("Inspect", Assert.Single(viewModel.AvailableActions));
-        Assert.Equal("Messages", Assert.Single(viewModel.NavigationItems).Title);
-        Assert.Equal(new ManagementSettings(viewModel.ApiBaseUrl, "en"), settingsStore.SavedSettings);
+        Assert.Equal(
+            new
+            {
+                Status = "API connection established",
+                Title = "Administration",
+                Summary = "Choose a management area.",
+                Actions = "Inspect",
+                Navigation = (NavigationItem?)new NavigationItem("Messages", "/api/v1/messages"),
+                Settings = (ManagementSettings?)new ManagementSettings(viewModel.ApiBaseUrl, "en")
+            },
+            new
+            {
+                Status = viewModel.StatusMessage,
+                Title = viewModel.ResourceTitle,
+                Summary = viewModel.ResourceSummary,
+                Actions = string.Join(',', viewModel.AvailableActions),
+                Navigation = viewModel.NavigationItems.SingleOrDefault(),
+                Settings = settingsStore.SavedSettings
+            });
     }
 
     [Fact]
@@ -61,9 +74,14 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.OpenResourceCommand.ExecuteAsync();
 
-        Assert.Equal("/api/v1/news", apiClient.LastResourceHref);
-        Assert.Equal("News", viewModel.ResourceTitle);
-        Assert.Equal("Current bulletins", viewModel.ResourceSummary);
+        Assert.Equal(
+            new { Href = "/api/v1/news", Title = "News", Summary = "Current bulletins" },
+            new
+            {
+                Href = apiClient.LastResourceHref ?? string.Empty,
+                Title = viewModel.ResourceTitle,
+                Summary = viewModel.ResourceSummary
+            });
     }
 
     [Fact]
@@ -116,7 +134,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task ConnectAsyncReportsInvalidApiUrlAndSettingsWriteFailures()
+    public async Task ConnectAsyncReportsInvalidApiUrl()
     {
         var urlClient = new StubApiClient
         {
@@ -124,11 +142,17 @@ public sealed class MainWindowViewModelTests
         };
         var urlViewModel = CreateViewModel(urlClient, new StubSettingsStore());
         await urlViewModel.ConnectCommand.ExecuteAsync();
-        Assert.Equal("Enter a valid value.", urlViewModel.StatusMessage);
 
+        Assert.Equal("Enter a valid value.", urlViewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ConnectAsyncReportsSettingsWriteFailure()
+    {
         var settingsStore = new StubSettingsStore { SaveException = new IOException() };
         var settingsViewModel = CreateViewModel(new StubApiClient(), settingsStore);
         await settingsViewModel.ConnectCommand.ExecuteAsync();
+
         Assert.Equal("Management settings could not be saved.", settingsViewModel.StatusMessage);
     }
 
@@ -139,21 +163,50 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(new StubApiClient(), settingsStore);
 
         viewModel.ApiBaseUrl = "http://localhost:5001/api";
-        viewModel.ApiBaseUrl = "http://localhost:5001/api";
         viewModel.Locale = "it";
 
-        Assert.Equal(1, viewModel.LocaleIndex);
-        Assert.Equal("Connetti", viewModel.ConnectLabel);
-        Assert.Equal("Sci-Fi LARP Network", viewModel.WindowTitle);
-        Assert.Equal("Connessione al backend", viewModel.ConnectionHeading);
-        Assert.Equal("Indirizzo API", viewModel.ApiAddressLabel);
-        Assert.Equal("Lingua", viewModel.LanguageLabel);
-        Assert.Equal("Navigazione", viewModel.NavigationHeading);
-        Assert.Equal("Apri destinazione", viewModel.OpenResourceLabel);
-        Assert.Equal("Azioni disponibili", viewModel.ActionsHeading);
-        Assert.Equal(new ManagementSettings("http://localhost:5001/api", "it"), settingsStore.SavedSettings);
-        viewModel.LocaleIndex = 0;
-        Assert.Equal("en", viewModel.Locale);
+        Assert.Equal(
+            new
+            {
+                LocaleIndex = 1,
+                ConnectLabel = "Connetti",
+                WindowTitle = "Sci-Fi LARP Network",
+                ConnectionHeading = "Connessione al backend",
+                ApiAddressLabel = "Indirizzo API",
+                LanguageLabel = "Lingua",
+                NavigationHeading = "Navigazione",
+                OpenResourceLabel = "Apri destinazione",
+                ActionsHeading = "Azioni disponibili",
+                Settings = (ManagementSettings?)new ManagementSettings("http://localhost:5001/api", "it")
+            },
+            new
+            {
+                viewModel.LocaleIndex,
+                viewModel.ConnectLabel,
+                viewModel.WindowTitle,
+                viewModel.ConnectionHeading,
+                viewModel.ApiAddressLabel,
+                viewModel.LanguageLabel,
+                viewModel.NavigationHeading,
+                viewModel.OpenResourceLabel,
+                viewModel.ActionsHeading,
+                Settings = settingsStore.SavedSettings
+            });
+    }
+
+    [Theory]
+    [InlineData("it", 0, "en")]
+    [InlineData("en", 1, "it")]
+    public void LocaleIndexUpdatesTheSelectedLocale(string initialLocale, int localeIndex, string expectedLocale)
+    {
+        var viewModel = CreateViewModel(
+            new StubApiClient(),
+            new StubSettingsStore(),
+            new ManagementSettings(Locale: initialLocale));
+
+        viewModel.LocaleIndex = localeIndex;
+
+        Assert.Equal(expectedLocale, viewModel.Locale);
     }
 
     [Theory]
@@ -195,10 +248,21 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
 
-        Assert.Equal("Sci-Fi LARP Network", viewModel.WindowTitle);
-        Assert.Equal("Network workspace", viewModel.ResourceTitle);
-        Assert.Equal("This service has not advertised any navigation destinations.", viewModel.ResourceSummary);
-        Assert.False(viewModel.HasAvailableActions);
+        Assert.Equal(
+            new
+            {
+                WindowTitle = "Sci-Fi LARP Network",
+                ResourceTitle = "Network workspace",
+                ResourceSummary = "This service has not advertised any navigation destinations.",
+                HasAvailableActions = false
+            },
+            new
+            {
+                viewModel.WindowTitle,
+                viewModel.ResourceTitle,
+                viewModel.ResourceSummary,
+                viewModel.HasAvailableActions
+            });
     }
 
     [Fact]
@@ -211,11 +275,20 @@ public sealed class MainWindowViewModelTests
 
         var runningConnection = viewModel.ConnectCommand.ExecuteAsync();
 
-        Assert.False(viewModel.ConnectCommand.CanExecute(null));
-        Assert.False(viewModel.OpenResourceCommand.CanExecute(null));
+        var canConnectWhileRunning = viewModel.ConnectCommand.CanExecute(null);
+        var canOpenResourceWhileRunning = viewModel.OpenResourceCommand.CanExecute(null);
         completion.SetResult(new ApiDiscovery(Resource("{}"), []));
         await runningConnection;
-        Assert.True(viewModel.ConnectCommand.CanExecute(null));
+        var canConnectAfterCompletion = viewModel.ConnectCommand.CanExecute(null);
+
+        Assert.Equal(
+            new { CanConnectWhileRunning = false, CanOpenWhileRunning = false, CanConnectAfterCompletion = true },
+            new
+            {
+                CanConnectWhileRunning = canConnectWhileRunning,
+                CanOpenWhileRunning = canOpenResourceWhileRunning,
+                CanConnectAfterCompletion = canConnectAfterCompletion
+            });
     }
 
     [Fact]
@@ -229,10 +302,21 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.SignInCommand.ExecuteAsync();
 
-        Assert.True(viewModel.IsAuthenticated);
-        Assert.Empty(viewModel.Password);
-        Assert.Equal("a-long-local-password", apiClient.LastSignInPassword);
-        Assert.Null(settingsStore.SavedSettings);
+        Assert.Equal(
+            new
+            {
+                IsAuthenticated = true,
+                Password = string.Empty,
+                SubmittedPassword = "a-long-local-password",
+                SavedSettings = (ManagementSettings?)null
+            },
+            new
+            {
+                viewModel.IsAuthenticated,
+                viewModel.Password,
+                SubmittedPassword = apiClient.LastSignInPassword ?? string.Empty,
+                SavedSettings = settingsStore.SavedSettings
+            });
     }
 
     [Fact]
@@ -243,9 +327,18 @@ public sealed class MainWindowViewModelTests
         viewModel.ApiBaseUrl = "http://user:secret@localhost:5000/api";
 
         await viewModel.ConnectCommand.ExecuteAsync();
-        viewModel.Locale = "it";
 
         Assert.Null(settingsStore.SavedSettings);
+    }
+
+    [Fact]
+    public void CredentialBearingApiAddressShowsLocalizedValidationErrorOnLocaleChange()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        viewModel.ApiBaseUrl = "http://user:secret@localhost:5000/api";
+
+        viewModel.Locale = "it";
+
         Assert.Equal("Inserisci un valore valido.", viewModel.StatusMessage);
     }
 
@@ -263,9 +356,14 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.OpenResourceCommand.ExecuteAsync();
 
-        Assert.False(viewModel.IsAuthenticated);
-        Assert.Empty(viewModel.NavigationItems);
-        Assert.Equal("Sign in to continue.", viewModel.StatusMessage);
+        Assert.Equal(
+            new { IsAuthenticated = false, NavigationCount = 0, Status = "Sign in to continue." },
+            new
+            {
+                viewModel.IsAuthenticated,
+                NavigationCount = viewModel.NavigationItems.Count,
+                Status = viewModel.StatusMessage
+            });
     }
 
     [Fact]
@@ -278,9 +376,19 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.SignOutCommand.ExecuteAsync();
 
-        Assert.False(viewModel.IsAuthenticated);
-        Assert.Empty(viewModel.NavigationItems);
-        Assert.Null(viewModel.SelectedNavigationItem);
+        Assert.Equal(
+            new
+            {
+                IsAuthenticated = false,
+                NavigationCount = 0,
+                SelectedNavigationItem = (NavigationItem?)null
+            },
+            new
+            {
+                viewModel.IsAuthenticated,
+                NavigationCount = viewModel.NavigationItems.Count,
+                SelectedNavigationItem = (NavigationItem?)viewModel.SelectedNavigationItem
+            });
     }
 
     [Fact]
