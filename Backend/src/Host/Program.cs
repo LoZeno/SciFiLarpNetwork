@@ -164,13 +164,23 @@ if (operatorCommand is not null)
             throw new InvalidOperationException("Administrator setup requires an interactive local console.");
         }
 
-        Console.Write("Administrator account name: ");
+        Console.Write("Administrator account name (3-64 characters, letters/digits first, no special characters): ");
         userName = Console.ReadLine()?.Trim() ?? string.Empty;
-        password = ReadOperatorPassword("Password: ");
+        password = ReadOperatorPassword("Password (minimum 12 characters): ");
         passwordConfirmation = ReadOperatorPassword("Confirm password: ");
         if (!string.Equals(password, passwordConfirmation, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("The password entries did not match.");
+        }
+
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            throw new InvalidOperationException("Administrator account name is required.");
+        }
+
+        if (password.Length < 12)
+        {
+            throw new InvalidOperationException("Password must be at least 12 characters long.");
         }
 
         await app.Services.GetRequiredService<Marten.IDocumentStore>()

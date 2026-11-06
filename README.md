@@ -79,7 +79,13 @@ To create the first local administrator, run the interactive bootstrap command f
 dotnet run --project Backend/src/Host/SciFiLarpNetwork.Backend.csproj -- --bootstrap-admin
 ```
 
-On Linux or macOS, prefix the same command with `DOTNET_ENVIRONMENT=Development`. Enter the account name and hidden password prompts locally; no default administrator credentials are shipped. See [local administrator authentication](docs/architecture/administrator-authentication.md) for recovery, roles, session expiry, and HTTPS requirements, and [backend API setup](docs/architecture/backend-api.md) for deployment configuration.
+On Linux or macOS, prefix the same command with `DOTNET_ENVIRONMENT=Development`. Enter the account name and hidden password prompts locally; no default administrator credentials are shipped.
+
+**Credential requirements:**
+- **Account name:** 3–64 characters, must start with a letter or digit; remaining characters may include letters, digits, spaces, underscores, periods, `@`, `+`, and `-`.
+- **Password:** at least 12 characters, any characters allowed.
+
+See [local administrator authentication](docs/architecture/administrator-authentication.md) for recovery, roles, session expiry, and HTTPS requirements, and [backend API setup](docs/architecture/backend-api.md) for deployment configuration.
 
 ## Run the frontend
 
