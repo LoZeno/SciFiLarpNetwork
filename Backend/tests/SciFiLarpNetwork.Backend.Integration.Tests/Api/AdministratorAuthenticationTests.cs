@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,9 +22,25 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 {
     private readonly AdministratorAuthenticationFactory factory = new();
 
-    public ValueTask InitializeAsync() => factory.InitializeAsync();
+    public async ValueTask InitializeAsync()
+    {
+        await factory.InitializeAsync();
+    }
 
-    public ValueTask DisposeAsync() => factory.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await factory.DisposeAsync();
+    }
+
+    private async Task CleanupBeforeTestAsync()
+    {
+        var store = factory.Services.GetRequiredService<IDocumentStore>();
+        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAccountDocument));
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorSessionDocument));
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorGrantDocument));
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAuditDocument));
+    }
 
     [Fact]
     public async Task BootstrapCreatesFirstAdministratorAccount()
@@ -391,11 +406,6 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorSessionDocument));
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorGrantDocument));
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAuditDocument));
-        // Clear projection floors so the async daemon re-processes new events from the start
-        await using var conn = new NpgsqlConnection(BaseConnectionString);
-        await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand("DELETE FROM public.mt_event_projection_floors", conn);
-        await cmd.ExecuteNonQueryAsync();
     }
 
     public new async ValueTask DisposeAsync()
