@@ -32,6 +32,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     {
         var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
 
@@ -43,6 +44,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     {
         var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "short", TestContext.Current.CancellationToken);
 
@@ -82,6 +84,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     {
         var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await factory.WaitForProjectionsAsync();
 
         var results = await Task.WhenAll(
             service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken),
@@ -146,6 +149,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         await factory.BootstrapAdministratorAsync();
         var service = factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
 
@@ -462,6 +466,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         var service = Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await WaitForProjectionsAsync();
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
         if (result != AdministratorOperationResult.Succeeded)
         {
@@ -474,6 +479,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         var service = Services.GetRequiredService<IAdministratorAuthenticationService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
+        await WaitForProjectionsAsync();
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
         if (result != AdministratorOperationResult.Succeeded)
         {

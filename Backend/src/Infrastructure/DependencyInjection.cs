@@ -33,6 +33,9 @@ public static class DependencyInjection
             options.Events.MetadataConfig.UserNameEnabled = true;
             options.Events.AppendMode = EventAppendMode.Rich;
 
+            // Register EmptyAggregate for FetchForWriting (MartenDB docs requirement)
+            options.Projections.LiveStreamAggregation<EmptyAggregate>();
+
             // Register distinct event types
             options.Events.AddEventType<AccountCreated>();
             options.Events.AddEventType<AccountPasswordChanged>();
@@ -61,8 +64,7 @@ public static class DependencyInjection
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();
         services.AddSingleton<IEventStreamStore>(provider => new AuthenticatedActorEventStreamStore(
-            new MartenEventStreamStore(
-                provider.GetRequiredService<IDocumentStore>()),
+            provider.GetRequiredService<IDocumentStore>(),
             provider.GetRequiredService<IEventActorContext>()));
         services.AddHealthChecks()
             .AddCheck<EventStoreReadinessHealthCheck>("event-store", tags: ["ready"]);
