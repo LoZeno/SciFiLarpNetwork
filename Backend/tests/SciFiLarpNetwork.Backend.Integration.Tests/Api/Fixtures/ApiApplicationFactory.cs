@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using JasperFx.Events;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -27,6 +28,10 @@ public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
         {
             services.ConfigureMarten(options =>
             {
+                options.Events.AppendMode = EventAppendMode.Rich;
+                options.Events.AddEventType<EventStoreProbeProjection>();
+                options.Events.AddEventType<TestProbeEvent>();
+                options.Events.AddEventType<ContractProbes.ContractTestEvent>();
                 options.Projections.Add<EventStoreProbeProjection>(ProjectionLifecycle.Async);
             });
             services

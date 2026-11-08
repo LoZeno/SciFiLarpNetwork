@@ -1,10 +1,8 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
-using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
@@ -84,14 +82,8 @@ public sealed class ApiContractProbeController(IEventStreamStore eventStreamStor
         [FromBody] ProbeEventAppendRequest request,
         CancellationToken cancellationToken)
     {
-        var domainEvent = new DomainEvent(
-            Guid.NewGuid(),
-            "contract-test.actor-attributed",
-            1,
-            DateTimeOffset.UtcNow,
-            JsonSerializer.SerializeToElement(new { accepted = true }),
-            request.ActorId);
-        await eventStreamStore.AppendAsync(request.StreamId, 0, [domainEvent], cancellationToken: cancellationToken);
+        var @event = new ContractTestEvent(request.ActorId);
+        await eventStreamStore.AppendAsync(request.StreamId, 0, [@event], cancellationToken: cancellationToken);
         var storedEvent = Assert.Single(await eventStreamStore.ReadStreamAsync(request.StreamId, cancellationToken));
         return Ok(new SirenEntity<object>
         {
@@ -100,5 +92,7 @@ public sealed class ApiContractProbeController(IEventStreamStore eventStreamStor
         });
     }
 }
+
+public sealed record ContractTestEvent(string? ActorId);
 
 public sealed record ProbeEventAppendRequest(Guid StreamId, string? ActorId);

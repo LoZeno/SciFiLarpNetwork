@@ -1,9 +1,14 @@
+using System.Text.Json;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
-using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
 public sealed record EventStoreProbeState(Guid Id, int EventCount, long LastSequence);
+
+public sealed record TestProbeEvent(
+    string DisplayName,
+    bool FailProjection);
 
 public sealed partial class EventStoreProbeProjection : SingleStreamProjection<EventStoreProbeState, Guid>
 {
@@ -12,24 +17,29 @@ public sealed partial class EventStoreProbeProjection : SingleStreamProjection<E
     public EventStoreProbeProjection()
     {
         Name = "EventStoreProbe";
+        IncludeType<TestProbeEvent>();
     }
 
-    public static EventStoreProbeState Create(PersistedDomainEvent domainEvent)
+    public override EventStoreProbeState? Evolve(EventStoreProbeState? snapshot, Guid id, IEvent e)
     {
-        ThrowWhenRequested(domainEvent);
-        return new EventStoreProbeState(domainEvent.StreamId, 1, domainEvent.Sequence);
+        if (e.Data is not TestProbeEvent probeEvent)
+        {
+            return snapshot;
+        }
+
+        ThrowWhenRequested(probeEvent);
+
+        if (snapshot is null)
+        {
+            return new EventStoreProbeState(id, 1, e.Version);
+        }
+
+        return snapshot with { EventCount = snapshot.EventCount + 1, LastSequence = e.Version };
     }
 
-    public static EventStoreProbeState Apply(PersistedDomainEvent domainEvent, EventStoreProbeState state)
+    private static void ThrowWhenRequested(TestProbeEvent probeEvent)
     {
-        ThrowWhenRequested(domainEvent);
-        return state with { EventCount = state.EventCount + 1, LastSequence = domainEvent.Sequence };
-    }
-
-    private static void ThrowWhenRequested(PersistedDomainEvent domainEvent)
-    {
-        if (FailOnMarkedEvent && domainEvent.Payload.TryGetProperty("failProjection", out var shouldFail) &&
-            shouldFail.GetBoolean())
+        if (FailOnMarkedEvent && probeEvent.FailProjection)
         {
             throw new InvalidOperationException("The test projection was instructed to fail.");
         }

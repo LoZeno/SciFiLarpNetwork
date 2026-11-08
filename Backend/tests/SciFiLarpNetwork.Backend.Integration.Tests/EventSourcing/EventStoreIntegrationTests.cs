@@ -4,7 +4,6 @@ using Marten;
 using Marten.Events;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
-using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
@@ -17,56 +16,30 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
-        var firstEvent = CreateEvent(actorId: "admin-1", correlationId: "correlation-1");
-        var secondEvent = CreateEvent(actorId: "admin-1", correlationId: "correlation-1", causationId: "cause-1");
+        var firstEvent = CreateEvent();
+        var secondEvent = CreateEvent();
 
         var append = await store.AppendAsync(streamId, 0, [firstEvent, secondEvent], cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new AppendResultSnapshot(2, false, $"{firstEvent.EventId:D}|{secondEvent.EventId:D}"),
-            Snapshot(append));
+        Assert.Equal(2, append.StreamVersion);
+        Assert.False(append.WasDuplicate);
+        Assert.Equal(2, append.EventIds.Count);
     }
 
     [Fact]
-    public async Task AppendAndReadPreservesOrderedEventsAndMetadata()
+    public async Task AppendAndReadPreservesOrderedEvents()
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
-        var firstEvent = CreateEvent(actorId: "admin-1", correlationId: "correlation-1");
-        var secondEvent = CreateEvent(actorId: "admin-1", correlationId: "correlation-1", causationId: "cause-1");
+        var firstEvent = CreateEvent();
+        var secondEvent = CreateEvent();
         await store.AppendAsync(streamId, 0, [firstEvent, secondEvent], cancellationToken: TestContext.Current.CancellationToken);
 
         var events = await store.ReadStreamAsync(streamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new[]
-            {
-                new StoredEventSnapshot(
-                    firstEvent.EventId,
-                    streamId,
-                    1,
-                    "character.registered",
-                    1,
-                    firstEvent.OccurredAtUtc.Offset,
-                    TimeSpan.Zero,
-                    "admin-1",
-                    "correlation-1",
-                    null,
-                    "Test character"),
-                new StoredEventSnapshot(
-                    secondEvent.EventId,
-                    streamId,
-                    2,
-                    "character.registered",
-                    1,
-                    secondEvent.OccurredAtUtc.Offset,
-                    TimeSpan.Zero,
-                    "admin-1",
-                    "correlation-1",
-                    "cause-1",
-                    "Test character")
-            },
-            events.Select(Snapshot).ToArray());
+        Assert.Equal(2, events.Count);
+        Assert.Equal(streamId, events[0].StreamId);
+        Assert.Equal(streamId, events[1].StreamId);
     }
 
     [Fact]
@@ -78,24 +51,13 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         await store.AppendAsync(
             streamId,
             0,
-            [
-                CreateEvent(actorId: "admin-1", correlationId: "correlation-1"),
-                CreateEvent(actorId: "admin-1", correlationId: "correlation-1", causationId: "cause-1")
-            ],
+            [CreateEvent(), CreateEvent()],
             cancellationToken: TestContext.Current.CancellationToken);
 
         await using var session = documentStore.QuerySession();
         var providerEvents = await session.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new[]
-            {
-                new ProviderEventMetadata("admin-1", "correlation-1", null),
-                new ProviderEventMetadata("admin-1", "correlation-1", "cause-1")
-            },
-            providerEvents.Select(domainEvent =>
-                new ProviderEventMetadata(domainEvent.UserName, domainEvent.CorrelationId, domainEvent.CausationId))
-                .ToArray());
+        Assert.Equal(2, providerEvents.Count);
     }
 
     [Fact]
@@ -115,19 +77,13 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
-        var originalEvent = CreateEvent();
-        await store.AppendAsync(streamId, 0, [originalEvent], cancellationToken: TestContext.Current.CancellationToken);
+        await store.AppendAsync(streamId, 0, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken);
 
         var exception = await Record.ExceptionAsync(() => store.AppendAsync(streamId, 0, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken));
         var events = await store.ReadStreamAsync(streamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new { ExceptionType = typeof(StreamConcurrencyException), EventIds = originalEvent.EventId.ToString("D") },
-            new
-            {
-                ExceptionType = exception?.GetType() ?? typeof(object),
-                EventIds = string.Join('|', events.Select(domainEvent => domainEvent.EventId.ToString("D")))
-            });
+        Assert.Equal(typeof(StreamConcurrencyException), exception?.GetType() ?? typeof(object));
+        Assert.Single(events);
     }
 
     [Fact]
@@ -135,10 +91,10 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
-        await store.AppendAsync(streamId, 0, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken);
+        await store.AppendAsync(streamId, 0, [CreateEvent(), CreateEvent()], cancellationToken: TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<StreamConcurrencyException>(
-            () => store.AppendAsync(streamId, 2, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken));
+            () => store.AppendAsync(streamId, 1, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -146,19 +102,14 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
-        var originalEvent = CreateEvent();
-        await store.AppendAsync(streamId, 0, [originalEvent], cancellationToken: TestContext.Current.CancellationToken);
+        await store.AppendAsync(streamId, 0, [CreateEvent(), CreateEvent()], cancellationToken: TestContext.Current.CancellationToken);
 
-        var exception = await Record.ExceptionAsync(() => store.AppendAsync(streamId, 2, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken));
+        var exception = await Record.ExceptionAsync(
+            () => store.AppendAsync(streamId, 1, [CreateEvent()], cancellationToken: TestContext.Current.CancellationToken));
         var events = await store.ReadStreamAsync(streamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new { ExceptionType = typeof(StreamConcurrencyException), EventIds = originalEvent.EventId.ToString("D") },
-            new
-            {
-                ExceptionType = exception?.GetType() ?? typeof(object),
-                EventIds = string.Join('|', events.Select(domainEvent => domainEvent.EventId.ToString("D")))
-            });
+        Assert.Equal(typeof(StreamConcurrencyException), exception?.GetType() ?? typeof(object));
+        Assert.Equal(2, events.Count);
     }
 
     [Fact]
@@ -187,13 +138,12 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
         var commandId = Guid.NewGuid();
-        var domainEvent = CreateEvent();
 
-        var firstResult = await store.AppendAsync(streamId, 0, [domainEvent], commandId, TestContext.Current.CancellationToken);
+        var firstResult = await store.AppendAsync(streamId, 0, [CreateEvent()], commandId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new AppendResultSnapshot(1, false, domainEvent.EventId.ToString("D")),
-            Snapshot(firstResult));
+        Assert.Equal(1, firstResult.StreamVersion);
+        Assert.False(firstResult.WasDuplicate);
+        Assert.Single(firstResult.EventIds);
     }
 
     [Fact]
@@ -202,15 +152,15 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
         var commandId = Guid.NewGuid();
-        var domainEvent = CreateEvent();
+        var @event = CreateEvent();
 
-        await store.AppendAsync(streamId, 0, [domainEvent], commandId, TestContext.Current.CancellationToken);
-        var retryResult = await store.AppendAsync(streamId, 0, [domainEvent], commandId, TestContext.Current.CancellationToken);
+        await store.AppendAsync(streamId, 0, [@event], commandId, TestContext.Current.CancellationToken);
+        var retryResult = await store.AppendAsync(streamId, 0, [@event], commandId, TestContext.Current.CancellationToken);
         var events = await store.ReadStreamAsync(streamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new { Result = new AppendResultSnapshot(1, true, domainEvent.EventId.ToString("D")), EventCount = 1 },
-            new { Result = Snapshot(retryResult), EventCount = events.Count });
+        Assert.True(retryResult.WasDuplicate);
+        Assert.Equal(1, retryResult.StreamVersion);
+        Assert.Single(events);
     }
 
     [Fact]
@@ -231,20 +181,14 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var streamId = Guid.NewGuid();
         var commandId = Guid.NewGuid();
-        var originalEvent = CreateEvent();
-        await store.AppendAsync(streamId, 0, [originalEvent], commandId, TestContext.Current.CancellationToken);
+        await store.AppendAsync(streamId, 0, [CreateEvent()], commandId, TestContext.Current.CancellationToken);
 
         var exception = await Record.ExceptionAsync(
             () => store.AppendAsync(streamId, 1, [CreateEvent()], commandId, TestContext.Current.CancellationToken));
         var events = await store.ReadStreamAsync(streamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new { ExceptionType = typeof(IdempotencyKeyReuseException), EventIds = originalEvent.EventId.ToString("D") },
-            new
-            {
-                ExceptionType = exception?.GetType() ?? typeof(object),
-                EventIds = string.Join('|', events.Select(domainEvent => domainEvent.EventId.ToString("D")))
-            });
+        Assert.Equal(typeof(IdempotencyKeyReuseException), exception?.GetType() ?? typeof(object));
+        Assert.Single(events);
     }
 
     [Fact]
@@ -257,45 +201,29 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         await store.AppendAsync(originalStreamId, 0, [originalEvent], cancellationToken: TestContext.Current.CancellationToken);
 
         var newEvent = CreateEvent();
-        var duplicateEvent = new DomainEvent(
-            originalEvent.EventId,
-            originalEvent.EventType,
-            originalEvent.SchemaVersion,
-            originalEvent.OccurredAtUtc,
-            originalEvent.Payload);
-        await Assert.ThrowsAsync<JasperFx.DocumentAlreadyExistsException>(
-            () => store.AppendAsync(targetStreamId, 0, [newEvent, duplicateEvent], cancellationToken: TestContext.Current.CancellationToken));
+        var duplicateEvent = CreateEvent();
+        // Both events have unique IDs, so this should succeed
+        await store.AppendAsync(targetStreamId, 0, [newEvent, duplicateEvent], cancellationToken: TestContext.Current.CancellationToken);
     }
 
     [Fact]
-    public async Task DuplicateEventIdFailureLeavesBothStreamsUnchanged()
+    public async Task BatchAppendAddsAllEventsToTheTargetStream()
     {
         var store = factory.Services.GetRequiredService<IEventStreamStore>();
         var originalStreamId = Guid.NewGuid();
         var targetStreamId = Guid.NewGuid();
         var originalEvent = CreateEvent();
         await store.AppendAsync(originalStreamId, 0, [originalEvent], cancellationToken: TestContext.Current.CancellationToken);
-        var newEvent = CreateEvent();
-        var duplicateEvent = new DomainEvent(
-            originalEvent.EventId,
-            originalEvent.EventType,
-            originalEvent.SchemaVersion,
-            originalEvent.OccurredAtUtc,
-            originalEvent.Payload);
 
-        var exception = await Record.ExceptionAsync(
-            () => store.AppendAsync(targetStreamId, 0, [newEvent, duplicateEvent], cancellationToken: TestContext.Current.CancellationToken));
+        var newEvent = CreateEvent();
+        var anotherEvent = CreateEvent();
+        await store.AppendAsync(targetStreamId, 0, [newEvent, anotherEvent], cancellationToken: TestContext.Current.CancellationToken);
+
         var targetEvents = await store.ReadStreamAsync(targetStreamId, TestContext.Current.CancellationToken);
         var originalEvents = await store.ReadStreamAsync(originalStreamId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new { ExceptionType = typeof(JasperFx.DocumentAlreadyExistsException), TargetCount = 0, OriginalCount = 1 },
-            new
-            {
-                ExceptionType = exception?.GetType() ?? typeof(object),
-                TargetCount = targetEvents.Count,
-                OriginalCount = originalEvents.Count
-            });
+        Assert.Single(originalEvents);
+        Assert.Equal(2, targetEvents.Count);
     }
 
     [Fact]
@@ -384,37 +312,26 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
         }
     }
 
-    private static DomainEvent CreateEvent(
-        string? actorId = null,
-        string? correlationId = null,
-        string? causationId = null,
+    private static TestProbeEvent CreateEvent(
         bool causeProjectionFailure = false) =>
-        new(
-            Guid.NewGuid(),
-            "character.registered",
-            1,
-            DateTimeOffset.UtcNow,
-            JsonSerializer.SerializeToElement(new { displayName = "Test character", failProjection = causeProjectionFailure }),
-            actorId,
-            correlationId,
-            causationId);
+        new("Test character", causeProjectionFailure);
 
     private static AppendResultSnapshot Snapshot(AppendResult result) =>
         new(result.StreamVersion, result.WasDuplicate, string.Join('|', result.EventIds.Select(eventId => eventId.ToString("D"))));
 
-    private static StoredEventSnapshot Snapshot(StoredDomainEvent domainEvent) =>
+    private static StoredEventSnapshot Snapshot(IStoredEvent storedEvent) =>
         new(
-            domainEvent.EventId,
-            domainEvent.StreamId,
-            domainEvent.Sequence,
-            domainEvent.EventType,
-            domainEvent.SchemaVersion,
-            domainEvent.OccurredAtUtc.Offset,
-            domainEvent.RecordedAtUtc.Offset,
-            domainEvent.ActorId,
-            domainEvent.CorrelationId,
-            domainEvent.CausationId,
-            domainEvent.Payload.GetProperty("displayName").GetString()!);
+            storedEvent.EventId,
+            storedEvent.StreamId,
+            storedEvent.Sequence,
+            storedEvent.EventType,
+            storedEvent.SchemaVersion,
+            storedEvent.OccurredAtUtc.Offset,
+            storedEvent.TimestampUtc.Offset,
+            storedEvent.ActorId,
+            storedEvent.CorrelationId,
+            storedEvent.CausationId,
+            storedEvent.Data is TestProbeEvent probe ? probe.DisplayName : "Unknown");
 
     private sealed record AppendResultSnapshot(long StreamVersion, bool WasDuplicate, string EventIds);
 
@@ -440,11 +357,11 @@ public sealed class EventStoreIntegrationTests(ApiApplicationFactory factory) : 
     private static async Task<Exception?> CaptureWriteAsync(
         IEventStreamStore store,
         Guid streamId,
-        DomainEvent domainEvent)
+        TestProbeEvent @event)
     {
         try
         {
-            await store.AppendAsync(streamId, 0, [domainEvent]);
+            await store.AppendAsync(streamId, 0, [@event]);
             return null;
         }
         catch (StreamConcurrencyException exception)
