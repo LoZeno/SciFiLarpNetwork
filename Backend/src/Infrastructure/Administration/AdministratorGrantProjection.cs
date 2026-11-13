@@ -1,6 +1,7 @@
 using JasperFx.Events;
 using Marten.Events.Aggregation;
-using SciFiLarpNetwork.Backend.Domain.Events;
+using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Administration;
 

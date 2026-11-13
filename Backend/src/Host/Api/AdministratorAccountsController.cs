@@ -1,6 +1,4 @@
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Application.Administration;
@@ -182,26 +180,3 @@ public sealed class AdministratorAccountsController(
 
     private string ApiPath(string path) => $"{Request.PathBase}{path}";
 }
-
-public sealed record AdministratorDirectoryProperties(
-    string Title,
-    string Description,
-    IReadOnlyList<AdministratorSummary> Administrators);
-
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record AdministratorRoleChangeRequest(
-    [Required]
-    [RegularExpression("^(reader|administrator)$")]
-    string Role);
-
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record AdministratorAccountCreateRequest(
-    [Required]
-    [StringLength(64, MinimumLength = 3)]
-    string UserName,
-    [Required]
-    [StringLength(128, MinimumLength = 12)]
-    string Password,
-    [Required]
-    [RegularExpression("^(reader|administrator)$")]
-    string Role);

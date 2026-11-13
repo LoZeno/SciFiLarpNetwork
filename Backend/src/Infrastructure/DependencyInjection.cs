@@ -9,8 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
-using SciFiLarpNetwork.Backend.Domain.Events;
+using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure;

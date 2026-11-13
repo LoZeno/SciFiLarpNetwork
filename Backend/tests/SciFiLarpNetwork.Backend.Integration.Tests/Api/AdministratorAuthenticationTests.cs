@@ -16,8 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SciFiLarpNetwork.Backend.Application.Administration;
-using SciFiLarpNetwork.Backend.Domain.Events;
-using SciFiLarpNetwork.Backend.Infrastructure.Administration;
+using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 

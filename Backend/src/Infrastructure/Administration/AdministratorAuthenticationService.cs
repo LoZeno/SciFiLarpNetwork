@@ -6,7 +6,8 @@ using Marten;
 using Microsoft.AspNetCore.Identity;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
-using SciFiLarpNetwork.Backend.Domain.Events;
+using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Administration;
 

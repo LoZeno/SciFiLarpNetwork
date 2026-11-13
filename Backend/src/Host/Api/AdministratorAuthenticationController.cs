@@ -1,7 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Application.Administration;
@@ -153,8 +151,3 @@ public sealed class AdministratorAuthenticationController(
 
     private string ApiPath(string path) => $"{Request.PathBase}{path}";
 }
-
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record AdministratorSignInRequest(
-    [Required, StringLength(64, MinimumLength = 3)] string UserName,
-    [Required, StringLength(128, MinimumLength = 12)] string Password);

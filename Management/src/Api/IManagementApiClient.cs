@@ -40,5 +40,3 @@ public interface IManagementApiClient
         string locale,
         CancellationToken cancellationToken = default);
 }
-
-public sealed record ManagementSession(string UserName, string Role, DateTimeOffset ExpiresAtUtc);
