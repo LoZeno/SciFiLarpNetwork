@@ -11,7 +11,7 @@ namespace SciFiLarpNetwork.Backend.Api;
 [Route("api/v1/admin/accounts")]
 [Produces(SirenMediaTypes.Json)]
 public sealed class AdministratorAccountsController(
-    IAdministratorAuthenticationService authenticationService,
+    IAdministratorAccountService accountService,
     IApplicationText text) : ControllerBase
 {
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
@@ -28,7 +28,7 @@ public sealed class AdministratorAccountsController(
                 ApiErrorCodes.Unauthorized);
         }
 
-        var result = await authenticationService.CreateAccountAsync(
+        var result = await accountService.CreateAccountAsync(
             actorAccountId,
             request.UserName,
             request.Password,
@@ -60,7 +60,7 @@ public sealed class AdministratorAccountsController(
     public async Task<ActionResult<SirenEntity<AdministratorDirectoryProperties>>> Get(
         CancellationToken cancellationToken)
     {
-        var accounts = await authenticationService.GetAdministratorsAsync(cancellationToken);
+        var accounts = await accountService.GetAdministratorsAsync(cancellationToken);
         return Ok(new SirenEntity<AdministratorDirectoryProperties>
         {
             Class = ["administrator-directory"],
@@ -113,7 +113,7 @@ public sealed class AdministratorAccountsController(
                 ApiErrorCodes.Unauthorized);
         }
 
-        var result = await authenticationService.ChangeRoleAsync(
+        var result = await accountService.ChangeRoleAsync(
             actorAccountId,
             accountId,
             request.Role,
@@ -145,7 +145,7 @@ public sealed class AdministratorAccountsController(
     }
 
     private async Task<AdministratorSummary> FindAccountAsync(Guid accountId, CancellationToken cancellationToken) =>
-        (await authenticationService.GetAdministratorsAsync(cancellationToken))
+        (await accountService.GetAdministratorsAsync(cancellationToken))
         .FirstOrDefault(account => account.AccountId == accountId)
         ?? throw new ApiException(StatusCodes.Status404NotFound, ApiErrorCodes.NotFound, ApiErrorCodes.NotFound);
 

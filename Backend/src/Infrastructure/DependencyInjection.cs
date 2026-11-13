@@ -25,7 +25,10 @@ public static class DependencyInjection
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
-        services.AddSingleton<IAdministratorAuthenticationService, AdministratorAuthenticationService>();
+        services.AddSingleton<AttributedSessionFactory>();
+        services.AddSingleton<IAdministratorProvisioningService, AdministratorProvisioningService>();
+        services.AddSingleton<IAdministratorSessionService, AdministratorSessionService>();
+        services.AddSingleton<IAdministratorAccountService, AdministratorAccountService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {

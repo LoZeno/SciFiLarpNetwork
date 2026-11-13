@@ -12,7 +12,7 @@ namespace SciFiLarpNetwork.Backend.Api;
 [Route("api/v1/admin")]
 [Produces(SirenMediaTypes.Json)]
 public sealed class AdministratorAuthenticationController(
-    IAdministratorAuthenticationService authenticationService,
+    IAdministratorSessionService sessionService,
     IApplicationText text) : ControllerBase
 {
     [AllowAnonymous]
@@ -23,7 +23,7 @@ public sealed class AdministratorAuthenticationController(
         CancellationToken cancellationToken)
     {
         RequireSecureTransport();
-        var session = await authenticationService.SignInAsync(request.UserName, request.Password, cancellationToken);
+        var session = await sessionService.SignInAsync(request.UserName, request.Password, cancellationToken);
         if (session is null)
         {
             throw new ApiException(
@@ -52,7 +52,7 @@ public sealed class AdministratorAuthenticationController(
     {
         RequireSecureTransport();
         var oldToken = GetBearerToken();
-        var session = await authenticationService.RenewSessionAsync(oldToken, cancellationToken);
+        var session = await sessionService.RenewSessionAsync(oldToken, cancellationToken);
         if (session is null)
         {
             throw new ApiException(
@@ -70,13 +70,13 @@ public sealed class AdministratorAuthenticationController(
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> SignOut(CancellationToken cancellationToken)
     {
-        await authenticationService.RevokeSessionAsync(GetBearerToken(), cancellationToken);
+        await sessionService.RevokeSessionAsync(GetBearerToken(), cancellationToken);
         return NoContent();
     }
 
     private async Task<AdministratorSession> GetCurrentSessionAsync(CancellationToken cancellationToken)
     {
-        var session = await authenticationService.ValidateSessionAsync(GetBearerToken(), cancellationToken);
+        var session = await sessionService.ValidateSessionAsync(GetBearerToken(), cancellationToken);
         return session ?? throw new ApiException(
             StatusCodes.Status401Unauthorized,
             ApiErrorCodes.Unauthorized,

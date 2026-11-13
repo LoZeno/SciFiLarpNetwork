@@ -188,13 +188,13 @@ if (operatorCommand is not null)
 
         await app.Services.GetRequiredService<IDocumentStore>()
             .Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        var authenticationService = app.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var provisioningService = app.Services.GetRequiredService<IAdministratorProvisioningService>();
         credential = operatorCommand == "--bootstrap-admin"
-            ? await authenticationService.IssueBootstrapCredentialAsync()
-            : await authenticationService.IssueRecoveryCredentialAsync();
+            ? await provisioningService.IssueBootstrapCredentialAsync()
+            : await provisioningService.IssueRecoveryCredentialAsync();
         var result = operatorCommand == "--bootstrap-admin"
-            ? await authenticationService.BootstrapAsync(credential, userName, password)
-            : await authenticationService.RecoverAsync(credential, userName, password);
+            ? await provisioningService.BootstrapAsync(credential, userName, password)
+            : await provisioningService.RecoverAsync(credential, userName, password);
         if (result != AdministratorOperationResult.Succeeded)
         {
             throw new InvalidOperationException($"Administrator operation failed: {result}.");
