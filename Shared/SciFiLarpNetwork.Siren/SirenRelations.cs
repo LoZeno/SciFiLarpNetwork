@@ -7,4 +7,6 @@ public static class SirenRelations
     public const string Talents = "urn:scifilarnetwork:rels:talents";
     public const string Skills = "urn:scifilarnetwork:rels:skills";
     public const string CardFlags = "urn:scifilarnetwork:rels:card-flags";
+    public const string WithArchived = "urn:scifilarnetwork:rels:with-archived";
+    public const string WithoutArchived = "urn:scifilarnetwork:rels:without-archived";
 }

@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
+using SciFiLarpNetwork.Management.Views.Skills;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
@@ -20,6 +21,7 @@ public sealed class DesktopApplicationBootstrapperTests
             new TestApiClient(),
             new TestSettingsStore(),
             new JsonLocalizer(),
+            new WindowCatalogDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         var lifetime = new ClassicDesktopStyleApplicationLifetime();

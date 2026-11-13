@@ -38,11 +38,13 @@ internal sealed class SkillCatalogResources(IApplicationText text, string pathBa
                 Rel = ["item"],
                 Class = ["talent"],
                 Href = TalentPath(talent.TalentId),
-                Properties = SirenJson.ToElement(talent)
+                Properties = SirenJson.ToElement(talent),
+                Links = [new SirenLink { Rel = [SirenRelations.Skills], Href = TalentSkillsPath(talent.TalentId) }]
             }).ToArray(),
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = WithArchived(TalentsPath, includeArchived) },
+                .. ArchiveFilterLinks(TalentsPath),
                 new SirenLink { Rel = [SirenRelations.Skills], Href = SkillsPath, Title = text.GetLocalizedText("api.skills") },
                 new SirenLink { Rel = [SirenRelations.CardFlags], Href = CardFlagsPath, Title = text.GetLocalizedText("api.cardFlags") }
             ],
@@ -114,6 +116,7 @@ internal sealed class SkillCatalogResources(IApplicationText text, string pathBa
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = WithArchived(collectionPath, includeArchived) },
+                .. ArchiveFilterLinks(collectionPath),
                 new SirenLink { Rel = [SirenRelations.Talents], Href = TalentsPath, Title = text.GetLocalizedText("api.talents") },
                 new SirenLink { Rel = [SirenRelations.CardFlags], Href = CardFlagsPath, Title = text.GetLocalizedText("api.cardFlags") }
             ],
@@ -180,6 +183,12 @@ internal sealed class SkillCatalogResources(IApplicationText text, string pathBa
 
     private static string WithArchived(string path, bool includeArchived) =>
         includeArchived ? $"{path}?includeArchived=true" : path;
+
+    private static SirenLink[] ArchiveFilterLinks(string path) =>
+    [
+        new SirenLink { Rel = [SirenRelations.WithArchived], Href = WithArchived(path, includeArchived: true) },
+        new SirenLink { Rel = [SirenRelations.WithoutArchived], Href = path }
+    ];
 
     private SirenAction ArchiveAction(string kind, string resourcePath, bool isArchived) =>
         new()

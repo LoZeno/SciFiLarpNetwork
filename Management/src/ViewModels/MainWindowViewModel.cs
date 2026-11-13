@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
+using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.ViewModels.Skills;
 
 namespace SciFiLarpNetwork.Management.ViewModels;
 
@@ -14,6 +16,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IManagementApiClient _apiClient;
     private readonly IManagementSettingsStore _settingsStore;
     private readonly IManagementLocalizer _localizer;
+    private readonly ICatalogDialogService _catalogDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -24,17 +27,20 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string _password = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
+    private TalentCatalogViewModel? _talentCatalog;
 
     public MainWindowViewModel(
         IManagementApiClient apiClient,
         IManagementSettingsStore settingsStore,
         IManagementLocalizer localizer,
+        ICatalogDialogService catalogDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
         _apiClient = apiClient;
         _settingsStore = settingsStore;
         _localizer = localizer;
+        _catalogDialogs = catalogDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -89,6 +95,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(LocaleIndex));
             OnLocalizedPropertiesChanged();
+            TalentCatalog?.Locale = normalized;
             SaveSettings();
         }
     }
@@ -221,6 +228,38 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public bool HasAvailableActions => AvailableActions.Count > 0;
 
+    /// <summary>The talents and skills screen, shown in place of the resource summary while open.</summary>
+    public TalentCatalogViewModel? TalentCatalog
+    {
+        get => _talentCatalog;
+        private set
+        {
+            if (_talentCatalog == value)
+            {
+                return;
+            }
+
+            if (_talentCatalog is not null)
+            {
+                _talentCatalog.SessionExpired -= OnCatalogSessionExpired;
+            }
+
+            _talentCatalog = value;
+            if (_talentCatalog is not null)
+            {
+                _talentCatalog.SessionExpired += OnCatalogSessionExpired;
+            }
+
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsTalentCatalogOpen));
+            OnPropertyChanged(nameof(IsResourceSummaryVisible));
+        }
+    }
+
+    public bool IsTalentCatalogOpen => TalentCatalog is not null;
+
+    public bool IsResourceSummaryVisible => TalentCatalog is null;
+
     private async Task ConnectAsync()
     {
         IsBusy = true;
@@ -230,6 +269,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(HasAvailableActions));
         SelectedNavigationItem = null;
         _selectedResource = null;
+        TalentCatalog = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
 
@@ -240,7 +280,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             var discovery = await _apiClient.DiscoverAsync(ApiBaseUrl, Locale);
             foreach (var link in discovery.NavigationLinks)
             {
-                NavigationItems.Add(new NavigationItem(link.Title!, link.Href!));
+                NavigationItems.Add(new NavigationItem(
+                    link.Title!,
+                    link.Href!,
+                    link.Rel.Contains(SirenRelations.Talents, StringComparer.Ordinal)));
             }
 
             SetResource(discovery.ApiResource);
@@ -342,11 +385,18 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
+        if (item.OpensTalentCatalog)
+        {
+            await OpenTalentCatalogAsync(item);
+            return;
+        }
+
         IsBusy = true;
         SetStatus("management.connecting");
         try
         {
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
+            TalentCatalog = null;
             SetResource(resource);
             SetStatus("app.apiConnected");
         }
@@ -382,6 +432,28 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
     }
 
+    private async Task OpenTalentCatalogAsync(NavigationItem item)
+    {
+        IsBusy = true;
+        try
+        {
+            var catalog = new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href);
+            TalentCatalog = catalog;
+            SetStatus("app.apiConnected");
+            await catalog.LoadAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OnCatalogSessionExpired(object? sender, EventArgs e)
+    {
+        ClearSessionState();
+        SetStatus("errors.unauthorized");
+    }
+
     private void SetResource(SirenEntity resource)
     {
         _selectedResource = resource;
@@ -408,6 +480,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectedNavigationItem = null;
         AvailableActions.Clear();
         _selectedResource = null;
+        TalentCatalog = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
         OnPropertyChanged(nameof(HasAvailableActions));
@@ -425,51 +498,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         return value.GetString();
     }
 
-    private string GetApiErrorMessage(string errorCode)
-    {
-        var key = errorCode switch
-        {
-            "errors.validation" => "errors.validation",
-            "errors.unauthorized" => "errors.unauthorized",
-            "errors.forbidden" => "errors.forbidden",
-            "errors.notFound" => "errors.notFound",
-            "errors.conflict" => "errors.conflict",
-            "errors.requestFailed" => "errors.requestFailed",
-            "errors.serviceUnavailable" => "errors.serviceUnavailable",
-            "errors.internalServerError" => "errors.internalServerError",
-            _ when TryGetStatusCode(errorCode, out var statusCode) => statusCode switch
-            {
-                HttpStatusCode.Unauthorized => "errors.unauthorized",
-                HttpStatusCode.Forbidden => "errors.forbidden",
-                HttpStatusCode.NotFound => "errors.notFound",
-                HttpStatusCode.Conflict => "errors.conflict",
-                HttpStatusCode.ServiceUnavailable => "errors.serviceUnavailable",
-                >= HttpStatusCode.InternalServerError => "errors.internalServerError",
-                _ => "errors.requestFailed"
-            },
-            _ => "errors.requestFailed"
-        };
-        return _localizer.Translate(key, Locale);
-    }
-
-    private static bool TryGetStatusCode(string errorCode, out HttpStatusCode statusCode)
-    {
-        statusCode = default;
-        if (!errorCode.StartsWith("http.", StringComparison.Ordinal) ||
-            !int.TryParse(errorCode.AsSpan("http.".Length), out var numericStatus))
-        {
-            return false;
-        }
-
-        var parsedStatus = (HttpStatusCode)numericStatus;
-        if (!Enum.IsDefined(parsedStatus))
-        {
-            return false;
-        }
-
-        statusCode = parsedStatus;
-        return true;
-    }
+    private string GetApiErrorMessage(string errorCode) =>
+        _localizer.TranslateApiError(errorCode, Locale);
 
     private void SaveSettings()
     {

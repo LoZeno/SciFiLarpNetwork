@@ -4,6 +4,7 @@ using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
 using SciFiLarpNetwork.Management.ViewModels;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
@@ -569,7 +570,7 @@ public sealed class MainWindowViewModelTests
         StubApiClient apiClient,
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
-        new(apiClient, settingsStore, new JsonLocalizer(), settings ?? new ManagementSettings());
+        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()

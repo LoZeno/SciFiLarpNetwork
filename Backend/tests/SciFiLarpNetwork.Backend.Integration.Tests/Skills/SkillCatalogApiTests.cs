@@ -3,6 +3,7 @@ using System.Text.Json;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
+using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
 
@@ -253,6 +254,55 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
             (await ReadAsync(response)).Property("cardFlags").EnumerateArray().Select(flag => flag.GetProperty("name").GetString()));
     }
 
+    [Fact]
+    public async Task TalentCollectionLinksToItsArchivedView()
+    {
+        using var client = _factory.CreateClient();
+        var token = await ReaderTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, TalentsPath, token);
+
+        Assert.Equal($"{TalentsPath}?includeArchived=true", (await ReadAsync(response)).LinkHref(SirenRelations.WithArchived));
+    }
+
+    [Fact]
+    public async Task ArchivedTalentViewLinksBackToTheActiveView()
+    {
+        using var client = _factory.CreateClient();
+        var token = await ReaderTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(
+            client, HttpMethod.Get, $"{TalentsPath}?includeArchived=true", token);
+
+        Assert.Equal(TalentsPath, (await ReadAsync(response)).LinkHref(SirenRelations.WithoutArchived));
+    }
+
+    [Fact]
+    public async Task TalentItemsLinkToTheirSkills()
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var talentId = await CreateTalentAsync(client, token, "Medicine");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, TalentsPath, token);
+
+        Assert.Equal($"{TalentsPath}/{talentId:D}/skills", (await ReadAsync(response)).FirstEntityLinkHref(SirenRelations.Skills));
+    }
+
+    [Fact]
+    public async Task TalentSkillsLinkToTheirArchivedView()
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var talentId = await CreateTalentAsync(client, token, "Medicine");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"{TalentsPath}/{talentId:D}/skills", token);
+
+        Assert.Equal(
+            $"{TalentsPath}/{talentId:D}/skills?includeArchived=true",
+            (await ReadAsync(response)).LinkHref(SirenRelations.WithArchived));
+    }
+
     private static object GameFlagSnapshot(JsonElement gameFlags) =>
         new
         {
@@ -310,6 +360,15 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
 
         public IEnumerable<string?> Links() =>
             Root.GetProperty("links").EnumerateArray().Select(link => link.GetProperty("href").GetString());
+
+        public string? LinkHref(string rel) => FindLinkHref(Root, rel);
+
+        public string? FirstEntityLinkHref(string rel) => FindLinkHref(Root.GetProperty("entities")[0], rel);
+
+        private static string? FindLinkHref(JsonElement entity, string rel) =>
+            entity.GetProperty("links").EnumerateArray()
+                .Single(link => link.GetProperty("rel").EnumerateArray().Any(value => value.GetString() == rel))
+                .GetProperty("href").GetString();
 
         public string?[] ActionNames() =>
             Root.TryGetProperty("actions", out var actions)

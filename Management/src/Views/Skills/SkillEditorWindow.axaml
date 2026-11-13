@@ -1,0 +1,174 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.Skills.SkillEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Skills"
+    x:DataType="vm:SkillEditorViewModel"
+    Title="{Binding Title}"
+    Width="720"
+    Height="760"
+    MinWidth="560"
+    MinHeight="480"
+    WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <DataTemplate x:Key="OptionTemplate" x:DataType="vm:SelectableOption">
+      <CheckBox
+          Margin="0,0,16,0"
+          Content="{Binding Title}"
+          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+    </DataTemplate>
+  </Window.Resources>
+  <DockPanel Margin="24">
+    <StackPanel
+        Margin="0,12,0,0"
+        DockPanel.Dock="Bottom"
+        Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button
+            Command="{Binding SaveCommand}"
+            Content="{Binding SaveLabel}"
+            IsDefault="True" />
+        <Button
+            Command="{Binding CancelCommand}"
+            Content="{Binding CancelLabel}"
+            IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <ScrollViewer>
+      <StackPanel Margin="0,0,12,0" Spacing="10">
+        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Text="{Binding NameLabel}" />
+        <TextBox
+            AutomationProperties.Name="{Binding NameLabel}"
+            MaxLength="64"
+            Text="{Binding Name, Mode=TwoWay}" />
+        <TextBlock Text="{Binding DescriptionLabel}" />
+        <TextBox
+            Height="100"
+            AcceptsReturn="True"
+            AutomationProperties.Name="{Binding DescriptionLabel}"
+            MaxLength="2000"
+            Text="{Binding Description, Mode=TwoWay}"
+            TextWrapping="Wrap" />
+        <TextBlock Text="{Binding CostLabel}" />
+        <NumericUpDown
+            Width="160"
+            HorizontalAlignment="Left"
+            AutomationProperties.Name="{Binding CostLabel}"
+            FormatString="0"
+            Increment="1"
+            Maximum="999"
+            Minimum="0"
+            Value="{Binding Cost, Mode=TwoWay}" />
+        <CheckBox Content="{Binding MultiPurchaseLabel}" IsChecked="{Binding IsMultiPurchase, Mode=TwoWay}" />
+        <CheckBox Content="{Binding AdvancedLabel}" IsChecked="{Binding IsAdvanced, Mode=TwoWay}" />
+
+        <TextBlock FontWeight="SemiBold" Text="{Binding TalentsLabel}" />
+        <ItemsControl ItemTemplate="{StaticResource OptionTemplate}" ItemsSource="{Binding Talents}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <TextBlock FontWeight="SemiBold" Text="{Binding GameFlagsLabel}" />
+        <ItemsControl ItemTemplate="{StaticResource OptionTemplate}" ItemsSource="{Binding GameFlags}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <TextBlock FontWeight="SemiBold" Text="{Binding CardFlagsLabel}" />
+        <ItemsControl ItemTemplate="{StaticResource OptionTemplate}" ItemsSource="{Binding CardFlags}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <TextBlock Text="{Binding NewCardFlagsLabel}" />
+        <TextBox
+            Height="72"
+            AcceptsReturn="True"
+            AutomationProperties.HelpText="{Binding NewCardFlagsHelp}"
+            AutomationProperties.Name="{Binding NewCardFlagsLabel}"
+            Text="{Binding NewCardFlagNames, Mode=TwoWay}" />
+        <TextBlock FontSize="12" Text="{Binding NewCardFlagsHelp}" TextWrapping="Wrap" />
+
+        <TextBlock FontWeight="SemiBold" Text="{Binding PrerequisitesLabel}" />
+        <TextBlock FontSize="12" Text="{Binding PrerequisitesHelp}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding PrerequisiteGroups}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PrerequisiteGroupViewModel">
+              <Border
+                  Margin="0,4"
+                  Padding="12"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                  BorderThickness="1"
+                  CornerRadius="4">
+                <StackPanel Spacing="6">
+                  <DockPanel>
+                    <Button
+                        Command="{Binding RemoveCommand}"
+                        Content="{Binding RemoveLabel}"
+                        DockPanel.Dock="Right" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Heading}" />
+                  </DockPanel>
+                  <ItemsControl ItemsSource="{Binding Members}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:PrerequisiteMemberViewModel">
+                        <DockPanel Margin="0,2">
+                          <Button
+                              Command="{Binding RemoveCommand}"
+                              Content="{Binding RemoveLabel}"
+                              DockPanel.Dock="Right" />
+                          <TextBlock VerticalAlignment="Center" Text="{Binding Skill.DisplayName}" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <DockPanel>
+                    <Button
+                        Margin="8,0,0,0"
+                        Command="{Binding AddMemberCommand}"
+                        Content="{Binding AddMemberLabel}"
+                        DockPanel.Dock="Right" />
+                    <ComboBox
+                        HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{Binding AddMemberLabel}"
+                        ItemsSource="{Binding Candidates}"
+                        SelectedItem="{Binding SelectedCandidate, Mode=TwoWay}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:SkillListItem">
+                          <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </DockPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button
+            HorizontalAlignment="Left"
+            Command="{Binding AddGroupCommand}"
+            Content="{Binding AddGroupLabel}" />
+        <TextBlock
+            Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+            IsVisible="{Binding HasArchivedPrerequisiteWarning}"
+            Text="{Binding ArchivedPrerequisiteWarning}"
+            TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>
