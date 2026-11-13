@@ -1,4 +1,3 @@
-using JasperFx;
 using Marten;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
@@ -9,23 +8,6 @@ internal static class AdministratorDocumentSessionExtensions
 {
     extension(IDocumentSession session)
     {
-        /// <summary>
-        /// Commits the session and reports <see langword="false"/> when Marten rejects it with a
-        /// <see cref="ConcurrencyException"/>; in that case nothing was written.
-        /// </summary>
-        public async Task<bool> TrySaveChangesAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                await session.SaveChangesAsync(cancellationToken);
-                return true;
-            }
-            catch (ConcurrencyException)
-            {
-                return false;
-            }
-        }
-
         public void StartAuditStream(
             string actorKind,
             Guid? actorAccountId,

@@ -1,7 +1,7 @@
 using Marten;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 
-namespace SciFiLarpNetwork.Backend.Infrastructure.Administration;
+namespace SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 internal sealed class AttributedSessionFactory(IDocumentStore documentStore, IEventActorContext actorContext)
 {
