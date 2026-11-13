@@ -1,18 +1,21 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using JasperFx;
+using JasperFx.Events;
+using Marten;
+using Marten.Events;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Marten;
-using Marten.Events;
-using Npgsql;
 using SciFiLarpNetwork.Backend.Application.Administration;
+using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
@@ -69,7 +72,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         var grant = await _factory.LoadGrantDocumentAsync();
 
         Assert.NotNull(grant);
-        Assert.NotEqual(credential, grant!.TokenHash);
+        Assert.NotEqual(credential, grant.TokenHash);
     }
 
     [Fact]
@@ -395,8 +398,19 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         Assert.Equal(adminId.ToString("D"), readerEvents[^1].UserName);
     }
 
+    [Fact]
+    public async Task StoreRejectsSecondAccountWithSameNormalizedUserName()
+    {
+        await _factory.BootstrapAdministratorAsync();
+        var existing = (await _factory.LoadAccountDocumentsAsync()).Single();
+
+        var exception = await Record.ExceptionAsync(() => _factory.AppendAccountCreatedAsync(existing.NormalizedUserName));
+
+        Assert.IsType<DocumentAlreadyExistsException>(exception);
+    }
+
     private static string HashSecret(string secret) =>
-        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
 }
 
 public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<Program>, IAsyncLifetime
@@ -476,10 +490,20 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         return await session.Query<AdministratorAuditDocument>().ToListAsync();
     }
 
-    public async Task<IReadOnlyList<JasperFx.Events.IEvent>> LoadStreamEventsAsync(Guid streamId)
+    public async Task<IReadOnlyList<IEvent>> LoadStreamEventsAsync(Guid streamId)
     {
         await using var session = Services.GetRequiredService<IDocumentStore>().QuerySession();
         return await session.Events.FetchStreamAsync(streamId);
+    }
+
+    public async Task AppendAccountCreatedAsync(string normalizedUserName)
+    {
+        var accountId = Guid.NewGuid();
+        await using var session = Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        session.Events.StartStream<AdministratorAccountDocument>(
+            accountId,
+            new AccountCreated(accountId, normalizedUserName, normalizedUserName, "not-a-real-hash", AdministratorRoles.Reader, DateTimeOffset.UtcNow));
+        await session.SaveChangesAsync();
     }
 
     // Events are immutable history, so expiry is simulated by moving the application clock
@@ -546,7 +570,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         await BootstrapAdministratorAsync();
         var token = await SignInAsync(client, "local-admin-password-1");
-        var readerId = await AdministratorAuthenticationFactory.CreateReaderAccountInternalAsync(client, token);
+        var readerId = await CreateReaderAccountInternalAsync(client, token);
         return (token, readerId);
     }
 

@@ -1,11 +1,10 @@
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
+using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
-using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
 
@@ -449,7 +448,7 @@ public sealed class MainWindowViewModelTests
 
         public Task<ApiDiscovery>? DiscoveryTask { get; init; }
 
-        public SirenEntity Resource { get; init; } = MainWindowViewModelTests.Resource("{}");
+        public SirenEntity Resource { get; init; } = Resource("{}");
 
         public string? LastResourceHref { get; private set; }
 

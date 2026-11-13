@@ -1,14 +1,14 @@
 using Avalonia;
 using Avalonia.Headless;
-using Avalonia.Headless.XUnit;
+using SciFiLarpNetwork.Management.Tests.Application;
 
-[assembly: AvaloniaTestApplication(typeof(SciFiLarpNetwork.Management.Tests.Application.TestAppBuilder))]
+[assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
 public static class TestAppBuilder
 {
     public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<SciFiLarpNetwork.Management.App>()
+        AppBuilder.Configure<App>()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions());
 }

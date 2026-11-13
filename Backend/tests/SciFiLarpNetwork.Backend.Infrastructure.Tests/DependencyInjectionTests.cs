@@ -1,6 +1,6 @@
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Marten;
 using SciFiLarpNetwork.Backend.Infrastructure;
 
 namespace SciFiLarpNetwork.Backend.Tests.Infrastructure;

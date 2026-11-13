@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
-using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api;
 
 namespace SciFiLarpNetwork.Management.Tests.Api;
 

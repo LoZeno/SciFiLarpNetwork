@@ -1,7 +1,8 @@
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
+using Marten.Schema;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,6 @@ using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure;
 
@@ -48,10 +48,13 @@ public static class DependencyInjection
             // validation and grant checks must see every committed event immediately. Inline
             // projections are updated in the same transaction as the appended events, which
             // gives that strong consistency (Marten "Projections" docs, ProjectionLifecycle).
-            options.Projections.Add<AdministratorAccountProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorSessionProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorGrantProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorAuditProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorAccountProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorSessionProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorGrantProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorAuditProjection>(ProjectionLifecycle.Inline);
+
+            options.Schema.For<AdministratorAccountDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, account => account.NormalizedUserName);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();

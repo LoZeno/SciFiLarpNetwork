@@ -1,8 +1,11 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authorization;
+using Marten;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -132,13 +135,13 @@ app.MapOpenApi().AllowAnonymous();
 app.MapControllers();
 app.MapHealthChecks(
     "/health/ready",
-    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
         ResponseWriter = async (context, report) =>
         {
             context.Response.ContentType = "application/json";
-            await System.Text.Json.JsonSerializer.SerializeAsync(
+            await JsonSerializer.SerializeAsync(
                 context.Response.Body,
                 new
                 {
@@ -183,7 +186,7 @@ if (operatorCommand is not null)
             throw new InvalidOperationException("Password must be at least 12 characters long.");
         }
 
-        await app.Services.GetRequiredService<Marten.IDocumentStore>()
+        await app.Services.GetRequiredService<IDocumentStore>()
             .Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         var authenticationService = app.Services.GetRequiredService<IAdministratorAuthenticationService>();
         credential = operatorCommand == "--bootstrap-admin"

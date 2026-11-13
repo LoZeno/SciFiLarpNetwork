@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using JasperFx;
 using Marten;
@@ -336,11 +337,20 @@ public sealed class AdministratorAuthenticationService(
             new AccountCreated(accountId, userName.Trim(), normalizedUserName, passwordHasher.HashPassword(_passwordSubject, password), role, now));
         StartAuditStream(session, "administrator", actorAccountId, accountId, "AdministratorAccountCreated", "none", role, now);
 
-        return await TrySaveAsync(session, cancellationToken)
-            ? new AdministratorAccountCreationResult(
-                AdministratorOperationResult.Succeeded,
-                new AdministratorSummary(accountId, userName.Trim(), role, now))
-            : new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
+        try
+        {
+            return await TrySaveAsync(session, cancellationToken)
+                ? new AdministratorAccountCreationResult(
+                    AdministratorOperationResult.Succeeded,
+                    new AdministratorSummary(accountId, userName.Trim(), role, now))
+                : new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
+        }
+        catch (DocumentAlreadyExistsException)
+        {
+            // The unique index on NormalizedUserName rejects a concurrent command that
+            // claimed the same name after the lookup above.
+            return new AdministratorAccountCreationResult(AdministratorOperationResult.AccountNameAlreadyUsed, null);
+        }
     }
 
     public async Task<AdministratorOperationResult> ChangeRoleAsync(
@@ -542,8 +552,8 @@ public sealed class AdministratorAuthenticationService(
     private static string NormalizeUserName(string userName)
     {
         var trimmed = userName.Trim();
-        return System.Text.Encoding.UTF8.GetString(
-            System.Text.Encoding.UTF8.GetBytes(trimmed.Normalize(System.Text.NormalizationForm.FormKC))).ToUpperInvariant();
+        return Encoding.UTF8.GetString(
+            Encoding.UTF8.GetBytes(trimmed.Normalize(NormalizationForm.FormKC))).ToUpperInvariant();
     }
 
     private static string CreateRandomToken()
@@ -555,7 +565,7 @@ public sealed class AdministratorAuthenticationService(
 
     private static string HashSecret(string secret)
     {
-        var bytes = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(secret));
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(secret));
         return Convert.ToHexString(bytes);
     }
 }

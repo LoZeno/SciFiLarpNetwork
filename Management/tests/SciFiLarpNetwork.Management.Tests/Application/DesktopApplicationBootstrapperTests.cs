@@ -1,13 +1,13 @@
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Headless.XUnit;
+using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Application;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
-using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
@@ -71,14 +71,14 @@ public sealed class DesktopApplicationBootstrapperTests
             CancellationToken cancellationToken = default) =>
             Task.FromException<ApiDiscovery>(new NotImplementedException());
 
-        public Task<SirenEntity<JsonElement>> GetResourceAsync(
+        public Task<SirenEntity> GetResourceAsync(
             string apiBaseUrl,
             string href,
             string locale,
             CancellationToken cancellationToken = default) =>
             Task.FromException<SirenEntity<JsonElement>>(new NotImplementedException());
 
-        public Task<SirenEntity<JsonElement>> SubmitActionAsync(
+        public Task<SirenEntity> SubmitActionAsync(
             string apiBaseUrl,
             SirenAction action,
             JsonElement? body,

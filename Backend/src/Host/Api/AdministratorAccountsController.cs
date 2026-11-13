@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
@@ -189,18 +190,18 @@ public sealed record AdministratorDirectoryProperties(
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record AdministratorRoleChangeRequest(
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.RegularExpression("^(reader|administrator)$")]
+    [Required]
+    [RegularExpression("^(reader|administrator)$")]
     string Role);
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record AdministratorAccountCreateRequest(
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.StringLength(64, MinimumLength = 3)]
+    [Required]
+    [StringLength(64, MinimumLength = 3)]
     string UserName,
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 12)]
+    [Required]
+    [StringLength(128, MinimumLength = 12)]
     string Password,
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.RegularExpression("^(reader|administrator)$")]
+    [Required]
+    [RegularExpression("^(reader|administrator)$")]
     string Role);

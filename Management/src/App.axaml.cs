@@ -1,13 +1,13 @@
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using SciFiLarpNetwork.Common.Localization;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Application;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
-using SciFiLarpNetwork.Common.Localization;
 
 namespace SciFiLarpNetwork.Management;
 

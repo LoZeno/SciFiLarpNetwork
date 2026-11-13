@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api;
 
 namespace SciFiLarpNetwork.Management.Tests.Api;
 

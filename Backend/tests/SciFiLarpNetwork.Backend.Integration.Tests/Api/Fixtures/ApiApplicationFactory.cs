@@ -1,13 +1,13 @@
 using System.Security.Claims;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
+using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Marten;
-using JasperFx.Events.Projections;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
 using SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 

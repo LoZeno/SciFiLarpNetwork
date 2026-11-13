@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
-using Avalonia.Threading;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
@@ -17,7 +17,7 @@ public sealed class AppStartupTests
         new ManagementSettingsStore(settingsPath)
             .Save(new ManagementSettings("http://localhost:6000/api", "it"));
 
-        var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
+        var window = App.CreateMainWindow(settingsPath, httpClient);
         var viewModel = (MainWindowViewModel)window.DataContext!;
 
         window.Show();
@@ -46,7 +46,7 @@ public sealed class AppStartupTests
         var settingsPath = Path.Combine(directory.Path, "settings.json");
         File.WriteAllText(settingsPath, "{");
 
-        var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
+        var window = App.CreateMainWindow(settingsPath, httpClient);
         var viewModel = (MainWindowViewModel)window.DataContext!;
         var actual = new MainWindowStartupSnapshot(
             window.GetType(),
