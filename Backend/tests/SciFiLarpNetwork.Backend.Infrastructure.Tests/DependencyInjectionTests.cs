@@ -1,6 +1,7 @@
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Infrastructure;
 
 namespace SciFiLarpNetwork.Backend.Tests.Infrastructure;
@@ -16,6 +17,18 @@ public sealed class DependencyInjectionTests
         var secondResolution = provider.GetRequiredService<IDocumentStore>();
 
         Assert.Same(documentStore, secondResolution);
+    }
+
+    [Fact]
+    public void DefaultEventActorContextIsSystemOriginated()
+    {
+        using var provider = CreateProvider();
+
+        var actorContext = provider.GetRequiredService<IEventActorContext>();
+
+        Assert.Equal(
+            new { RequiresAuthenticatedActor = false, ActorId = (string?)null },
+            new { actorContext.RequiresAuthenticatedActor, actorContext.ActorId });
     }
 
     private static ServiceProvider CreateProvider()

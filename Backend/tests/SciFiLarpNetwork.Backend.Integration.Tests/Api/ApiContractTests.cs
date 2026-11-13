@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
@@ -276,6 +277,18 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
                 ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
                 Code = body.RootElement.GetProperty("properties").GetProperty("code").GetString() ?? string.Empty
             });
+    }
+
+    [Fact]
+    public void InvalidPathBasePreventsStartup()
+    {
+        using var invalidFactory = factory.WithWebHostBuilder(builder => builder.UseSetting("PathBase", "local/"));
+
+        var exception = Record.Exception(() => invalidFactory.CreateClient());
+
+        Assert.Equal(
+            "PathBase must be an absolute path without a trailing slash, query, or fragment.",
+            exception?.GetBaseException().Message);
     }
 
     private static string LinkSnapshot(JsonElement entity) =>

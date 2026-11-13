@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using JasperFx;
@@ -10,10 +9,12 @@ using Marten;
 using Marten.Events;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
@@ -71,8 +72,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 
         var grant = await _factory.LoadGrantDocumentAsync();
 
-        Assert.NotNull(grant);
-        Assert.NotEqual(credential, grant.TokenHash);
+        Assert.Equal(
+            new { IsStored = true, IsPlaintext = false },
+            new { IsStored = grant is not null, IsPlaintext = grant?.TokenHash == credential });
     }
 
     [Fact]
@@ -115,9 +117,14 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
             new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
                 Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.True(response.Headers.TryGetValues("Authorization", out var values));
-        Assert.NotEmpty(values);
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, HasBearerToken = true },
+            new
+            {
+                Status = response.StatusCode,
+                HasBearerToken = response.Headers.TryGetValues("Authorization", out var values) &&
+                                 values.Single().StartsWith("Bearer ", StringComparison.Ordinal)
+            });
     }
 
     [Fact]
@@ -149,8 +156,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 
         var sessions = await _factory.LoadSessionDocumentsAsync();
 
-        Assert.Single(sessions);
-        Assert.NotEqual(token, sessions[0].TokenHash);
+        Assert.Equal(
+            new { SessionCount = 1, IsPlaintext = false },
+            new { SessionCount = sessions.Count, IsPlaintext = sessions.Any(s => s.TokenHash == token) });
     }
 
     [Fact]
@@ -267,7 +275,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     public async Task ReaderCanViewAccounts()
     {
         using var client = _factory.CreateClient();
-        var readerId = await _factory.CreateReaderAccountAsync(client);
+        await _factory.CreateReaderAccountAsync(client);
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", readerToken);
@@ -352,10 +360,13 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 
         var accounts = await _factory.LoadAccountDocumentsAsync();
 
-        Assert.Single(accounts);
-        var account = accounts[0];
-        Assert.NotEqual("local-admin-password-1", account.PasswordHash);
-        Assert.False(account.PasswordHash.Contains("local-admin-password-1", StringComparison.Ordinal));
+        Assert.Equal(
+            new { AccountCount = 1, ContainsPlaintextPassword = false },
+            new
+            {
+                AccountCount = accounts.Count,
+                ContainsPlaintextPassword = accounts.Any(a => a.PasswordHash.Contains("local-admin-password-1", StringComparison.Ordinal))
+            });
     }
 
     [Fact]
@@ -377,8 +388,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         var audits = await _factory.LoadAuditDocumentsAsync();
         var roleChangeAudit = audits.FirstOrDefault(a => a.TargetAccountId == readerId && a.EventType == "AdministratorRoleChanged");
 
-        Assert.NotNull(roleChangeAudit);
-        Assert.Equal(adminId, roleChangeAudit!.ActorAccountId);
+        Assert.Equal(adminId, roleChangeAudit?.ActorAccountId);
     }
 
     [Fact]
@@ -409,8 +419,264 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         Assert.IsType<DocumentAlreadyExistsException>(exception);
     }
 
-    private static string HashSecret(string secret) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
+    [Fact]
+    public async Task CurrentSessionReturnsSignedInAccountName()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/session", token);
+
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, UserName = "local-admin" },
+            new { Status = response.StatusCode, UserName = await ReadPropertyAsync(response, "userName") });
+    }
+
+    [Fact]
+    public async Task RemoteSignInWithoutHttpsIsForbidden()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/admin/session")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
+                Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("X-Test-Remote", "true");
+
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SignInWithUnknownAccountReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+
+        using var response = await client.PostAsync("/local/api/v1/admin/session",
+            new StringContent(JsonSerializer.Serialize(new { userName = "unknown-admin", password = "local-admin-password-1" }),
+                Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SignInWithLegacyPasswordHashUpgradesTheStoredHash()
+    {
+        using var client = _factory.CreateClient();
+        var legacyHash = new PasswordHasher<object>(Options.Create(new PasswordHasherOptions
+        {
+            CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV2
+        })).HashPassword(new object(), "legacy-password-123");
+        await _factory.AppendAccountCreatedAsync("LEGACY-ADMIN", "legacy-admin", legacyHash, AdministratorRoles.Administrator);
+
+        await AdministratorAuthenticationFactory.SignInAsync(client, "legacy-admin", "legacy-password-123");
+
+        var account = (await _factory.LoadAccountDocumentsAsync()).Single();
+        Assert.NotEqual(legacyHash, account.PasswordHash);
+    }
+
+    [Fact]
+    public async Task ExpiredSessionIsRevokedWhenItIsPresented()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
+        _factory.Clock.Advance(TimeSpan.FromHours(9));
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
+
+        Assert.Empty(await _factory.LoadSessionDocumentsAsync());
+    }
+
+    [Fact]
+    public async Task CreatingAccountWithUsedNameReturnsConflict()
+    {
+        using var client = _factory.CreateClient();
+        var (token, _) = await _factory.PrepareReaderWithTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "Auditor", password = "another-reader-password-1", role = AdministratorRoles.Reader });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatingAccountWithInvalidNameReturnsBadRequest()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
+            new { userName = "-invalid", password = "valid-length-password", role = AdministratorRoles.Reader });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AccountCanBeReadById()
+    {
+        using var client = _factory.CreateClient();
+        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"/local/api/v1/admin/accounts/{readerId:D}", token);
+
+        Assert.Equal(
+            new { Status = HttpStatusCode.OK, UserName = "auditor" },
+            new { Status = response.StatusCode, UserName = await ReadPropertyAsync(response, "userName") });
+    }
+
+    [Fact]
+    public async Task ChangingRoleOfUnknownAccountReturnsNotFound()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{Guid.NewGuid():D}/role", token, new { role = AdministratorRoles.Reader });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangingRoleToTheCurrentRoleSucceeds()
+    {
+        using var client = _factory.CreateClient();
+        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Reader });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task VersionRootAdvertisesAccountsNavigationToAdministrators()
+    {
+        using var client = _factory.CreateClient();
+        await _factory.BootstrapAdministratorAsync();
+        var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1", token);
+
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("/local/api/v1/admin/accounts", body.RootElement.GetProperty("links").EnumerateArray()
+            .Select(link => link.GetProperty("href").GetString()));
+    }
+
+    [Fact]
+    public async Task BootstrapIsRejectedWhenAnAccountAlreadyExists()
+    {
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+        await _factory.AppendAccountCreatedAsync("EXISTING-ADMIN", "existing-admin", "not-a-real-hash", AdministratorRoles.Administrator);
+
+        var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.AlreadyInitialized, result);
+    }
+
+    [Fact]
+    public async Task BootstrapRejectsNonHexadecimalCredential()
+    {
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+
+        var result = await service.BootstrapAsync("not-a-hex-credential", "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
+    }
+
+    [Fact]
+    public async Task BootstrapRejectsBlankUserName()
+    {
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
+
+        var result = await service.BootstrapAsync(credential, "   ", "local-admin-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
+    }
+
+    [Fact]
+    public async Task RecoveryRejectsShortPassword()
+    {
+        await _factory.BootstrapAdministratorAsync();
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
+
+        var result = await service.RecoverAsync(credential, "local-admin", "short", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
+    }
+
+    [Fact]
+    public async Task RecoveryOfUnknownAccountReturnsAccountNotFound()
+    {
+        await _factory.BootstrapAdministratorAsync();
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+        var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
+
+        var result = await service.RecoverAsync(credential, "unknown-admin", "replacement-password-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.AccountNotFound, result);
+    }
+
+    [Fact]
+    public async Task RecoveryCredentialCannotBeIssuedWithoutAccounts()
+    {
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ReaderCannotCreateAccountsThroughTheService()
+    {
+        using var client = _factory.CreateClient();
+        var readerId = await _factory.CreateReaderAccountAsync(client);
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+
+        var result = await service.CreateAccountAsync(readerId, "new-reader", "new-reader-password-1", AdministratorRoles.Reader, TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.ActorNoLongerAuthorized, result.Result);
+    }
+
+    [Fact]
+    public async Task ReaderCannotChangeRolesThroughTheService()
+    {
+        using var client = _factory.CreateClient();
+        var readerId = await _factory.CreateReaderAccountAsync(client);
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+
+        var result = await service.ChangeRoleAsync(readerId, readerId, AdministratorRoles.Administrator, TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.ActorNoLongerAuthorized, result);
+    }
+
+    [Fact]
+    public async Task ChangingToAnUnknownRoleIsRejected()
+    {
+        await _factory.BootstrapAdministratorAsync();
+        var adminId = (await _factory.LoadAccountDocumentsAsync()).Single().Id;
+        var service = _factory.Services.GetRequiredService<IAdministratorAuthenticationService>();
+
+        var result = await service.ChangeRoleAsync(adminId, adminId, "superuser", TestContext.Current.CancellationToken);
+
+        Assert.Equal(AdministratorOperationResult.AccountNotFound, result);
+    }
+
+    private static async Task<string> ReadPropertyAsync(HttpResponseMessage response, string name)
+    {
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        return body.RootElement.GetProperty("properties").GetProperty(name).GetString() ?? string.Empty;
+    }
 }
 
 public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<Program>, IAsyncLifetime
@@ -496,13 +762,16 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         return await session.Events.FetchStreamAsync(streamId);
     }
 
-    public async Task AppendAccountCreatedAsync(string normalizedUserName)
+    public Task AppendAccountCreatedAsync(string normalizedUserName) =>
+        AppendAccountCreatedAsync(normalizedUserName, normalizedUserName, "not-a-real-hash", AdministratorRoles.Reader);
+
+    public async Task AppendAccountCreatedAsync(string normalizedUserName, string userName, string passwordHash, string role)
     {
         var accountId = Guid.NewGuid();
         await using var session = Services.GetRequiredService<IDocumentStore>().LightweightSession();
         session.Events.StartStream<AdministratorAccountDocument>(
             accountId,
-            new AccountCreated(accountId, normalizedUserName, normalizedUserName, "not-a-real-hash", AdministratorRoles.Reader, DateTimeOffset.UtcNow));
+            new AccountCreated(accountId, userName, normalizedUserName, passwordHash, role, DateTimeOffset.UtcNow));
         await session.SaveChangesAsync();
     }
 
@@ -537,10 +806,13 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         return credential;
     }
 
-    public static async Task<string> SignInAsync(HttpClient client, string password)
+    public static Task<string> SignInAsync(HttpClient client, string password) =>
+        SignInAsync(client, "local-admin", password);
+
+    public static async Task<string> SignInAsync(HttpClient client, string userName, string password)
     {
         using var response = await client.PostAsync("/local/api/v1/admin/session",
-            new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password }),
+            new StringContent(JsonSerializer.Serialize(new { userName, password }),
                 Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
         response.EnsureSuccessStatusCode();
         return AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter!;
@@ -629,7 +901,7 @@ public sealed class CapturingLoggerProvider : ILoggerProvider
 
     public ILogger CreateLogger(string categoryName) => new CapturingLogger(Messages);
 
-    public void Dispose() { }
+    public void Dispose() => GC.SuppressFinalize(this);
 
     private sealed class CapturingLogger(ConcurrentBag<string> messages) : ILogger
     {

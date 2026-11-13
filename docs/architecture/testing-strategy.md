@@ -20,8 +20,6 @@ dotnet test SciFiLarpNetwork.slnx --configuration Release
 
 Compose initializes separate `scifilarnetwork_dev` and `scifilarnetwork_tests` databases. The integration test fixture defaults to the test database; its connection can be overridden with `ConnectionStrings__EventStore`. Never point that setting at development or production data. Authentication tests create and remove a uniquely named schema and require permission to do so; database-backed test classes run serially to avoid competing projection daemons. The same Docker Compose commands work on Windows, Linux, and macOS, with Docker selecting the native x64 or ARM64 PostgreSQL image.
 
-The Backend Integration and Management test projects collect coverage through Coverlet's MTP extension. They write uniquely named Cobertura XML and JSON reports under their `TestResults/coverage/` directories and enforce an 80% total line threshold. Only `SciFiLarpNetwork.*` assemblies are measured; test assemblies and compiler-generated code (by generated-code attributes or `.g.cs`, `.generated.cs`, and `.designer.cs` suffixes) are excluded. Running the documented solution-wide `dotnet test` command collects coverage and enforces both gates.
-
 Run the frontend's TypeScript tests and checks separately:
 
 ```powershell
@@ -30,9 +28,33 @@ npm ci
 npm run check
 ```
 
-The frontend check includes coverage collection. Vitest measures all executable TypeScript under `src/`, writes text, LCOV, and HTML reports under `Frontend/coverage/`, and enforces 80% for both statements and lines.
+The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented.
 
-The GitHub Actions workflow runs both command paths on pull requests and pushes to `master`, and uploads each platform's reports as workflow artifacts. The backend, React SPA, and management application have active tests and coverage thresholds. Add tests alongside domain, event persistence/projections, MVC endpoints, UI workflows, and shared API contracts as those features are implemented.
+## Coverage gates
+
+CI enforces two separate gates, specified in [SPEC-10](../specifications/SPEC-10-code-coverage.md):
+
+| Gate | What is measured | Minimum | Enforced by |
+|---|---|---|---|
+| C# | All production C#, by all .NET test projects together | 80% lines | ReportGenerator, after the .NET tests |
+| TypeScript | All production TypeScript in `Frontend/src` | 80% statements and lines | Vitest, inside `npm run check` |
+
+### C# gate
+
+Each .NET test project writes its own coverage report to its `TestResults/coverage/` directory. No single project has a threshold: unit tests and integration tests cover different parts of the code, so only their combined coverage is checked. Coverage includes the `SciFiLarpNetwork.*` production assemblies and excludes test assemblies and generated code (generated-code attributes, and `.g.cs`, `.generated.cs`, and `.designer.cs` files).
+
+To check the C# gate locally, run the .NET tests (see above), then merge the reports:
+
+```powershell
+dotnet tool restore
+dotnet reportgenerator "-reports:Backend/tests/**/TestResults/coverage/*.cobertura.*.xml;Management/tests/**/TestResults/coverage/*.cobertura.*.xml" "-targetdir:coverage/dotnet" "-reporttypes:Cobertura;HtmlSummary;MarkdownSummaryGithub;TextSummary" "minimumCoverageThresholds:lineCoverage=80"
+```
+
+The command fails when combined line coverage is below 80%. It writes the combined report to `coverage/dotnet/` either way; open `summary.html` or `Summary.txt` to see coverage per assembly and class. CI runs the same command, adds the summary to the job page, and uploads all reports as the `dotnet-coverage` artifact.
+
+### TypeScript gate
+
+`npm run check` in `Frontend` runs the tests with coverage and fails when statement or line coverage is below 80%. Reports are written to `Frontend/coverage/`; CI uploads them as the `frontend-coverage` artifact.
 
 ## Test design
 
@@ -45,4 +67,4 @@ The GitHub Actions workflow runs both command paths on pull requests and pushes 
 - Keep test data generic and franchise-neutral. Distinguish Account, Player, and Character as defined in the domain glossary.
 - Tests and fixture setup must run without public internet access after their declared packages/runtime prerequisites have been prepared locally.
 
-The 80% coverage thresholds and report formats are specified in SPEC-10.
+The coverage gates are specified in SPEC-10 and described under [Coverage gates](#coverage-gates).

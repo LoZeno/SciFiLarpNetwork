@@ -31,7 +31,7 @@ public partial class App : Avalonia.Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    internal static MainWindow CreateMainWindow(string settingsPath, HttpClient httpClient)
+    public static MainWindow CreateMainWindow(string settingsPath, HttpClient httpClient)
     {
         var settingsStore = new ManagementSettingsStore(settingsPath);
         ManagementSettings settings;

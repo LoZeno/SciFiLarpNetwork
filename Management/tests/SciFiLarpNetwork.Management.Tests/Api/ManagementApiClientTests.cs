@@ -297,7 +297,11 @@ public sealed class ManagementApiClientTests : IDisposable
         return new ManagementApiClient(_httpClient);
     }
 
-    public void Dispose() => _httpClient?.Dispose();
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     private static HttpResponseMessage SirenResponse(
         string body,
