@@ -111,5 +111,7 @@
   "hacking.difficulty": "Challenge difficulty (1–10)",
   "hacking.minimumHits": "Minimum required hits",
   "hacking.attackerLevel": "Attacker hacking level",
-  "hacking.start": "Start hacking simulation"
+  "hacking.start": "Start hacking simulation",
+  "skills.talent": "Talent",
+  "skills.talents": "Talents"
 }

@@ -111,5 +111,7 @@
   "hacking.difficulty": "Difficoltà della sfida (1–10)",
   "hacking.minimumHits": "Colpi minimi richiesti",
   "hacking.attackerLevel": "Livello di abilità informatica dell'attaccante",
-  "hacking.start": "Avvia la simulazione di hacking"
+  "hacking.start": "Avvia la simulazione di hacking",
+  "skills.talent": "Attitudine",
+  "skills.talents": "Attitudini"
 }
