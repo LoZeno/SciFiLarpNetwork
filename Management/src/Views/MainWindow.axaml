@@ -77,10 +77,6 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <Button
-              HorizontalAlignment="Stretch"
-              Command="{Binding OpenResourceCommand}"
-              Content="{Binding OpenResourceLabel}" />
         </StackPanel>
       </Border>
       <Grid Grid.Column="1">

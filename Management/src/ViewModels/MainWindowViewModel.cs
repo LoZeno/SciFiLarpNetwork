@@ -119,6 +119,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             _selectedNavigationItem = value;
             OnPropertyChanged();
             OpenResourceCommand.NotifyCanExecuteChanged();
+            if (value is not null)
+            {
+                OpenResourceCommand.Execute(null);
+            }
         }
     }
 
@@ -207,8 +211,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public string LanguageLabel => _localizer.Translate("common.language", Locale);
 
     public string NavigationHeading => _localizer.Translate("navigation.heading", Locale);
-
-    public string OpenResourceLabel => _localizer.Translate("management.openResource", Locale);
 
     public string ActionsHeading => _localizer.Translate("actions.heading", Locale);
 
@@ -548,7 +550,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(LanguageLabel));
         OnPropertyChanged(nameof(LocaleIndex));
         OnPropertyChanged(nameof(NavigationHeading));
-        OnPropertyChanged(nameof(OpenResourceLabel));
         OnPropertyChanged(nameof(ActionsHeading));
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));

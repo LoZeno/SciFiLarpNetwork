@@ -21,7 +21,6 @@
   "management.connect": "Connect",
   "management.connecting": "Connecting to the API…",
   "management.connectionHeading": "Backend connection",
-  "management.openResource": "Open destination",
   "management.settingsLoadError": "Management settings could not be loaded. Defaults are being used.",
   "management.settingsSaveError": "Management settings could not be saved.",
   "management.userName": "Administrator account",

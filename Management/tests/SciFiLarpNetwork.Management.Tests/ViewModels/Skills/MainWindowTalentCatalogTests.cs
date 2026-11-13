@@ -76,7 +76,6 @@ public sealed class MainWindowTalentCatalogTests
         var viewModel = CreateViewModel(api);
         await viewModel.ConnectCommand.ExecuteAsync();
         viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
-        await viewModel.OpenResourceCommand.ExecuteAsync();
         return viewModel;
     }
 

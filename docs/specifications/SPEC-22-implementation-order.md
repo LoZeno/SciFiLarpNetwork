@@ -64,7 +64,7 @@ Implement foundational catalogs before records that reference them, then impleme
 
 |   # | Status | Specification                                                                                              | Implementation gate                                                                      |
 | --: | :----: | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-|  22 |  [ ]   | [MANAGER-02 Skill groups and skills](legacy-features/manager-tabs/MANAGER-02-skills.md)                    | Establish configurable skills before character skill assignments.                        |
+|  22 |  [x]   | [MANAGER-02 Talents and skills](legacy-features/manager-tabs/MANAGER-02-skills.md)                         | Establish configurable skills before character skill assignments.                        |
 |  23 |  [ ]   | [MANAGER-11 Configurable networks](legacy-features/manager-tabs/MANAGER-11-networks.md)                    | Establish generic network records before character assignment, network news, or sign-in.  |
 |  24 |  [ ]   | [MANAGER-01 Players and characters](legacy-features/manager-tabs/MANAGER-01-players-characters.md)         | Establish player/character administration using the configured skill and network catalogs. |
 |  25 |  [ ]   | [MANAGER-03 Events and participation](legacy-features/manager-tabs/MANAGER-03-events.md)                   | Establish event/day/registration and participant administration.                         |

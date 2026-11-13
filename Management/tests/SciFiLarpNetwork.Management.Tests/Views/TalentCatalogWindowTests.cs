@@ -84,7 +84,7 @@ public sealed class TalentCatalogWindowTests
     }
 
     [AvaloniaFact]
-    public async Task MainWindowShowsTheTalentsScreenWhenItIsOpen()
+    public async Task MainWindowShowsTheTalentsScreenWhenItsEntryIsSelected()
     {
         var api = new FakeCatalogApi();
         api.AddTalent("Medicine");
@@ -97,9 +97,8 @@ public sealed class TalentCatalogWindowTests
         var window = new MainWindow(viewModel);
         window.Show();
         await viewModel.ConnectCommand.ExecuteAsync();
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
         Dispatcher.UIThread.RunJobs();
 
         Assert.True(window.GetVisualDescendants().OfType<TalentCatalogView>().Single().IsEffectivelyVisible);

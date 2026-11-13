@@ -62,7 +62,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task OpenResourceAsyncFollowsSelectedSirenLink()
+    public async Task SelectingANavigationItemOpensItsSirenLink()
     {
         var apiClient = new StubApiClient
         {
@@ -70,9 +70,8 @@ public sealed class MainWindowViewModelTests
         };
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         viewModel.NavigationItems.Add(new NavigationItem("News", "/api/v1/news"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(
             new { Href = "/api/v1/news", Title = "News", Summary = "Current bulletins" },
@@ -175,7 +174,6 @@ public sealed class MainWindowViewModelTests
                 ApiAddressLabel = "Indirizzo API",
                 LanguageLabel = "Lingua",
                 NavigationHeading = "Navigazione",
-                OpenResourceLabel = "Apri destinazione",
                 ActionsHeading = "Azioni disponibili",
                 Settings = (ManagementSettings?)new ManagementSettings("http://localhost:5001/api", "it")
             },
@@ -188,7 +186,6 @@ public sealed class MainWindowViewModelTests
                 viewModel.ApiAddressLabel,
                 viewModel.LanguageLabel,
                 viewModel.NavigationHeading,
-                viewModel.OpenResourceLabel,
                 viewModel.ActionsHeading,
                 Settings = settingsStore.SavedSettings
             });
@@ -364,9 +361,8 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         await viewModel.SignInCommand.ExecuteAsync();
         viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(
             new { IsAuthenticated = false, NavigationCount = 0, Status = "Sign in to continue." },
@@ -477,9 +473,8 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = CreateViewModel(new StubApiClient { ResourceException = failure }, new StubSettingsStore());
         viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(expectedMessage, viewModel.StatusMessage);
     }
@@ -494,9 +489,8 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         await viewModel.SignInCommand.ExecuteAsync();
         viewModel.NavigationItems.Add(new NavigationItem("Accounts", "/api/v1/admin/accounts"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.True(viewModel.IsAuthenticated);
     }
