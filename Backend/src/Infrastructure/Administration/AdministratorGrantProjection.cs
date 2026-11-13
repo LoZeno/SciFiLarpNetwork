@@ -33,8 +33,9 @@ public partial class AdministratorGrantProjection : SingleStreamProjection<Admin
                     recovery.ExpiresAtUtc);
 
             case GrantConsumed:
-                // Grant remains but is logically consumed — keep the document
-                return snapshot;
+                // A consumed grant can never be used again. Returning null deletes the
+                // projected document (Marten "Aggregation with Explicit Code" docs).
+                return null;
 
             default:
                 return snapshot;

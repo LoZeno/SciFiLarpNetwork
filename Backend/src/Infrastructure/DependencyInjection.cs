@@ -22,6 +22,7 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("EventStore");
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<IAdministratorAuthenticationService, AdministratorAuthenticationService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
@@ -47,11 +48,14 @@ public static class DependencyInjection
             options.Events.AddEventType<SessionRevoked>();
             options.Events.AddEventType<AuditEventLogged>();
 
-            // Register admin projections as async
-            options.Projections.Add<AdministratorAccountProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Async);
-            options.Projections.Add<AdministratorSessionProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Async);
-            options.Projections.Add<AdministratorGrantProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Async);
-            options.Projections.Add<AdministratorAuditProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Async);
+            // Administrator accounts, sessions and grants are write models: sign-in, session
+            // validation and grant checks must see every committed event immediately. Inline
+            // projections are updated in the same transaction as the appended events, which
+            // gives that strong consistency (Marten "Projections" docs, ProjectionLifecycle).
+            options.Projections.Add<AdministratorAccountProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorSessionProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorGrantProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorAuditProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
 
             options.Schema.For<CommandReceiptDocument>();
             options.Schema.For<GlobalEventIdDocument>();

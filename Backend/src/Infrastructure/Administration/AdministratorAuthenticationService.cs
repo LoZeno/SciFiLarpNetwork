@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using JasperFx;
 using Marten;
 using Microsoft.AspNetCore.Identity;
 using SciFiLarpNetwork.Backend.Application.Administration;
@@ -8,11 +9,21 @@ using SciFiLarpNetwork.Backend.Domain.Events;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Administration;
 
+/// <summary>
+/// Administrator commands follow Marten's "CQRS Command Handler Workflow": each command opens one
+/// session, loads the write models it decides on with <c>FetchForWriting</c> (which records the
+/// stream version for optimistic concurrency), appends events, and commits everything with a single
+/// <c>SaveChangesAsync</c>. The administrator projections run Inline, so queries and
+/// <c>FetchForWriting</c> always observe the committed events.
+/// </summary>
 public sealed class AdministratorAuthenticationService(
-    IEventStreamStore eventStore,
     IDocumentStore documentStore,
-    IPasswordHasher<object> passwordHasher) : IAdministratorAuthenticationService
+    IEventActorContext actorContext,
+    IPasswordHasher<object> passwordHasher,
+    TimeProvider timeProvider) : IAdministratorAuthenticationService
 {
+    private const string BootstrapPurpose = "bootstrap";
+    private const string RecoveryPurpose = "recovery";
     private static readonly TimeSpan CredentialLifetime = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(8);
     private static readonly Regex UserNamePattern = new("^[\\p{L}\\p{N}][\\p{L}\\p{N} ._@+-]{2,63}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -20,47 +31,19 @@ public sealed class AdministratorAuthenticationService(
 
     private static Guid GrantsStreamId => new(0x53464C4E, 0x4155, 0x5448, new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 });
 
-    public async Task<string> IssueBootstrapCredentialAsync(CancellationToken cancellationToken = default)
-    {
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        if (accounts.Count != 0)
-        {
-            throw new InvalidOperationException("Administrator bootstrap has already been completed.");
-        }
+    public Task<string> IssueBootstrapCredentialAsync(CancellationToken cancellationToken = default) =>
+        IssueCredentialAsync(
+            requireAccounts: false,
+            "Administrator bootstrap has already been completed.",
+            (tokenHash, expiresAtUtc, now) => new BootstrapCredentialIssued(tokenHash, expiresAtUtc, now),
+            cancellationToken);
 
-        var credential = CreateRandomToken();
-        var tokenHash = HashSecret(credential);
-        var expiresAtUtc = DateTimeOffset.UtcNow.Add(CredentialLifetime);
-
-        var grantStreamId = GrantsStreamId;
-        var expectedVersion = await GetCurrentStreamVersionAsync(grantStreamId, cancellationToken);
-        await eventStore.AppendAsync(grantStreamId, expectedVersion,
-            [new BootstrapCredentialIssued(tokenHash, expiresAtUtc, DateTime.UtcNow)],
-            cancellationToken: cancellationToken);
-
-        return credential;
-    }
-
-    public async Task<string> IssueRecoveryCredentialAsync(CancellationToken cancellationToken = default)
-    {
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        if (accounts.Count == 0)
-        {
-            throw new InvalidOperationException("There are no administrator accounts to recover.");
-        }
-
-        var credential = CreateRandomToken();
-        var tokenHash = HashSecret(credential);
-        var expiresAtUtc = DateTimeOffset.UtcNow.Add(CredentialLifetime);
-
-        var grantStreamId = GrantsStreamId;
-        var expectedVersion = await GetCurrentStreamVersionAsync(grantStreamId, cancellationToken);
-        await eventStore.AppendAsync(grantStreamId, expectedVersion,
-            [new RecoveryCredentialIssued(tokenHash, expiresAtUtc, DateTime.UtcNow)],
-            cancellationToken: cancellationToken);
-
-        return credential;
-    }
+    public Task<string> IssueRecoveryCredentialAsync(CancellationToken cancellationToken = default) =>
+        IssueCredentialAsync(
+            requireAccounts: true,
+            "There are no administrator accounts to recover.",
+            (tokenHash, expiresAtUtc, now) => new RecoveryCredentialIssued(tokenHash, expiresAtUtc, now),
+            cancellationToken);
 
     public async Task<AdministratorOperationResult> BootstrapAsync(
         string credential,
@@ -73,51 +56,37 @@ public sealed class AdministratorAuthenticationService(
             return AdministratorOperationResult.InvalidGrant;
         }
 
-        var grant = await LoadGrantAsync(cancellationToken);
-        if (grant is null || grant.Purpose != "bootstrap" || !IsValidGrantToken(grant, credential))
+        await using var session = OpenSession();
+        var grant = await session.Events.FetchForWriting<AdministratorGrantDocument>(GrantsStreamId, cancellationToken);
+        if (!IsUsableGrant(grant.Aggregate, BootstrapPurpose, credential))
         {
             return AdministratorOperationResult.InvalidGrant;
         }
 
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        if (accounts.Count != 0)
+        if (await session.Query<AdministratorAccountDocument>().AnyAsync(cancellationToken))
         {
             return AdministratorOperationResult.AlreadyInitialized;
         }
 
         var accountId = Guid.NewGuid();
-        var normalizedUserName = NormalizeUserName(userName);
-        var passwordHash = passwordHasher.HashPassword(_passwordSubject, password);
-        var occurredAtUtc = DateTime.UtcNow;
+        var now = timeProvider.GetUtcNow();
+        session.Events.StartStream<AdministratorAccountDocument>(
+            accountId,
+            new AccountCreated(
+                accountId,
+                userName.Trim(),
+                NormalizeUserName(userName),
+                passwordHasher.HashPassword(_passwordSubject, password),
+                AdministratorRoles.Administrator,
+                now));
+        grant.AppendOne(new GrantConsumed(accountId, now));
+        StartAuditStream(session, "local-operator", null, accountId, "AdministratorBootstrapped", "none", AdministratorRoles.Administrator, now);
 
-        var accountStreamId = accountId;
-        try
-        {
-            await eventStore.AppendAsync(accountStreamId, 0,
-                [
-                    new AccountCreated(accountId, userName.Trim(), normalizedUserName, passwordHash, AdministratorRoles.Administrator, occurredAtUtc),
-                ],
-                cancellationToken: cancellationToken);
-        }
-        catch (StreamConcurrencyException)
-        {
-            return AdministratorOperationResult.AccountNameAlreadyUsed;
-        }
-
-        var grantStreamId = GrantsStreamId;
-        var grantVersion = await GetCurrentStreamVersionAsync(grantStreamId, cancellationToken);
-        await eventStore.AppendAsync(grantStreamId, grantVersion,
-            [new GrantConsumed(accountId, occurredAtUtc)],
-            cancellationToken: cancellationToken);
-
-        var auditId = Guid.NewGuid();
-        await eventStore.AppendAsync(auditId, 0,
-            [
-                new AuditEventLogged(auditId, "local-operator", null, accountId, "AdministratorBootstrapped", "none", AdministratorRoles.Administrator, occurredAtUtc),
-            ],
-            cancellationToken: cancellationToken);
-
-        return AdministratorOperationResult.Succeeded;
+        // A concurrent command that consumed the same grant first makes the grant stream
+        // version stale, so this commit is rejected and nothing is written.
+        return await TrySaveAsync(session, cancellationToken)
+            ? AdministratorOperationResult.Succeeded
+            : AdministratorOperationResult.InvalidGrant;
     }
 
     public async Task<AdministratorOperationResult> RecoverAsync(
@@ -131,54 +100,50 @@ public sealed class AdministratorAuthenticationService(
             return AdministratorOperationResult.InvalidGrant;
         }
 
-        var grant = await LoadGrantAsync(cancellationToken);
-        if (grant is null || grant.Purpose != "recovery" || !IsValidGrantToken(grant, credential))
+        await using var session = OpenSession();
+        var grant = await session.Events.FetchForWriting<AdministratorGrantDocument>(GrantsStreamId, cancellationToken);
+        if (!IsUsableGrant(grant.Aggregate, RecoveryPurpose, credential))
         {
             return AdministratorOperationResult.InvalidGrant;
         }
 
-        var normalizedUserName = NormalizeUserName(userName);
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var account = accounts.FirstOrDefault(a => a.NormalizedUserName == normalizedUserName);
-        if (account is null)
+        var accountId = await FindAccountIdAsync(session, userName, cancellationToken);
+        if (accountId is null)
         {
             return AdministratorOperationResult.AccountNotFound;
         }
 
-        var accountId = account.Id;
-        var passwordHash = passwordHasher.HashPassword(_passwordSubject, password);
-        var occurredAtUtc = DateTime.UtcNow;
-
-        var accountStreamId = accountId;
-        var accountVersion = await GetCurrentStreamVersionAsync(accountStreamId, cancellationToken);
-        await eventStore.AppendAsync(accountStreamId, accountVersion,
-            [new AccountPasswordChanged(accountId, passwordHash, occurredAtUtc)],
-            cancellationToken: cancellationToken);
-
-        var sessions = await LoadSessionsForAccountAsync(accountId, cancellationToken);
-        foreach (var session in sessions)
+        var account = await session.Events.FetchForWriting<AdministratorAccountDocument>(accountId.Value, cancellationToken);
+        if (account.Aggregate is not { } current)
         {
-            var sessionStreamId = session.Id;
-            var sessionVersion = await GetCurrentStreamVersionAsync(sessionStreamId, cancellationToken);
-            await eventStore.AppendAsync(sessionStreamId, sessionVersion,
-                [new SessionRevoked(session.Id, accountId, occurredAtUtc)],
-                cancellationToken: cancellationToken);
+            return AdministratorOperationResult.AccountNotFound;
         }
 
-        var grantStreamId = GrantsStreamId;
-        var grantVersion = await GetCurrentStreamVersionAsync(grantStreamId, cancellationToken);
-        await eventStore.AppendAsync(grantStreamId, grantVersion,
-            [new GrantConsumed(accountId, occurredAtUtc)],
-            cancellationToken: cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        account.AppendOne(new AccountPasswordChanged(current.Id, passwordHasher.HashPassword(_passwordSubject, password), now));
 
-        var auditId = Guid.NewGuid();
-        await eventStore.AppendAsync(auditId, 0,
-            [
-                new AuditEventLogged(auditId, "local-operator", null, accountId, "AdministratorCredentialRecovered", account.Role, account.Role, occurredAtUtc),
-            ],
-            cancellationToken: cancellationToken);
+        var sessionIds = await session.Query<AdministratorSessionDocument>()
+            .Where(s => s.AccountId == current.Id)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+        if (sessionIds.Count != 0)
+        {
+            var sessionStreams = await session.Events.FetchManyForWriting<AdministratorSessionDocument>(sessionIds.ToArray(), cancellationToken);
+            foreach (var sessionStream in sessionStreams)
+            {
+                if (sessionStream.Aggregate is { } existingSession)
+                {
+                    sessionStream.AppendOne(new SessionRevoked(existingSession.Id, current.Id, now));
+                }
+            }
+        }
 
-        return AdministratorOperationResult.Succeeded;
+        grant.AppendOne(new GrantConsumed(current.Id, now));
+        StartAuditStream(session, "local-operator", null, current.Id, "AdministratorCredentialRecovered", current.Role, current.Role, now);
+
+        return await TrySaveAsync(session, cancellationToken)
+            ? AdministratorOperationResult.Succeeded
+            : AdministratorOperationResult.InvalidGrant;
     }
 
     public async Task<AdministratorSession?> SignInAsync(
@@ -187,8 +152,14 @@ public sealed class AdministratorAuthenticationService(
         CancellationToken cancellationToken = default)
     {
         var normalizedUserName = NormalizeUserName(userName);
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var account = accounts.FirstOrDefault(a => a.NormalizedUserName == normalizedUserName);
+        AdministratorAccountDocument? account;
+        await using (var query = documentStore.QuerySession())
+        {
+            account = await query.Query<AdministratorAccountDocument>()
+                .Where(a => a.NormalizedUserName == normalizedUserName)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         if (account is null)
         {
             return null;
@@ -200,31 +171,25 @@ public sealed class AdministratorAuthenticationService(
             return null;
         }
 
-        var accountId = account.Id;
-        var storedUserName = account.UserName;
-        var role = account.Role;
-
+        // Sign-in is anonymous at the HTTP level; the session events are attributed to the
+        // account whose password was just verified, never to a client-supplied identity.
+        await using var session = OpenSession(account.Id.ToString("D"));
+        var now = timeProvider.GetUtcNow();
         if (verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            var newPasswordHash = passwordHasher.HashPassword(_passwordSubject, password);
-            var accountStreamId = accountId;
-            var accountVersion = await GetCurrentStreamVersionAsync(accountStreamId, cancellationToken);
-            await eventStore.AppendAsync(accountStreamId, accountVersion,
-                [new AccountPasswordChanged(accountId, newPasswordHash, DateTime.UtcNow)],
-                cancellationToken: cancellationToken);
+            var accountStream = await session.Events.FetchForWriting<AdministratorAccountDocument>(account.Id, cancellationToken);
+            accountStream.AppendOne(new AccountPasswordChanged(account.Id, passwordHasher.HashPassword(_passwordSubject, password), now));
         }
 
         var sessionId = Guid.NewGuid();
         var token = CreateRandomToken();
-        var tokenHash = HashSecret(token);
-        var expiresAtUtc = DateTimeOffset.UtcNow.Add(SessionLifetime);
+        var expiresAtUtc = now.Add(SessionLifetime);
+        session.Events.StartStream<AdministratorSessionDocument>(
+            sessionId,
+            new SessionCreated(sessionId, HashSecret(token), account.Id, expiresAtUtc, now));
+        await session.SaveChangesAsync(cancellationToken);
 
-        var sessionStreamId = sessionId;
-        await eventStore.AppendAsync(sessionStreamId, 0,
-            [new SessionCreated(sessionId, tokenHash, accountId, expiresAtUtc, DateTime.UtcNow)],
-            cancellationToken: cancellationToken);
-
-        return new AdministratorSession(accountId, storedUserName, role, expiresAtUtc, token);
+        return new AdministratorSession(account.Id, account.UserName, account.Role, expiresAtUtc, token);
     }
 
     public async Task<AdministratorSession?> ValidateSessionAsync(
@@ -236,33 +201,28 @@ public sealed class AdministratorAuthenticationService(
             return null;
         }
 
-        var tokenHash = HashSecret(sessionToken);
-        var sessions = await LoadSessionDocumentsAsync(cancellationToken);
-        var session = sessions.FirstOrDefault(s => s.TokenHash == tokenHash);
-        if (session is null)
+        AdministratorSessionDocument? existing;
+        AdministratorAccountDocument? account;
+        await using (var query = documentStore.QuerySession())
         {
+            existing = await FindSessionAsync(query, sessionToken, cancellationToken);
+            if (existing is null)
+            {
+                return null;
+            }
+
+            account = await query.LoadAsync<AdministratorAccountDocument>(existing.AccountId, cancellationToken);
+        }
+
+        if (existing.ExpiresAtUtc <= timeProvider.GetUtcNow())
+        {
+            await RevokeAsync(existing, cancellationToken);
             return null;
         }
 
-        var expiresAtUtc = session.ExpiresAtUtc;
-        if (expiresAtUtc <= DateTimeOffset.UtcNow)
-        {
-            var sessionStreamId = session.Id;
-            var sessionVersion = await GetCurrentStreamVersionAsync(sessionStreamId, cancellationToken);
-            await eventStore.AppendAsync(sessionStreamId, sessionVersion,
-                [new SessionRevoked(session.Id, session.AccountId, DateTime.UtcNow)],
-                cancellationToken: cancellationToken);
-            return null;
-        }
-
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var account = accounts.FirstOrDefault(a => a.Id == session.AccountId);
-        if (account is null)
-        {
-            return null;
-        }
-
-        return new AdministratorSession(account.Id, account.UserName, account.Role, expiresAtUtc, string.Empty);
+        return account is null
+            ? null
+            : new AdministratorSession(account.Id, account.UserName, account.Role, existing.ExpiresAtUtc, string.Empty);
     }
 
     public async Task<AdministratorSession?> RenewSessionAsync(
@@ -274,45 +234,39 @@ public sealed class AdministratorAuthenticationService(
             return null;
         }
 
-        var tokenHash = HashSecret(sessionToken);
-        var sessions = await LoadSessionDocumentsAsync(cancellationToken);
-        var oldSession = sessions.FirstOrDefault(s => s.TokenHash == tokenHash);
-        if (oldSession is null)
+        await using var session = OpenSession();
+        var existing = await FindSessionAsync(session, sessionToken, cancellationToken);
+        if (existing is null || existing.ExpiresAtUtc <= timeProvider.GetUtcNow())
         {
             return null;
         }
 
-        if (oldSession.ExpiresAtUtc <= DateTimeOffset.UtcNow)
-        {
-            return null;
-        }
-
-        var accountId = oldSession.AccountId;
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var account = accounts.FirstOrDefault(a => a.Id == accountId);
+        var account = await session.LoadAsync<AdministratorAccountDocument>(existing.AccountId, cancellationToken);
         if (account is null)
         {
             return null;
         }
 
-        var occurredAtUtc = DateTime.UtcNow;
-        var oldSessionStreamId = oldSession.Id;
-        var oldSessionVersion = await GetCurrentStreamVersionAsync(oldSessionStreamId, cancellationToken);
-        await eventStore.AppendAsync(oldSessionStreamId, oldSessionVersion,
-            [new SessionRevoked(oldSession.Id, accountId, occurredAtUtc)],
-            cancellationToken: cancellationToken);
+        var oldSession = await session.Events.FetchForWriting<AdministratorSessionDocument>(existing.Id, cancellationToken);
+        if (oldSession.Aggregate is null)
+        {
+            return null;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        oldSession.AppendOne(new SessionRevoked(existing.Id, account.Id, now));
 
         var newSessionId = Guid.NewGuid();
         var newToken = CreateRandomToken();
-        var newTokenHash = HashSecret(newToken);
-        var expiresAtUtc = DateTimeOffset.UtcNow.Add(SessionLifetime);
+        var expiresAtUtc = now.Add(SessionLifetime);
+        session.Events.StartStream<AdministratorSessionDocument>(
+            newSessionId,
+            new SessionCreated(newSessionId, HashSecret(newToken), account.Id, expiresAtUtc, now));
 
-        var newSessionStreamId = newSessionId;
-        await eventStore.AppendAsync(newSessionStreamId, 0,
-            [new SessionCreated(newSessionId, newTokenHash, accountId, expiresAtUtc, occurredAtUtc)],
-            cancellationToken: cancellationToken);
-
-        return new AdministratorSession(accountId, account.UserName, account.Role, expiresAtUtc, newToken);
+        // A concurrent renewal or logout of the same session wins; this one is rejected.
+        return await TrySaveAsync(session, cancellationToken)
+            ? new AdministratorSession(account.Id, account.UserName, account.Role, expiresAtUtc, newToken)
+            : null;
     }
 
     public async Task RevokeSessionAsync(string sessionToken, CancellationToken cancellationToken = default)
@@ -322,27 +276,25 @@ public sealed class AdministratorAuthenticationService(
             return;
         }
 
-        var tokenHash = HashSecret(sessionToken);
-        var sessions = await LoadSessionDocumentsAsync(cancellationToken);
-        var session = sessions.FirstOrDefault(s => s.TokenHash == tokenHash);
-        if (session is null)
+        AdministratorSessionDocument? existing;
+        await using (var query = documentStore.QuerySession())
         {
-            return;
+            existing = await FindSessionAsync(query, sessionToken, cancellationToken);
         }
 
-        var sessionStreamId = session.Id;
-        var sessionVersion = await GetCurrentStreamVersionAsync(sessionStreamId, cancellationToken);
-        await eventStore.AppendAsync(sessionStreamId, sessionVersion,
-            [new SessionRevoked(session.Id, session.AccountId, DateTime.UtcNow)],
-            cancellationToken: cancellationToken);
+        if (existing is not null)
+        {
+            await RevokeAsync(existing, cancellationToken);
+        }
     }
 
     public async Task<IReadOnlyList<AdministratorSummary>> GetAdministratorsAsync(
         CancellationToken cancellationToken = default)
     {
-        var accounts = await LoadAccountsAsync(cancellationToken);
+        await using var query = documentStore.QuerySession();
+        var accounts = await query.Query<AdministratorAccountDocument>().ToListAsync(cancellationToken);
         return accounts
-            .OrderBy(a => a.NormalizedUserName)
+            .OrderBy(a => a.NormalizedUserName, StringComparer.Ordinal)
             .Select(a => new AdministratorSummary(a.Id, a.UserName, a.Role, a.CreatedAtUtc))
             .ToArray();
     }
@@ -360,40 +312,35 @@ public sealed class AdministratorAuthenticationService(
             return new AdministratorAccountCreationResult(AdministratorOperationResult.InvalidGrant, null);
         }
 
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var actorAccount = accounts.FirstOrDefault(a => a.Id == actorAccountId);
-        if (actorAccount is null || actorAccount.Role != AdministratorRoles.Administrator)
+        await using var session = OpenSession();
+        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId, cancellationToken);
+        if (actor.Aggregate is not { Role: AdministratorRoles.Administrator })
         {
             return new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
         }
 
-        var accountId = Guid.NewGuid();
-        var createdAtUtc = DateTime.UtcNow;
-        var normalizedUserName = NormalizeUserName(userName);
-        var passwordHash = passwordHasher.HashPassword(_passwordSubject, password);
+        // Guards against the actor being demoted concurrently even though nothing is appended
+        // to the actor's own stream (Marten "Enforcing Consistency Without Appending Events").
+        actor.AlwaysEnforceConsistency = true;
 
-        var accountStreamId = accountId;
-        try
-        {
-            await eventStore.AppendAsync(accountStreamId, 0,
-                [new AccountCreated(accountId, userName.Trim(), normalizedUserName, passwordHash, role, createdAtUtc)],
-                cancellationToken: cancellationToken);
-        }
-        catch (StreamConcurrencyException)
+        var normalizedUserName = NormalizeUserName(userName);
+        if (await FindAccountIdAsync(session, userName, cancellationToken) is not null)
         {
             return new AdministratorAccountCreationResult(AdministratorOperationResult.AccountNameAlreadyUsed, null);
         }
 
-        var auditId = Guid.NewGuid();
-        await eventStore.AppendAsync(auditId, 0,
-            [
-                new AuditEventLogged(auditId, "administrator", actorAccountId, accountId, "AdministratorAccountCreated", "none", role, createdAtUtc),
-            ],
-            cancellationToken: cancellationToken);
+        var accountId = Guid.NewGuid();
+        var now = timeProvider.GetUtcNow();
+        session.Events.StartStream<AdministratorAccountDocument>(
+            accountId,
+            new AccountCreated(accountId, userName.Trim(), normalizedUserName, passwordHasher.HashPassword(_passwordSubject, password), role, now));
+        StartAuditStream(session, "administrator", actorAccountId, accountId, "AdministratorAccountCreated", "none", role, now);
 
-        return new AdministratorAccountCreationResult(
-            AdministratorOperationResult.Succeeded,
-            new AdministratorSummary(accountId, userName.Trim(), role, new DateTimeOffset(createdAtUtc, TimeSpan.Zero)));
+        return await TrySaveAsync(session, cancellationToken)
+            ? new AdministratorAccountCreationResult(
+                AdministratorOperationResult.Succeeded,
+                new AdministratorSummary(accountId, userName.Trim(), role, now))
+            : new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
     }
 
     public async Task<AdministratorOperationResult> ChangeRoleAsync(
@@ -407,15 +354,17 @@ public sealed class AdministratorAuthenticationService(
             return AdministratorOperationResult.AccountNotFound;
         }
 
-        var accounts = await LoadAccountsAsync(cancellationToken);
-        var actorAccount = accounts.FirstOrDefault(a => a.Id == actorAccountId);
-        if (actorAccount is null || actorAccount.Role != AdministratorRoles.Administrator)
+        await using var session = OpenSession();
+        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId, cancellationToken);
+        if (actor.Aggregate is not { Role: AdministratorRoles.Administrator })
         {
             return AdministratorOperationResult.ActorNoLongerAuthorized;
         }
 
-        var targetAccount = accounts.FirstOrDefault(a => a.Id == targetAccountId);
-        if (targetAccount is null)
+        var target = actorAccountId == targetAccountId
+            ? actor
+            : await session.Events.FetchForWriting<AdministratorAccountDocument>(targetAccountId, cancellationToken);
+        if (target.Aggregate is not { } targetAccount)
         {
             return AdministratorOperationResult.AccountNotFound;
         }
@@ -428,65 +377,136 @@ public sealed class AdministratorAuthenticationService(
 
         if (previousRole == AdministratorRoles.Administrator && role == AdministratorRoles.Reader)
         {
-            var adminCount = accounts.Count(a => a.Role == AdministratorRoles.Administrator);
-            if (adminCount <= 1)
+            var administratorCount = await session.Query<AdministratorAccountDocument>()
+                .Where(a => a.Role == AdministratorRoles.Administrator)
+                .CountAsync(cancellationToken);
+            if (administratorCount <= 1)
             {
                 return AdministratorOperationResult.LastAdministrator;
             }
         }
 
-        var occurredAtUtc = DateTime.UtcNow;
-        var accountStreamId = targetAccountId;
-        var accountVersion = await GetCurrentStreamVersionAsync(accountStreamId, cancellationToken);
-        await eventStore.AppendAsync(accountStreamId, accountVersion,
-            [new AccountRoleChanged(targetAccountId, previousRole, role, actorAccountId, occurredAtUtc)],
-            cancellationToken: cancellationToken);
+        actor.AlwaysEnforceConsistency = true;
+        var now = timeProvider.GetUtcNow();
+        target.AppendOne(new AccountRoleChanged(targetAccountId, previousRole, role, actorAccountId, now));
+        StartAuditStream(session, "administrator", actorAccountId, targetAccountId, "AdministratorRoleChanged", previousRole, role, now);
 
+        return await TrySaveAsync(session, cancellationToken)
+            ? AdministratorOperationResult.Succeeded
+            : AdministratorOperationResult.ActorNoLongerAuthorized;
+    }
+
+    private async Task<string> IssueCredentialAsync(
+        bool requireAccounts,
+        string rejectionMessage,
+        Func<string, DateTimeOffset, DateTimeOffset, object> createEvent,
+        CancellationToken cancellationToken)
+    {
+        await using var session = OpenSession();
+        var hasAccounts = await session.Query<AdministratorAccountDocument>().AnyAsync(cancellationToken);
+        if (hasAccounts != requireAccounts)
+        {
+            throw new InvalidOperationException(rejectionMessage);
+        }
+
+        var credential = CreateRandomToken();
+        var now = timeProvider.GetUtcNow();
+        var grant = await session.Events.FetchForWriting<AdministratorGrantDocument>(GrantsStreamId, cancellationToken);
+        grant.AppendOne(createEvent(HashSecret(credential), now.Add(CredentialLifetime), now));
+        await session.SaveChangesAsync(cancellationToken);
+
+        return credential;
+    }
+
+    private async Task RevokeAsync(AdministratorSessionDocument existing, CancellationToken cancellationToken)
+    {
+        await using var session = OpenSession(existing.AccountId.ToString("D"));
+        var stream = await session.Events.FetchForWriting<AdministratorSessionDocument>(existing.Id, cancellationToken);
+        if (stream.Aggregate is null)
+        {
+            return;
+        }
+
+        stream.AppendOne(new SessionRevoked(existing.Id, existing.AccountId, timeProvider.GetUtcNow()));
+
+        // A concurrent revocation of the same session already achieved the same outcome.
+        await TrySaveAsync(session, cancellationToken);
+    }
+
+    /// <summary>
+    /// Opens a lightweight session whose events are attributed through Marten's
+    /// <c>LastModifiedBy</c> user-name metadata. HTTP-originated changes use the authenticated
+    /// actor; <paramref name="verifiedActorId"/> is used only when the server itself has just
+    /// established the actor (sign-in, or revoking an expired session during authentication).
+    /// </summary>
+    private IDocumentSession OpenSession(string? verifiedActorId = null)
+    {
+        var actorId = actorContext.ActorId ?? verifiedActorId;
+        if (actorContext.RequiresAuthenticatedActor && string.IsNullOrWhiteSpace(actorId))
+        {
+            throw new UnauthorizedAccessException("An authenticated actor is required to append events from an HTTP request.");
+        }
+
+        var session = documentStore.LightweightSession();
+        session.LastModifiedBy = actorId;
+        return session;
+    }
+
+    private static async Task<bool> TrySaveAsync(IDocumentSession session, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await session.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (ConcurrencyException)
+        {
+            return false;
+        }
+    }
+
+    private static void StartAuditStream(
+        IDocumentSession session,
+        string actorKind,
+        Guid? actorAccountId,
+        Guid targetAccountId,
+        string eventType,
+        string previousRole,
+        string newRole,
+        DateTimeOffset occurredAtUtc)
+    {
         var auditId = Guid.NewGuid();
-        await eventStore.AppendAsync(auditId, 0,
-            [
-                new AuditEventLogged(auditId, "administrator", actorAccountId, targetAccountId, "AdministratorRoleChanged", previousRole, role, occurredAtUtc),
-            ],
-            cancellationToken: cancellationToken);
-
-        return AdministratorOperationResult.Succeeded;
+        session.Events.StartStream<AdministratorAuditDocument>(
+            auditId,
+            new AuditEventLogged(auditId, actorKind, actorAccountId, targetAccountId, eventType, previousRole, newRole, occurredAtUtc));
     }
 
-    private async Task<long> GetCurrentStreamVersionAsync(Guid streamId, CancellationToken cancellationToken)
+    private static async Task<Guid?> FindAccountIdAsync(IQuerySession session, string userName, CancellationToken cancellationToken)
     {
-        var stream = await eventStore.ReadStreamAsync(streamId, cancellationToken);
-        return stream.Count > 0 ? stream[^1].Sequence : 0;
+        var normalizedUserName = NormalizeUserName(userName);
+        var account = await session.Query<AdministratorAccountDocument>()
+            .Where(a => a.NormalizedUserName == normalizedUserName)
+            .FirstOrDefaultAsync(cancellationToken);
+        return account?.Id;
     }
 
-    private async Task<IReadOnlyList<AdministratorAccountDocument>> LoadAccountsAsync(CancellationToken cancellationToken)
+    private static Task<AdministratorSessionDocument?> FindSessionAsync(
+        IQuerySession session,
+        string sessionToken,
+        CancellationToken cancellationToken)
     {
-        await using var session = documentStore.QuerySession();
-        return await session.Query<AdministratorAccountDocument>().ToListAsync(cancellationToken);
+        var tokenHash = HashSecret(sessionToken);
+        return session.Query<AdministratorSessionDocument>()
+            .Where(s => s.TokenHash == tokenHash)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<IReadOnlyList<AdministratorSessionDocument>> LoadSessionDocumentsAsync(CancellationToken cancellationToken)
+    private bool IsUsableGrant(AdministratorGrantDocument? grant, string purpose, string credential)
     {
-        await using var session = documentStore.QuerySession();
-        return await session.Query<AdministratorSessionDocument>().ToListAsync(cancellationToken);
-    }
-
-    private async Task<IReadOnlyList<AdministratorSessionDocument>> LoadSessionsForAccountAsync(Guid accountId, CancellationToken cancellationToken)
-    {
-        await using var session = documentStore.QuerySession();
-        return await session.Query<AdministratorSessionDocument>()
-            .Where(s => s.AccountId == accountId)
-            .ToListAsync(cancellationToken);
-    }
-
-    private async Task<AdministratorGrantDocument?> LoadGrantAsync(CancellationToken cancellationToken)
-    {
-        await using var session = documentStore.QuerySession();
-        return await session.LoadAsync<AdministratorGrantDocument>(GrantsStreamId, cancellationToken);
-    }
-
-    private static bool IsValidGrantToken(AdministratorGrantDocument grant, string credential)
-    {
-        if (grant.ExpiresAtUtc <= DateTimeOffset.UtcNow || string.IsNullOrWhiteSpace(credential))
+        if (grant is null ||
+            grant.Purpose != purpose ||
+            grant.ExpiresAtUtc <= timeProvider.GetUtcNow() ||
+            string.IsNullOrWhiteSpace(credential))
         {
             return false;
         }

@@ -148,7 +148,9 @@ internal sealed class MartenStoredEvent(IEvent inner) : IStoredEvent
 {
     public Guid EventId => inner.Id;
     public Guid StreamId => inner.StreamId;
-    public long Sequence => inner.Sequence;
+    // IEvent.Version is the event's position within its stream (mt_events.version);
+    // IEvent.Sequence is the store-wide sequence (mt_events.seq_id).
+    public long Sequence => inner.Version;
     public string EventType => inner.Data.GetType().FullName!;
     public int SchemaVersion => 1;
     public DateTimeOffset OccurredAtUtc => inner.Data is { } data && data.GetType().GetProperty("OccurredAtUtc")?.GetValue(data) is DateTimeOffset dt ? dt : DateTimeOffset.UtcNow;
