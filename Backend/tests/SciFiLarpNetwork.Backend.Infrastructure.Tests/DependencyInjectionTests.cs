@@ -1,6 +1,7 @@
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
+using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Infrastructure;
 
 namespace SciFiLarpNetwork.Backend.Tests.Infrastructure;
@@ -8,25 +9,26 @@ namespace SciFiLarpNetwork.Backend.Tests.Infrastructure;
 public sealed class DependencyInjectionTests
 {
     [Fact]
-    public void EventStoreDataSourceIsRegisteredAsSingleton()
+    public void DocumentStoreIsRegisteredAsSingleton()
     {
         using var provider = CreateProvider();
 
-        var dataSource = provider.GetRequiredService<NpgsqlDataSource>();
-        var secondResolution = provider.GetRequiredService<NpgsqlDataSource>();
+        var documentStore = provider.GetRequiredService<IDocumentStore>();
+        var secondResolution = provider.GetRequiredService<IDocumentStore>();
 
-        Assert.Same(dataSource, secondResolution);
+        Assert.Same(documentStore, secondResolution);
     }
 
     [Fact]
-    public async Task EventStoreDataSourceIsDisposedWithServiceProvider()
+    public void DefaultEventActorContextIsSystemOriginated()
     {
-        var provider = CreateProvider();
-        var dataSource = provider.GetRequiredService<NpgsqlDataSource>();
-        provider.Dispose();
+        using var provider = CreateProvider();
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            await dataSource.OpenConnectionAsync(TestContext.Current.CancellationToken));
+        var actorContext = provider.GetRequiredService<IEventActorContext>();
+
+        Assert.Equal(
+            new { RequiresAuthenticatedActor = false, ActorId = (string?)null },
+            new { actorContext.RequiresAuthenticatedActor, actorContext.ActorId });
     }
 
     private static ServiceProvider CreateProvider()

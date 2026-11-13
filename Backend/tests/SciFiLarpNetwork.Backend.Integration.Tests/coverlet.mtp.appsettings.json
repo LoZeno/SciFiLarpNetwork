@@ -4,9 +4,6 @@
     "Exclude": "[*.Tests]*",
     "ExcludeByAttribute": "GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute",
     "ExcludeByFile": "**/*.g.cs,**/*.generated.cs,**/*.designer.cs",
-    "Format": "cobertura,json",
-    "Threshold": 80,
-    "ThresholdType": "line",
-    "ThresholdStat": "Total"
+    "Format": "cobertura,json"
   }
 }

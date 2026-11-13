@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Application.Administration;
@@ -12,7 +11,7 @@ namespace SciFiLarpNetwork.Backend.Api;
 [Route("api/v1/admin/accounts")]
 [Produces(SirenMediaTypes.Json)]
 public sealed class AdministratorAccountsController(
-    IAdministratorAuthenticationService authenticationService,
+    IAdministratorAccountService accountService,
     IApplicationText text) : ControllerBase
 {
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
@@ -29,7 +28,7 @@ public sealed class AdministratorAccountsController(
                 ApiErrorCodes.Unauthorized);
         }
 
-        var result = await authenticationService.CreateAccountAsync(
+        var result = await accountService.CreateAccountAsync(
             actorAccountId,
             request.UserName,
             request.Password,
@@ -61,7 +60,7 @@ public sealed class AdministratorAccountsController(
     public async Task<ActionResult<SirenEntity<AdministratorDirectoryProperties>>> Get(
         CancellationToken cancellationToken)
     {
-        var accounts = await authenticationService.GetAdministratorsAsync(cancellationToken);
+        var accounts = await accountService.GetAdministratorsAsync(cancellationToken);
         return Ok(new SirenEntity<AdministratorDirectoryProperties>
         {
             Class = ["administrator-directory"],
@@ -114,7 +113,7 @@ public sealed class AdministratorAccountsController(
                 ApiErrorCodes.Unauthorized);
         }
 
-        var result = await authenticationService.ChangeRoleAsync(
+        var result = await accountService.ChangeRoleAsync(
             actorAccountId,
             accountId,
             request.Role,
@@ -131,6 +130,10 @@ public sealed class AdministratorAccountsController(
                     StatusCodes.Status404NotFound,
                     ApiErrorCodes.NotFound,
                     ApiErrorCodes.NotFound),
+                AdministratorOperationResult.InvalidGrant => new ApiException(
+                    StatusCodes.Status400BadRequest,
+                    ApiErrorCodes.Validation,
+                    ApiErrorCodes.Validation),
                 _ => new ApiException(
                     StatusCodes.Status403Forbidden,
                     ApiErrorCodes.Forbidden,
@@ -142,7 +145,7 @@ public sealed class AdministratorAccountsController(
     }
 
     private async Task<AdministratorSummary> FindAccountAsync(Guid accountId, CancellationToken cancellationToken) =>
-        (await authenticationService.GetAdministratorsAsync(cancellationToken))
+        (await accountService.GetAdministratorsAsync(cancellationToken))
         .FirstOrDefault(account => account.AccountId == accountId)
         ?? throw new ApiException(StatusCodes.Status404NotFound, ApiErrorCodes.NotFound, ApiErrorCodes.NotFound);
 
@@ -181,26 +184,3 @@ public sealed class AdministratorAccountsController(
 
     private string ApiPath(string path) => $"{Request.PathBase}{path}";
 }
-
-public sealed record AdministratorDirectoryProperties(
-    string Title,
-    string Description,
-    IReadOnlyList<AdministratorSummary> Administrators);
-
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record AdministratorRoleChangeRequest(
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.RegularExpression("^(reader|administrator)$")]
-    string Role);
-
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record AdministratorAccountCreateRequest(
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.StringLength(64, MinimumLength = 3)]
-    string UserName,
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 12)]
-    string Password,
-    [System.ComponentModel.DataAnnotations.Required]
-    [System.ComponentModel.DataAnnotations.RegularExpression("^(reader|administrator)$")]
-    string Role);

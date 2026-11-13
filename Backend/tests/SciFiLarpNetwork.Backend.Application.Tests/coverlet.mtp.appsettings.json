@@ -1,0 +1,9 @@
+{
+  "Coverlet": {
+    "Include": "[SciFiLarpNetwork.*]*",
+    "Exclude": "[*.Tests]*",
+    "ExcludeByAttribute": "GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute",
+    "ExcludeByFile": "**/*.g.cs,**/*.generated.cs,**/*.designer.cs",
+    "Format": "cobertura,json"
+  }
+}

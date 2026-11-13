@@ -11,8 +11,7 @@ internal sealed class EventStoreReadinessHealthCheck(IDocumentStore documentStor
     {
         try
         {
-            await using var session = documentStore.QuerySession();
-            _ = await session.Query<CommandReceiptDocument>().CountAsync(cancellationToken);
+            await documentStore.Storage.Database.FetchEventStoreStatistics(cancellationToken);
             return HealthCheckResult.Healthy("The event store is available.");
         }
         catch (Exception exception)

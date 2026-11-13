@@ -1,6 +1,6 @@
 using System.Net;
-using System.Security.Claims;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -12,7 +12,7 @@ public sealed class AdministratorSessionAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IAdministratorAuthenticationService authenticationService)
+    IAdministratorSessionService sessionService)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public const string SchemeName = "AdministratorSession";
@@ -33,7 +33,7 @@ public sealed class AdministratorSessionAuthenticationHandler(
             return AuthenticateResult.Fail("Administrator sessions require a secure connection.");
         }
 
-        var session = await authenticationService.ValidateSessionAsync(header.Parameter, Context.RequestAborted);
+        var session = await sessionService.ValidateSessionAsync(header.Parameter, Context.RequestAborted);
         if (session is null)
         {
             return AuthenticateResult.Fail("The administrator session is invalid or expired.");

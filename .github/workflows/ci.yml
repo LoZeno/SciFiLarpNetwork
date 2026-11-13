@@ -34,8 +34,21 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - name: Restore .NET tools
+        run: dotnet tool restore
       - name: Test solution
         run: dotnet test SciFiLarpNetwork.slnx --configuration Release
+      - name: Merge .NET coverage reports and enforce 80% line coverage
+        if: always()
+        run: |
+          dotnet reportgenerator \
+            "-reports:Backend/tests/**/TestResults/coverage/*.cobertura.*.xml;Management/tests/**/TestResults/coverage/*.cobertura.*.xml" \
+            "-targetdir:coverage/dotnet" \
+            "-reporttypes:Cobertura;HtmlSummary;MarkdownSummaryGithub;TextSummary" \
+            "minimumCoverageThresholds:lineCoverage=80"
+      - name: Publish .NET coverage summary
+        if: always()
+        run: cat coverage/dotnet/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload .NET coverage reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -46,6 +59,7 @@ jobs:
             Backend/tests/**/TestResults/coverage/*.json
             Management/tests/**/TestResults/coverage/*.cobertura.*.xml
             Management/tests/**/TestResults/coverage/*.json
+            coverage/dotnet/
           if-no-files-found: error
 
   frontend-checks:

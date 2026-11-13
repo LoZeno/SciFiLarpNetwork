@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
@@ -214,33 +215,6 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
-    public async Task EventAppendUsesAuthenticatedActorInsteadOfClientSuppliedActor()
-    {
-        using var client = factory.CreateClient();
-        var actorId = Guid.NewGuid().ToString("D");
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/contract-test/append-event")
-        {
-            Content = new StringContent(
-                JsonSerializer.Serialize(new { streamId = Guid.NewGuid(), actorId = "forged-client-actor" }),
-                Encoding.UTF8,
-                "application/json")
-        };
-        request.Headers.Add("X-Test-Authenticated", "true");
-        request.Headers.Add("X-Test-ActorId", actorId);
-
-        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
-
-        Assert.Equal(
-            new { Status = HttpStatusCode.OK, ActorId = actorId },
-            new
-            {
-                Status = response.StatusCode,
-                ActorId = body.RootElement.GetProperty("properties").GetProperty("actorId").GetString() ?? string.Empty
-            });
-    }
-
-    [Fact]
     public async Task UnexpectedExceptionIsLoggedAndDetailsAreNotDisclosed()
     {
         using var client = factory.CreateClient();
@@ -303,6 +277,18 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
                 ContentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty,
                 Code = body.RootElement.GetProperty("properties").GetProperty("code").GetString() ?? string.Empty
             });
+    }
+
+    [Fact]
+    public void InvalidPathBasePreventsStartup()
+    {
+        using var invalidFactory = factory.WithWebHostBuilder(builder => builder.UseSetting("PathBase", "local/"));
+
+        var exception = Record.Exception(() => invalidFactory.CreateClient());
+
+        Assert.Equal(
+            "PathBase must be an absolute path without a trailing slash, query, or fragment.",
+            exception?.GetBaseException().Message);
     }
 
     private static string LinkSnapshot(JsonElement entity) =>

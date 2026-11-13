@@ -4,10 +4,18 @@
     <RootNamespace>SciFiLarpNetwork.Backend.Tests.Domain</RootNamespace>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <TestingPlatformCommandLineArguments>--coverlet --coverlet-file-prefix $(AssemblyName) --results-directory $(MSBuildProjectDirectory)/TestResults/coverage</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="coverlet.MTP" Version="10.1.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="xunit.v3" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="coverlet.mtp.appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

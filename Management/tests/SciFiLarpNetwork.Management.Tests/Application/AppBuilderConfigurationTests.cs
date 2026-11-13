@@ -1,5 +1,3 @@
-using SciFiLarpNetwork.Management;
-
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
 public sealed class AppBuilderConfigurationTests

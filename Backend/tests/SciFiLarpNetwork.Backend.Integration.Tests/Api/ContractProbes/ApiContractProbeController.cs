@@ -1,10 +1,7 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SciFiLarpNetwork.Backend.Api;
-using SciFiLarpNetwork.Backend.Application.EventSourcing;
-using SciFiLarpNetwork.Backend.Domain.Events;
 using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
@@ -12,7 +9,7 @@ namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
 [ApiController]
 [Route("api/v1/contract-test")]
 [Produces(SirenMediaTypes.Json)]
-public sealed class ApiContractProbeController(IEventStreamStore eventStreamStore) : ControllerBase
+public sealed class ApiContractProbeController : ControllerBase
 {
     [HttpGet("message-action")]
     public ActionResult<SirenEntity<object>> GetMessageAction() =>
@@ -77,28 +74,4 @@ public sealed class ApiContractProbeController(IEventStreamStore eventStreamStor
     [Authorize(Policy = "ContractAdmin")]
     [HttpPost("admin-action")]
     public IActionResult AdminAction() => Ok();
-
-    [Authorize]
-    [HttpPost("append-event")]
-    public async Task<ActionResult<SirenEntity<object>>> AppendEvent(
-        [FromBody] ProbeEventAppendRequest request,
-        CancellationToken cancellationToken)
-    {
-        var domainEvent = new DomainEvent(
-            Guid.NewGuid(),
-            "contract-test.actor-attributed",
-            1,
-            DateTimeOffset.UtcNow,
-            JsonSerializer.SerializeToElement(new { accepted = true }),
-            request.ActorId);
-        await eventStreamStore.AppendAsync(request.StreamId, 0, [domainEvent], cancellationToken: cancellationToken);
-        var storedEvent = Assert.Single(await eventStreamStore.ReadStreamAsync(request.StreamId, cancellationToken));
-        return Ok(new SirenEntity<object>
-        {
-            Class = ["actor-attributed-event"],
-            Properties = new { storedEvent.ActorId }
-        });
-    }
 }
-
-public sealed record ProbeEventAppendRequest(Guid StreamId, string? ActorId);

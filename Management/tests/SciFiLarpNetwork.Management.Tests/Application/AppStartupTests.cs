@@ -1,8 +1,9 @@
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
-using Avalonia.Threading;
 
 namespace SciFiLarpNetwork.Management.Tests.Application;
 
@@ -17,7 +18,7 @@ public sealed class AppStartupTests
         new ManagementSettingsStore(settingsPath)
             .Save(new ManagementSettings("http://localhost:6000/api", "it"));
 
-        var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
+        var window = App.CreateMainWindow(settingsPath, httpClient);
         var viewModel = (MainWindowViewModel)window.DataContext!;
 
         window.Show();
@@ -46,7 +47,7 @@ public sealed class AppStartupTests
         var settingsPath = Path.Combine(directory.Path, "settings.json");
         File.WriteAllText(settingsPath, "{");
 
-        var window = SciFiLarpNetwork.Management.App.CreateMainWindow(settingsPath, httpClient);
+        var window = App.CreateMainWindow(settingsPath, httpClient);
         var viewModel = (MainWindowViewModel)window.DataContext!;
         var actual = new MainWindowStartupSnapshot(
             window.GetType(),
@@ -62,6 +63,34 @@ public sealed class AppStartupTests
                 new ManagementSettings(),
                 "Management settings could not be loaded. Defaults are being used."),
             actual);
+    }
+
+    [AvaloniaFact]
+    public void CreateMainWindowReportsUnreadableSettingsAndUsesDefaults()
+    {
+        using var directory = new TemporaryDirectory();
+        using var httpClient = new HttpClient();
+        var settingsPath = Path.Combine(directory.Path, "settings.json");
+        File.WriteAllText(settingsPath, "{}");
+        using var exclusiveLock = new FileStream(settingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        var window = App.CreateMainWindow(settingsPath, httpClient);
+        var statusMessage = ((MainWindowViewModel)window.DataContext!).StatusMessage;
+        window.Close();
+
+        Assert.Equal("Management settings could not be loaded. Defaults are being used.", statusMessage);
+    }
+
+    [AvaloniaFact]
+    public void FrameworkInitializationAssignsMainWindowToDesktopLifetime()
+    {
+        using var lifetime = new ClassicDesktopStyleApplicationLifetime();
+        var app = new App { ApplicationLifetime = lifetime };
+
+        app.OnFrameworkInitializationCompleted();
+
+        Assert.IsType<MainWindow>(lifetime.MainWindow);
+        lifetime.MainWindow.Close();
     }
 
     private sealed record MainWindowStartupSnapshot(
@@ -82,6 +111,10 @@ public sealed class AppStartupTests
 
         public string Path { get; }
 
-        public void Dispose() => Directory.Delete(Path, recursive: true);
+        public void Dispose()
+        {
+            Directory.Delete(Path, recursive: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

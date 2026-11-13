@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api;
 
 namespace SciFiLarpNetwork.Management.Tests.Api;
 
@@ -297,7 +297,11 @@ public sealed class ManagementApiClientTests : IDisposable
         return new ManagementApiClient(_httpClient);
     }
 
-    public void Dispose() => _httpClient?.Dispose();
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     private static HttpResponseMessage SirenResponse(
         string body,

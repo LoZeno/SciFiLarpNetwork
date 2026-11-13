@@ -18,7 +18,7 @@ The database runs in a container on the host. On Linux, use a compatible contain
 
 ## Event and projection design
 
-- Store immutable, versioned domain events in Marten streams. Persist stream identity and sequence, explicit event type/schema version, UTC occurrence/recording times, actor/correlation/causation metadata, and replay-sufficient JSON payloads as defined by [event-sourced domain](event-sourced-domain.md).
+- Store immutable, versioned domain events in Marten streams. Persist stream identity and version, an explicit event type name, UTC occurrence/recording times, actor/correlation/causation metadata, and replay-sufficient JSON payloads as defined by [event-sourced domain](event-sourced-domain.md).
 - Append event batches atomically using Marten's expected stream version. A stale expected version is a concurrency conflict: reload the stream and re-evaluate the command, never blindly retry stale events.
 - Keep projections as rebuildable C#-defined read models. Prefer Marten's projection support over hand-maintained current-state tables. Use inline projections when the command requires the updated view in the same transaction; use asynchronous projections for read views that can tolerate lag; reserve live aggregation for suitable on-demand queries.
 - Every asynchronous projection must expose its checkpoint/freshness and failure state. Projection updates must be idempotent and rebuildable from the event history. Read-your-writes callers must be able to wait for or observe a checkpoint covering their committed event.

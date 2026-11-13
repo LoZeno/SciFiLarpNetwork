@@ -1,11 +1,10 @@
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
+using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
-using SciFiLarpNetwork.Common.Siren;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
 
@@ -219,6 +218,13 @@ public sealed class MainWindowViewModelTests
     [InlineData("errors.serviceUnavailable", "The service is temporarily unavailable.")]
     [InlineData("errors.internalServerError", "An unexpected server error occurred.")]
     [InlineData("http.invalid", "The request could not be completed.")]
+    [InlineData("http.400", "The request could not be completed.")]
+    [InlineData("http.401", "Sign in to continue.")]
+    [InlineData("http.403", "You are not allowed to perform this action.")]
+    [InlineData("http.409", "This change conflicts with the current data.")]
+    [InlineData("http.503", "The service is temporarily unavailable.")]
+    [InlineData("http.500", "An unexpected server error occurred.")]
+    [InlineData("http.999", "The request could not be completed.")]
     public async Task ConnectAsyncLocalizesApiErrorCodes(string errorCode, string expectedMessage)
     {
         var apiClient = new StubApiClient
@@ -266,7 +272,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task ConnectCommandCannotRunConcurrently()
+    public async Task CommandsCannotRunWhileConnectionIsInProgress()
     {
         var completion = new TaskCompletionSource<ApiDiscovery>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -275,20 +281,25 @@ public sealed class MainWindowViewModelTests
 
         var runningConnection = viewModel.ConnectCommand.ExecuteAsync();
 
-        var canConnectWhileRunning = viewModel.ConnectCommand.CanExecute(null);
-        var canOpenResourceWhileRunning = viewModel.OpenResourceCommand.CanExecute(null);
-        completion.SetResult(new ApiDiscovery(Resource("{}"), []));
-        await runningConnection;
-        var canConnectAfterCompletion = viewModel.ConnectCommand.CanExecute(null);
-
         Assert.Equal(
-            new { CanConnectWhileRunning = false, CanOpenWhileRunning = false, CanConnectAfterCompletion = true },
+            new { CanConnect = false, CanOpenResource = false },
             new
             {
-                CanConnectWhileRunning = canConnectWhileRunning,
-                CanOpenWhileRunning = canOpenResourceWhileRunning,
-                CanConnectAfterCompletion = canConnectAfterCompletion
+                CanConnect = viewModel.ConnectCommand.CanExecute(null),
+                CanOpenResource = viewModel.OpenResourceCommand.CanExecute(null)
             });
+        completion.SetResult(new ApiDiscovery(Resource("{}"), []));
+        await runningConnection;
+    }
+
+    [Fact]
+    public async Task ConnectCommandCanRunAgainAfterConnectionCompletes()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        Assert.True(viewModel.ConnectCommand.CanExecute(null));
     }
 
     [Fact]
@@ -402,6 +413,158 @@ public sealed class MainWindowViewModelTests
         Assert.Null(apiClient.LastResourceHref);
     }
 
+    public static TheoryData<Exception, string> SignInFailures => new()
+    {
+        { new ManagementApiException("errors.unauthorized", HttpStatusCode.Unauthorized), "Sign in to continue." },
+        { new HttpRequestException(), "The network service is unavailable" },
+        { new UriFormatException(), "Enter a valid value." },
+        { new JsonException(), "Something went wrong." }
+    };
+
+    [Theory]
+    [MemberData(nameof(SignInFailures))]
+    public async Task SignInFailureIsReportedAsLocalizedStatus(Exception failure, string expectedMessage)
+    {
+        var viewModel = CreateViewModel(new StubApiClient { SignInException = failure }, new StubSettingsStore());
+
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        Assert.Equal(expectedMessage, viewModel.StatusMessage);
+    }
+
+    public static TheoryData<Exception, string> SignOutFailures => new()
+    {
+        { new ManagementApiException("errors.serviceUnavailable", HttpStatusCode.ServiceUnavailable), "The service is temporarily unavailable." },
+        { new HttpRequestException(), "The network service is unavailable" }
+    };
+
+    [Theory]
+    [MemberData(nameof(SignOutFailures))]
+    public async Task SignOutFailureIsReportedAsLocalizedStatus(Exception failure, string expectedMessage)
+    {
+        var viewModel = CreateViewModel(new StubApiClient { SignOutException = failure }, new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        Assert.Equal(expectedMessage, viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task SignOutFailureStillClearsLocalSession()
+    {
+        var viewModel = CreateViewModel(new StubApiClient { SignOutException = new HttpRequestException() }, new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        Assert.False(viewModel.IsAuthenticated);
+    }
+
+    public static TheoryData<Exception, string> OpenResourceFailures => new()
+    {
+        { new ManagementApiException("errors.forbidden", HttpStatusCode.Forbidden), "You are not allowed to perform this action." },
+        { new HttpRequestException(), "The network service is unavailable" },
+        { new UriFormatException(), "Enter a valid value." },
+        { new InvalidOperationException(), "This action uses fields or a request format this client does not support." },
+        { new JsonException(), "Something went wrong." }
+    };
+
+    [Theory]
+    [MemberData(nameof(OpenResourceFailures))]
+    public async Task OpenResourceFailureIsReportedAsLocalizedStatus(Exception failure, string expectedMessage)
+    {
+        var viewModel = CreateViewModel(new StubApiClient { ResourceException = failure }, new StubSettingsStore());
+        viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        await viewModel.OpenResourceCommand.ExecuteAsync();
+
+        Assert.Equal(expectedMessage, viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ForbiddenResourceKeepsTheSessionSignedIn()
+    {
+        var apiClient = new StubApiClient
+        {
+            ResourceException = new ManagementApiException("errors.forbidden", HttpStatusCode.Forbidden)
+        };
+        var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+        viewModel.NavigationItems.Add(new NavigationItem("Accounts", "/api/v1/admin/accounts"));
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        await viewModel.OpenResourceCommand.ExecuteAsync();
+
+        Assert.True(viewModel.IsAuthenticated);
+    }
+
+    [Fact]
+    public async Task ConnectAsyncReportsMalformedDiscoveryResponse()
+    {
+        var viewModel = CreateViewModel(new StubApiClient { DiscoveryException = new JsonException() }, new StubSettingsStore());
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        Assert.Equal("Something went wrong.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ConnectAsyncReportsDeniedSettingsAccess()
+    {
+        var settingsStore = new StubSettingsStore { SaveException = new UnauthorizedAccessException() };
+        var viewModel = CreateViewModel(new StubApiClient(), settingsStore);
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        Assert.Equal("Management settings could not be saved.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void LocaleChangeReportsDeniedSettingsAccess()
+    {
+        var settingsStore = new StubSettingsStore { SaveException = new UnauthorizedAccessException() };
+        var viewModel = CreateViewModel(new StubApiClient(), settingsStore);
+
+        viewModel.Locale = "it";
+
+        Assert.Equal("Impossibile salvare le impostazioni di gestione.", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void UnexpectedCommandFailureIsReportedAsGenericError()
+    {
+        var viewModel = CreateViewModel(new StubApiClient { SignInException = new NotSupportedException() }, new StubSettingsStore());
+
+        ((System.Windows.Input.ICommand)viewModel.SignInCommand).Execute(null);
+
+        Assert.Equal("Something went wrong.", viewModel.StatusMessage);
+    }
+
+    public static TheoryData<string, Action<MainWindowViewModel>> UnchangedAssignments => new()
+    {
+        { nameof(MainWindowViewModel.ApiBaseUrl), viewModel => viewModel.ApiBaseUrl = viewModel.ApiBaseUrl },
+        { nameof(MainWindowViewModel.Locale), viewModel => viewModel.Locale = viewModel.Locale },
+        { nameof(MainWindowViewModel.SelectedNavigationItem), viewModel => viewModel.SelectedNavigationItem = viewModel.SelectedNavigationItem },
+        { nameof(MainWindowViewModel.UserName), viewModel => viewModel.UserName = viewModel.UserName },
+        { nameof(MainWindowViewModel.Password), viewModel => viewModel.Password = viewModel.Password }
+    };
+
+    [Theory]
+    [MemberData(nameof(UnchangedAssignments))]
+    public void AssigningTheCurrentValueRaisesNoPropertyChange(string propertyName, Action<MainWindowViewModel> assign)
+    {
+        _ = propertyName;
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        var raised = new List<string?>();
+        viewModel.PropertyChanged += (_, args) => raised.Add(args.PropertyName);
+
+        assign(viewModel);
+
+        Assert.Empty(raised);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         StubApiClient apiClient,
         StubSettingsStore settingsStore,
@@ -421,7 +584,7 @@ public sealed class MainWindowViewModelTests
     {
         public ManagementSettings? SavedSettings { get; private set; }
 
-        public IOException? SaveException { get; init; }
+        public Exception? SaveException { get; init; }
 
         public ManagementSettings Load() => new();
 
@@ -447,9 +610,11 @@ public sealed class MainWindowViewModelTests
 
         public Exception? SignInException { get; init; }
 
+        public Exception? SignOutException { get; init; }
+
         public Task<ApiDiscovery>? DiscoveryTask { get; init; }
 
-        public SirenEntity Resource { get; init; } = MainWindowViewModelTests.Resource("{}");
+        public SirenEntity Resource { get; init; } = Resource("{}");
 
         public string? LastResourceHref { get; private set; }
 
@@ -471,7 +636,8 @@ public sealed class MainWindowViewModelTests
         public Task SignOutAsync(
             string apiBaseUrl,
             string locale,
-            CancellationToken cancellationToken = default) => Task.CompletedTask;
+            CancellationToken cancellationToken = default) =>
+            SignOutException is null ? Task.CompletedTask : Task.FromException(SignOutException);
 
         public Task<ManagementSession> RenewSessionAsync(
             string apiBaseUrl,

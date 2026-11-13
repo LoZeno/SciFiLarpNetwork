@@ -76,30 +76,26 @@ public sealed class SirenContractTests
         }
     }
 
-    [Theory]
-    [InlineData("errors.unauthorized", "Sign in to continue.")]
-    [InlineData("missing.key", null)]
-    public void ApplicationTextUsesEnglishFallbackAndRejectsUnknownKey(string key, string? expected)
+    [Fact]
+    public void ApplicationTextUsesEnglishFallbackForUnsupportedCulture()
     {
         var originalCulture = CultureInfo.CurrentUICulture;
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("fr");
-            var text = new ApplicationText();
 
-            if (expected is null)
-            {
-                Assert.Throws<KeyNotFoundException>(() => text.GetLocalizedText(key));
-            }
-            else
-            {
-                Assert.Equal(expected, text.GetLocalizedText(key));
-            }
+            Assert.Equal("Sign in to continue.", new ApplicationText().GetLocalizedText("errors.unauthorized"));
         }
         finally
         {
             CultureInfo.CurrentUICulture = originalCulture;
         }
+    }
+
+    [Fact]
+    public void ApplicationTextRejectsUnknownKey()
+    {
+        Assert.Throws<KeyNotFoundException>(() => new ApplicationText().GetLocalizedText("missing.key"));
     }
 
     [Theory]
