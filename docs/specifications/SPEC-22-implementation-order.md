@@ -55,7 +55,7 @@ These cross-cutting prerequisites establish durable event-sourced writes and aut
 
 |   # | Status | Specification                                                                                 | Implementation gate                                                                                       |
 | --: | :----: | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-|  20 |  [x]   | [SPEC-24 Durable event-store runtime](SPEC-24-event-store-runtime.md)                         | Implement PostgreSQL/Marten append, concurrency, replay, projection, and recovery infrastructure.         |
+|  20 |  [x]   | [SPEC-24 Durable event-store runtime](SPEC-24-event-store-runtime.md)                         | Configure PostgreSQL/Marten and verify its concurrency, metadata, projection, and recovery behavior. |
 |  21 |  [x]   | [SPEC-25 Local administrator authentication and authorization](SPEC-25-administrator-authentication-authorization.md) | Securely bootstrap and authenticate local administrators; authorize and audit every administrative action. |
 
 ### Phase D — administrative catalogs and event capabilities

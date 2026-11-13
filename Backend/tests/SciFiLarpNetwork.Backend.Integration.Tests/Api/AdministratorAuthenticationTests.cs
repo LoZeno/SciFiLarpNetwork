@@ -378,6 +378,23 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         Assert.Equal(adminId, roleChangeAudit!.ActorAccountId);
     }
 
+    [Fact]
+    public async Task RoleChangeEventIsAttributedToAuthenticatedAdministrator()
+    {
+        using var client = _factory.CreateClient();
+        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+        var adminAccounts = await _factory.LoadAccountDocumentsAsync();
+        var adminId = adminAccounts.Single(a => a.Role == AdministratorRoles.Administrator).Id;
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
+            $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
+        response.EnsureSuccessStatusCode();
+
+        var readerEvents = await _factory.LoadStreamEventsAsync(readerId);
+
+        Assert.Equal(adminId.ToString("D"), readerEvents[^1].UserName);
+    }
+
     private static string HashSecret(string secret) =>
         Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
 }
@@ -457,6 +474,12 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         await using var session = Services.GetRequiredService<IDocumentStore>().QuerySession();
         return await session.Query<AdministratorAuditDocument>().ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<JasperFx.Events.IEvent>> LoadStreamEventsAsync(Guid streamId)
+    {
+        await using var session = Services.GetRequiredService<IDocumentStore>().QuerySession();
+        return await session.Events.FetchStreamAsync(streamId);
     }
 
     // Events are immutable history, so expiry is simulated by moving the application clock

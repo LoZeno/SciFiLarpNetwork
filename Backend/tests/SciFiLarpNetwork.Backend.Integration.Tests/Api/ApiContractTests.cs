@@ -214,33 +214,6 @@ public sealed class ApiContractTests(ApiApplicationFactory factory) : IClassFixt
     }
 
     [Fact]
-    public async Task EventAppendUsesAuthenticatedActorInsteadOfClientSuppliedActor()
-    {
-        using var client = factory.CreateClient();
-        var actorId = Guid.NewGuid().ToString("D");
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/contract-test/append-event")
-        {
-            Content = new StringContent(
-                JsonSerializer.Serialize(new { streamId = Guid.NewGuid(), actorId = "forged-client-actor" }),
-                Encoding.UTF8,
-                "application/json")
-        };
-        request.Headers.Add("X-Test-Authenticated", "true");
-        request.Headers.Add("X-Test-ActorId", actorId);
-
-        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
-        using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(TestContext.Current.CancellationToken), cancellationToken: TestContext.Current.CancellationToken);
-
-        Assert.Equal(
-            new { Status = HttpStatusCode.OK, ActorId = actorId },
-            new
-            {
-                Status = response.StatusCode,
-                ActorId = body.RootElement.GetProperty("properties").GetProperty("actorId").GetString() ?? string.Empty
-            });
-    }
-
-    [Fact]
     public async Task UnexpectedExceptionIsLoggedAndDetailsAreNotDisclosed()
     {
         using var client = factory.CreateClient();

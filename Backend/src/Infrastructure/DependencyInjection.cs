@@ -34,10 +34,6 @@ public static class DependencyInjection
             options.Events.MetadataConfig.UserNameEnabled = true;
             options.Events.AppendMode = EventAppendMode.Rich;
 
-            // Register EmptyAggregate for FetchForWriting (MartenDB docs requirement)
-            options.Projections.LiveStreamAggregation<EmptyAggregate>();
-
-            // Register distinct event types
             options.Events.AddEventType<AccountCreated>();
             options.Events.AddEventType<AccountPasswordChanged>();
             options.Events.AddEventType<AccountRoleChanged>();
@@ -56,20 +52,9 @@ public static class DependencyInjection
             options.Projections.Add<AdministratorSessionProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
             options.Projections.Add<AdministratorGrantProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
             options.Projections.Add<AdministratorAuditProjection>(JasperFx.Events.Projections.ProjectionLifecycle.Inline);
-
-            options.Schema.For<CommandReceiptDocument>();
-            options.Schema.For<GlobalEventIdDocument>();
         }).AddAsyncDaemon(DaemonMode.Solo);
 
-        // Register an empty upcaster registry by default. Feature modules add upcasters by
-        // registering IEventUpcaster implementations before the host starts.
-        services.AddSingleton<EventUpcasterRegistry>(
-            provider => new EventUpcasterRegistry(provider.GetServices<IEventUpcaster>()));
-
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();
-        services.AddSingleton<IEventStreamStore>(provider => new AuthenticatedActorEventStreamStore(
-            provider.GetRequiredService<IDocumentStore>(),
-            provider.GetRequiredService<IEventActorContext>()));
         services.AddHealthChecks()
             .AddCheck<EventStoreReadinessHealthCheck>("event-store", tags: ["ready"]);
 

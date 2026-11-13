@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Marten;
-using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Infrastructure;
 
 namespace SciFiLarpNetwork.Backend.Tests.Infrastructure;
@@ -17,17 +16,6 @@ public sealed class DependencyInjectionTests
         var secondResolution = provider.GetRequiredService<IDocumentStore>();
 
         Assert.Same(documentStore, secondResolution);
-    }
-
-    [Fact]
-    public void EventStreamStoreIsRegisteredAsSingleton()
-    {
-        using var provider = CreateProvider();
-
-        var eventStore = provider.GetRequiredService<IEventStreamStore>();
-        var secondResolution = provider.GetRequiredService<IEventStreamStore>();
-
-        Assert.Same(eventStore, secondResolution);
     }
 
     private static ServiceProvider CreateProvider()

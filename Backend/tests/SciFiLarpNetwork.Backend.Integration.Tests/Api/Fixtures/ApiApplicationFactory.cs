@@ -31,7 +31,6 @@ public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
                 options.Events.AppendMode = EventAppendMode.Rich;
                 options.Events.AddEventType<EventStoreProbeProjection>();
                 options.Events.AddEventType<TestProbeEvent>();
-                options.Events.AddEventType<ContractProbes.ContractTestEvent>();
                 options.Projections.Add<EventStoreProbeProjection>(ProjectionLifecycle.Async);
             });
             services
