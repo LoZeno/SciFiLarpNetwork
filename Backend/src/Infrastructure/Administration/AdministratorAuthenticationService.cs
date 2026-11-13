@@ -362,7 +362,7 @@ public sealed class AdministratorAuthenticationService(
     {
         if (role is not (AdministratorRoles.Reader or AdministratorRoles.Administrator))
         {
-            return AdministratorOperationResult.AccountNotFound;
+            return AdministratorOperationResult.InvalidGrant;
         }
 
         await using var session = OpenSession();

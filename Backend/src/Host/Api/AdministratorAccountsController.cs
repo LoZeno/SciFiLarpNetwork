@@ -130,6 +130,10 @@ public sealed class AdministratorAccountsController(
                     StatusCodes.Status404NotFound,
                     ApiErrorCodes.NotFound,
                     ApiErrorCodes.NotFound),
+                AdministratorOperationResult.InvalidGrant => new ApiException(
+                    StatusCodes.Status400BadRequest,
+                    ApiErrorCodes.Validation,
+                    ApiErrorCodes.Validation),
                 _ => new ApiException(
                     StatusCodes.Status403Forbidden,
                     ApiErrorCodes.Forbidden,

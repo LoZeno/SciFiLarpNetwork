@@ -35,6 +35,6 @@ public partial class AdministratorAccountProjection : SingleStreamProjection<Adm
                 return snapshot with { Role = roleChanged.NewRole };
         }
 
-        return snapshot ?? null;
+        return snapshot;
     }
 }

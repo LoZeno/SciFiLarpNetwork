@@ -669,7 +669,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
 
         var result = await service.ChangeRoleAsync(adminId, adminId, "superuser", TestContext.Current.CancellationToken);
 
-        Assert.Equal(AdministratorOperationResult.AccountNotFound, result);
+        Assert.Equal(AdministratorOperationResult.InvalidGrant, result);
     }
 
     private static async Task<string> ReadPropertyAsync(HttpResponseMessage response, string name)
