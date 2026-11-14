@@ -609,6 +609,40 @@ public sealed class TalentCatalogViewModelTests
     }
 
     [Fact]
+    public async Task AnOlderTalentLoadThatFinishesLastIsIgnored()
+    {
+        var api = new FakeCatalogApi();
+        api.AddTalent("Medicine");
+        api.AddTalent("Old ways", isArchived: true);
+        var catalog = CreateCatalog(api);
+        await catalog.LoadAsync();
+        var heldArchivedLoad = new TaskCompletionSource();
+        api.GetGate = href => href.Contains("includeArchived", StringComparison.Ordinal) ? heldArchivedLoad.Task : Task.CompletedTask;
+        catalog.ShowArchivedTalents = true;
+        catalog.ShowArchivedTalents = false;
+
+        heldArchivedLoad.SetResult();
+
+        Assert.Equal(["Medicine"], catalog.Talents.Select(talent => talent.DisplayName));
+    }
+
+    [Fact]
+    public async Task TheScreenStaysBusyUntilEveryLoadHasFinished()
+    {
+        var api = new FakeCatalogApi();
+        var catalog = CreateCatalog(api);
+        await catalog.LoadAsync();
+        var heldArchivedLoad = new TaskCompletionSource();
+        api.GetGate = href => href.Contains("includeArchived", StringComparison.Ordinal) ? heldArchivedLoad.Task : Task.CompletedTask;
+        catalog.ShowArchivedTalents = true;
+
+        catalog.ShowArchivedSkills = true;
+
+        Assert.True(catalog.IsBusy);
+        heldArchivedLoad.SetResult();
+    }
+
+    [Fact]
     public void ChangingTheLanguageRelabelsTheScreen()
     {
         var api = new FakeCatalogApi();

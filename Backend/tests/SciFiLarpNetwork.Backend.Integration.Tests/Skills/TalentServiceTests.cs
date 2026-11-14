@@ -1,6 +1,10 @@
+using JasperFx;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.Skills;
+using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
+using SciFiLarpNetwork.Backend.Domain.Skills;
+using SciFiLarpNetwork.Backend.Infrastructure.Skills.SkillDocuments;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
@@ -19,6 +23,21 @@ public sealed class TalentServiceTests : IAsyncLifetime
     }
 
     public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+
+    [Fact]
+    public async Task ADuplicateNormalizedTalentNameIsRejectedAsAnExistingDocument()
+    {
+        await Talents.CreateTalentAsync(new TalentDefinition("Medicine", null), TestContext.Current.CancellationToken);
+        var talentId = Guid.NewGuid();
+        await using var session = _factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        session.Events.StartStream<TalentDocument>(
+            talentId,
+            new TalentCreated(talentId, "MEDICINE", CatalogNames.Normalize("MEDICINE"), null, DateTimeOffset.UtcNow));
+
+        var exception = await Record.ExceptionAsync(() => session.SaveChangesAsync(TestContext.Current.CancellationToken));
+
+        Assert.IsType<DocumentAlreadyExistsException>(exception);
+    }
 
     [Fact]
     public async Task CreatedTalentStartsAtVersionOne()

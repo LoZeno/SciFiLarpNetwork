@@ -28,6 +28,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
     private TalentCatalogViewModel? _talentCatalog;
+    private int _openGeneration;
 
     public MainWindowViewModel(
         IManagementApiClient apiClient,
@@ -49,7 +50,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OpenResourceCommand = new AsyncCommand(
             OpenResourceAsync,
             HandleCommandException,
-            () => !IsBusy && SelectedNavigationItem is not null);
+            () => SelectedNavigationItem is not null);
         SetStatus(startupErrorKey ?? "navigation.empty");
     }
 
@@ -387,67 +388,98 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        if (item.OpensTalentCatalog)
-        {
-            await OpenTalentCatalogAsync(item);
-            return;
-        }
-
+        var generation = ++_openGeneration;
         IsBusy = true;
+        var opened = false;
+        try
+        {
+            opened = item.OpensTalentCatalog
+                ? await OpenTalentCatalogAsync(item)
+                : await OpenGenericResourceAsync(item, generation);
+        }
+        finally
+        {
+            if (generation == _openGeneration)
+            {
+                IsBusy = false;
+                ClearFailedSelection(item, opened);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears the selection after a failed open, so selecting the same entry again retries it.
+    /// </summary>
+    private void ClearFailedSelection(NavigationItem item, bool opened)
+    {
+        if (!opened && SelectedNavigationItem == item)
+        {
+            SelectedNavigationItem = null;
+        }
+    }
+
+    private async Task<bool> OpenGenericResourceAsync(NavigationItem item, int generation)
+    {
         SetStatus("management.connecting");
         try
         {
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
-            TalentCatalog = null;
-            SetResource(resource);
-            SetStatus("app.apiConnected");
-        }
-        catch (ManagementApiException exception)
-        {
-            if (exception.StatusCode == HttpStatusCode.Unauthorized)
+            if (generation == _openGeneration)
             {
-                ClearSessionState();
+                TalentCatalog = null;
+                SetResource(resource);
+                SetStatus("app.apiConnected");
             }
 
-            _apiErrorCode = exception.ErrorCode;
-            OnPropertyChanged(nameof(StatusMessage));
+            return true;
         }
-        catch (HttpRequestException)
+        catch (Exception failure) when (failure is ManagementApiException or HttpRequestException or UriFormatException
+                                            or InvalidOperationException or JsonException)
         {
-            SetStatus("app.connectionError");
-        }
-        catch (UriFormatException)
-        {
-            SetStatus("validation.invalid");
-        }
-        catch (InvalidOperationException)
-        {
-            SetStatus("actions.unsupported");
-        }
-        catch (JsonException)
-        {
-            SetStatus("common.error");
-        }
-        finally
-        {
-            IsBusy = false;
+            if (generation == _openGeneration)
+            {
+                ReportOpenFailure(failure);
+            }
+
+            return false;
         }
     }
 
-    private async Task OpenTalentCatalogAsync(NavigationItem item)
+    private void ReportOpenFailure(Exception failure)
     {
-        IsBusy = true;
-        try
+        switch (failure)
         {
-            var catalog = new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href);
-            TalentCatalog = catalog;
-            SetStatus("app.apiConnected");
-            await catalog.LoadAsync();
+            case ManagementApiException exception:
+                if (exception.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    ClearSessionState();
+                }
+
+                _apiErrorCode = exception.ErrorCode;
+                OnPropertyChanged(nameof(StatusMessage));
+                break;
+            case HttpRequestException:
+                SetStatus("app.connectionError");
+                break;
+            case UriFormatException:
+                SetStatus("validation.invalid");
+                break;
+            case InvalidOperationException:
+                SetStatus("actions.unsupported");
+                break;
+            default:
+                SetStatus("common.error");
+                break;
         }
-        finally
-        {
-            IsBusy = false;
-        }
+    }
+
+    private async Task<bool> OpenTalentCatalogAsync(NavigationItem item)
+    {
+        var catalog = new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href);
+        TalentCatalog = catalog;
+        SetStatus("app.apiConnected");
+        await catalog.LoadAsync();
+        return catalog.IsLoaded;
     }
 
     private void OnCatalogSessionExpired(object? sender, EventArgs e)

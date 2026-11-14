@@ -30,6 +30,9 @@ internal sealed class FakeCatalogApi : IManagementApiClient
 
     public Exception? GetFailure { get; set; }
 
+    /// <summary>Awaited before answering a GET, so a test can hold back chosen responses.</summary>
+    public Func<string, Task>? GetGate { get; set; }
+
     public FakeTalent AddTalent(string name, bool isArchived = false)
     {
         var talent = new FakeTalent(Guid.NewGuid(), name) { IsArchived = isArchived };
@@ -45,21 +48,26 @@ internal sealed class FakeCatalogApi : IManagementApiClient
         return skill;
     }
 
-    public Task<SirenEntity> GetResourceAsync(
+    public async Task<SirenEntity> GetResourceAsync(
         string apiBaseUrl,
         string href,
         string locale,
         CancellationToken cancellationToken = default)
     {
+        if (GetGate is { } gate)
+        {
+            await gate(href);
+        }
+
         if (GetFailure is { } failure)
         {
-            return Task.FromException<SirenEntity>(failure);
+            throw failure;
         }
 
         var parts = href.Split('?');
         var includeArchived = parts.Length > 1 && parts[1] == "includeArchived=true";
         var segments = parts[0].Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return Task.FromResult(segments switch
+        return segments switch
         {
             ["api", "v1", "talents"] => TalentCollection(includeArchived),
             ["api", "v1", "talents", var id] => TalentEntity(FindTalent(id)),
@@ -71,7 +79,7 @@ internal sealed class FakeCatalogApi : IManagementApiClient
             ["api", "v1", "skills", var id] => SkillEntity(FindSkill(id)),
             ["api", "v1", "skill-card-flags"] => CardFlagCollection(),
             _ => throw new ManagementApiException("errors.notFound", HttpStatusCode.NotFound)
-        });
+        };
     }
 
     public Task<SirenEntity> SubmitActionAsync(

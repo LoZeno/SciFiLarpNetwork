@@ -34,6 +34,8 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
     private bool _canWrite;
     private string? _statusMessage;
     private int _skillsLoadGeneration;
+    private int _talentsLoadGeneration;
+    private int _runningOperations;
 
     public TalentCatalogViewModel(
         IManagementApiClient apiClient,
@@ -211,6 +213,9 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
 
     public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
 
+    /// <summary>Whether the talent list has been loaded at least once.</summary>
+    public bool IsLoaded { get; private set; }
+
     public string TalentsHeading => Translate("skills.talents");
 
     public string SkillsHeading => Translate("skills.skills");
@@ -239,8 +244,15 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
 
     private async Task LoadTalentsCoreAsync()
     {
+        var generation = ++_talentsLoadGeneration;
         var collection = await GetCollectionAsync(_talentsHref, ShowArchivedTalents);
+        if (generation != _talentsLoadGeneration)
+        {
+            return;
+        }
+
         _talentCollection = collection;
+        IsLoaded = true;
         CanWrite = collection.FindAction("create-talent") is not null;
         var items = (collection.Entities ?? []).Select(ToTalentItem).ToArray();
         var selectedId = SelectedTalent?.TalentId;
@@ -574,6 +586,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
 
     private async Task RunAsync(Func<Task> operation)
     {
+        _runningOperations++;
         IsBusy = true;
         StatusMessage = null;
         try
@@ -586,7 +599,8 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         }
         finally
         {
-            IsBusy = false;
+            _runningOperations--;
+            IsBusy = _runningOperations > 0;
         }
     }
 
@@ -622,7 +636,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
     private void HandleUnexpectedFailure(Exception exception)
     {
         Trace.TraceError("Unhandled talent catalog exception: {0}", exception);
-        IsBusy = false;
         StatusMessage = Translate("common.error");
     }
 

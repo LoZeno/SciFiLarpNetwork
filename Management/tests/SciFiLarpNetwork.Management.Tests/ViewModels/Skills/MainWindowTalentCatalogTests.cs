@@ -62,6 +62,19 @@ public sealed class MainWindowTalentCatalogTests
     }
 
     [Fact]
+    public async Task AFailedTalentsLoadClearsTheSelectionSoItCanBeRetried()
+    {
+        var api = new FakeCatalogApi();
+        var viewModel = CreateViewModel(api);
+        await viewModel.ConnectCommand.ExecuteAsync();
+        api.GetFailure = new HttpRequestException();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        Assert.Null(viewModel.SelectedNavigationItem);
+    }
+
+    [Fact]
     public async Task ConnectingAgainClosesTheTalentsScreen()
     {
         var viewModel = await OpenCatalogAsync(new FakeCatalogApi());

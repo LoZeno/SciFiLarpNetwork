@@ -187,6 +187,21 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
             string.Join(',', (await ReadAsync(response)).Property("gameFlags").EnumerateArray().Select(flag => flag.GetString())));
     }
 
+    [Theory]
+    [MemberData(nameof(NumericGameFlags))]
+    public async Task NumericGameFlagsAreRejected(object gameFlag)
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, SkillsPath, token, new { name = "Hacking I", cost = 2, gameFlags = new[] { gameFlag } });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.validation"), await ErrorAsync(response));
+    }
+
+    public static TheoryData<object> NumericGameFlags => new() { 99, "99", 0 };
+
     [Fact]
     public async Task InvalidCostReturnsItsStableCode()
     {

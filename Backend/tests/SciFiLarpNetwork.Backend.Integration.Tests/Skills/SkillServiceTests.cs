@@ -1,7 +1,10 @@
+using JasperFx;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.Skills;
+using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Skills;
+using SciFiLarpNetwork.Backend.Infrastructure.Skills.SkillDocuments;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
@@ -334,6 +337,60 @@ public sealed class SkillServiceTests : IAsyncLifetime
         Assert.Equal(1L, result.Value!.Version);
     }
 
+    [Fact]
+    public async Task ADuplicateNormalizedSkillNameIsRejectedAsAnExistingDocument()
+    {
+        await CreateSkillAsync(Definition("Welding"));
+        var skillId = Guid.NewGuid();
+        await using var session = _factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        session.Events.StartStream<SkillDocument>(
+            skillId,
+            new SkillCreated(skillId, "WELDING", CatalogNames.Normalize("WELDING"), null, 1, false, false, [], [], [], [], DateTimeOffset.UtcNow));
+
+        var exception = await Record.ExceptionAsync(() => session.SaveChangesAsync(TestContext.Current.CancellationToken));
+
+        Assert.IsType<DocumentAlreadyExistsException>(exception);
+    }
+
+    [Fact]
+    public async Task ParallelCreatesWithTheSameNameLetOnlyOneSucceed()
+    {
+        var results = await Task.WhenAll(
+            Skills.CreateSkillAsync(Definition("Welding"), TestContext.Current.CancellationToken),
+            Skills.CreateSkillAsync(Definition("WELDING"), TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            [CatalogOutcome.Succeeded, CatalogOutcome.NameAlreadyUsed],
+            results.Select(result => result.Outcome).Order());
+    }
+
+    [Fact]
+    public async Task ParallelEditsThatWouldCloseALoopLetOnlyOneSucceed()
+    {
+        var first = await CreateSkillAsync(Definition("Hacking I"));
+        var second = await CreateSkillAsync(Definition("Hacking II"));
+
+        var results = await Task.WhenAll(
+            Skills.UpdateSkillAsync(
+                first.SkillId,
+                first.Version,
+                Definition("Hacking I") with { PrerequisiteGroups = [[second.SkillId]] },
+                TestContext.Current.CancellationToken),
+            Skills.UpdateSkillAsync(
+                second.SkillId,
+                second.Version,
+                Definition("Hacking II") with { PrerequisiteGroups = [[first.SkillId]] },
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(["Rejected", "Succeeded"], results.Select(result => LoopRaceOutcome(result.Outcome)).Order());
+    }
+
+    /// <summary>
+    /// A loop edit that loses the race is rejected either by validation (it saw the other edit) or by
+    /// Marten's consistency check on the prerequisite streams it read (it did not).
+    /// </summary>
+    private static string LoopRaceOutcome(CatalogOutcome outcome) =>
+        outcome is CatalogOutcome.PrerequisiteLoop or CatalogOutcome.StaleVersion ? "Rejected" : outcome.ToString();
     private static SkillDefinition Definition(
         string name,
         string? description = null,
