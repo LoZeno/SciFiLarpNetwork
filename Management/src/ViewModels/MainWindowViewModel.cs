@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
+using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.ViewModels.Skills;
 
 namespace SciFiLarpNetwork.Management.ViewModels;
 
@@ -14,6 +16,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IManagementApiClient _apiClient;
     private readonly IManagementSettingsStore _settingsStore;
     private readonly IManagementLocalizer _localizer;
+    private readonly ICatalogDialogService _catalogDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -24,17 +27,21 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string _password = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
+    private TalentCatalogViewModel? _talentCatalog;
+    private int _openGeneration;
 
     public MainWindowViewModel(
         IManagementApiClient apiClient,
         IManagementSettingsStore settingsStore,
         IManagementLocalizer localizer,
+        ICatalogDialogService catalogDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
         _apiClient = apiClient;
         _settingsStore = settingsStore;
         _localizer = localizer;
+        _catalogDialogs = catalogDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -43,7 +50,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OpenResourceCommand = new AsyncCommand(
             OpenResourceAsync,
             HandleCommandException,
-            () => !IsBusy && SelectedNavigationItem is not null);
+            () => SelectedNavigationItem is not null);
         SetStatus(startupErrorKey ?? "navigation.empty");
     }
 
@@ -89,6 +96,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(LocaleIndex));
             OnLocalizedPropertiesChanged();
+            TalentCatalog?.Locale = normalized;
             SaveSettings();
         }
     }
@@ -112,6 +120,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             _selectedNavigationItem = value;
             OnPropertyChanged();
             OpenResourceCommand.NotifyCanExecuteChanged();
+            if (value is not null)
+            {
+                OpenResourceCommand.Execute(null);
+            }
         }
     }
 
@@ -201,8 +213,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public string NavigationHeading => _localizer.Translate("navigation.heading", Locale);
 
-    public string OpenResourceLabel => _localizer.Translate("management.openResource", Locale);
-
     public string ActionsHeading => _localizer.Translate("actions.heading", Locale);
 
     public string ResourceTitle => GetPropertyString("title")
@@ -221,6 +231,38 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public bool HasAvailableActions => AvailableActions.Count > 0;
 
+    /// <summary>The talents and skills screen, shown in place of the resource summary while open.</summary>
+    public TalentCatalogViewModel? TalentCatalog
+    {
+        get => _talentCatalog;
+        private set
+        {
+            if (_talentCatalog == value)
+            {
+                return;
+            }
+
+            if (_talentCatalog is not null)
+            {
+                _talentCatalog.SessionExpired -= OnCatalogSessionExpired;
+            }
+
+            _talentCatalog = value;
+            if (_talentCatalog is not null)
+            {
+                _talentCatalog.SessionExpired += OnCatalogSessionExpired;
+            }
+
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsTalentCatalogOpen));
+            OnPropertyChanged(nameof(IsResourceSummaryVisible));
+        }
+    }
+
+    public bool IsTalentCatalogOpen => TalentCatalog is not null;
+
+    public bool IsResourceSummaryVisible => TalentCatalog is null;
+
     private async Task ConnectAsync()
     {
         IsBusy = true;
@@ -230,6 +272,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(HasAvailableActions));
         SelectedNavigationItem = null;
         _selectedResource = null;
+        TalentCatalog = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
 
@@ -240,7 +283,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             var discovery = await _apiClient.DiscoverAsync(ApiBaseUrl, Locale);
             foreach (var link in discovery.NavigationLinks)
             {
-                NavigationItems.Add(new NavigationItem(link.Title!, link.Href!));
+                NavigationItems.Add(new NavigationItem(
+                    link.Title!,
+                    link.Href!,
+                    link.Rel.Contains(SirenRelations.Talents, StringComparer.Ordinal)));
             }
 
             SetResource(discovery.ApiResource);
@@ -342,44 +388,104 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
+        var generation = ++_openGeneration;
         IsBusy = true;
+        var opened = false;
+        try
+        {
+            opened = item.OpensTalentCatalog
+                ? await OpenTalentCatalogAsync(item)
+                : await OpenGenericResourceAsync(item, generation);
+        }
+        finally
+        {
+            if (generation == _openGeneration)
+            {
+                IsBusy = false;
+                ClearFailedSelection(item, opened);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears the selection after a failed open, so selecting the same entry again retries it.
+    /// </summary>
+    private void ClearFailedSelection(NavigationItem item, bool opened)
+    {
+        if (!opened && SelectedNavigationItem == item)
+        {
+            SelectedNavigationItem = null;
+        }
+    }
+
+    private async Task<bool> OpenGenericResourceAsync(NavigationItem item, int generation)
+    {
         SetStatus("management.connecting");
         try
         {
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
-            SetResource(resource);
-            SetStatus("app.apiConnected");
-        }
-        catch (ManagementApiException exception)
-        {
-            if (exception.StatusCode == HttpStatusCode.Unauthorized)
+            if (generation == _openGeneration)
             {
-                ClearSessionState();
+                TalentCatalog = null;
+                SetResource(resource);
+                SetStatus("app.apiConnected");
             }
 
-            _apiErrorCode = exception.ErrorCode;
-            OnPropertyChanged(nameof(StatusMessage));
+            return true;
         }
-        catch (HttpRequestException)
+        catch (Exception failure) when (failure is ManagementApiException or HttpRequestException or UriFormatException
+                                            or InvalidOperationException or JsonException)
         {
-            SetStatus("app.connectionError");
+            if (generation == _openGeneration)
+            {
+                ReportOpenFailure(failure);
+            }
+
+            return false;
         }
-        catch (UriFormatException)
+    }
+
+    private void ReportOpenFailure(Exception failure)
+    {
+        switch (failure)
         {
-            SetStatus("validation.invalid");
+            case ManagementApiException exception:
+                if (exception.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    ClearSessionState();
+                }
+
+                _apiErrorCode = exception.ErrorCode;
+                OnPropertyChanged(nameof(StatusMessage));
+                break;
+            case HttpRequestException:
+                SetStatus("app.connectionError");
+                break;
+            case UriFormatException:
+                SetStatus("validation.invalid");
+                break;
+            case InvalidOperationException:
+                SetStatus("actions.unsupported");
+                break;
+            default:
+                SetStatus("common.error");
+                break;
         }
-        catch (InvalidOperationException)
-        {
-            SetStatus("actions.unsupported");
-        }
-        catch (JsonException)
-        {
-            SetStatus("common.error");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+    }
+
+    private async Task<bool> OpenTalentCatalogAsync(NavigationItem item)
+    {
+        var catalog = new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href);
+        TalentCatalog = catalog;
+        SetStatus("app.apiConnected");
+        await catalog.LoadAsync();
+        return catalog.IsLoaded;
+    }
+
+    private void OnCatalogSessionExpired(object? sender, EventArgs e)
+    {
+        ClearSessionState();
+        SetStatus("errors.unauthorized");
     }
 
     private void SetResource(SirenEntity resource)
@@ -408,6 +514,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectedNavigationItem = null;
         AvailableActions.Clear();
         _selectedResource = null;
+        TalentCatalog = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
         OnPropertyChanged(nameof(HasAvailableActions));
@@ -425,51 +532,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         return value.GetString();
     }
 
-    private string GetApiErrorMessage(string errorCode)
-    {
-        var key = errorCode switch
-        {
-            "errors.validation" => "errors.validation",
-            "errors.unauthorized" => "errors.unauthorized",
-            "errors.forbidden" => "errors.forbidden",
-            "errors.notFound" => "errors.notFound",
-            "errors.conflict" => "errors.conflict",
-            "errors.requestFailed" => "errors.requestFailed",
-            "errors.serviceUnavailable" => "errors.serviceUnavailable",
-            "errors.internalServerError" => "errors.internalServerError",
-            _ when TryGetStatusCode(errorCode, out var statusCode) => statusCode switch
-            {
-                HttpStatusCode.Unauthorized => "errors.unauthorized",
-                HttpStatusCode.Forbidden => "errors.forbidden",
-                HttpStatusCode.NotFound => "errors.notFound",
-                HttpStatusCode.Conflict => "errors.conflict",
-                HttpStatusCode.ServiceUnavailable => "errors.serviceUnavailable",
-                >= HttpStatusCode.InternalServerError => "errors.internalServerError",
-                _ => "errors.requestFailed"
-            },
-            _ => "errors.requestFailed"
-        };
-        return _localizer.Translate(key, Locale);
-    }
-
-    private static bool TryGetStatusCode(string errorCode, out HttpStatusCode statusCode)
-    {
-        statusCode = default;
-        if (!errorCode.StartsWith("http.", StringComparison.Ordinal) ||
-            !int.TryParse(errorCode.AsSpan("http.".Length), out var numericStatus))
-        {
-            return false;
-        }
-
-        var parsedStatus = (HttpStatusCode)numericStatus;
-        if (!Enum.IsDefined(parsedStatus))
-        {
-            return false;
-        }
-
-        statusCode = parsedStatus;
-        return true;
-    }
+    private string GetApiErrorMessage(string errorCode) =>
+        _localizer.TranslateApiError(errorCode, Locale);
 
     private void SaveSettings()
     {
@@ -518,7 +582,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(LanguageLabel));
         OnPropertyChanged(nameof(LocaleIndex));
         OnPropertyChanged(nameof(NavigationHeading));
-        OnPropertyChanged(nameof(OpenResourceLabel));
         OnPropertyChanged(nameof(ActionsHeading));
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));

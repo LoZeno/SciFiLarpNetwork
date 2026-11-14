@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
+using SciFiLarpNetwork.Management.Views.Skills;
 
 namespace SciFiLarpNetwork.Management;
 
@@ -58,7 +59,10 @@ public partial class App : Avalonia.Application
 
         var localizer = new JsonLocalizer(new LocalizationCatalog());
         var apiClient = new ManagementApiClient(httpClient);
-        return new MainWindow(
-            new MainWindowViewModel(apiClient, settingsStore, localizer, settings, startupErrorKey));
+        MainWindow? window = null;
+        var catalogDialogs = new WindowCatalogDialogService(() => window!);
+        window = new MainWindow(
+            new MainWindowViewModel(apiClient, settingsStore, localizer, catalogDialogs, settings, startupErrorKey));
+        return window;
     }
 }

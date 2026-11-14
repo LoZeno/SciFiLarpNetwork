@@ -877,11 +877,16 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     }
 
     public static async Task<HttpResponseMessage> SendAuthorizedAsync(
-        HttpClient client, HttpMethod method, string path, string token)
+        HttpClient client, HttpMethod method, string path, string token, string? language = null)
     {
         using var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Headers.Accept.ParseAdd("application/vnd.siren+json");
+        if (language is not null)
+        {
+            request.Headers.AcceptLanguage.ParseAdd(language);
+        }
+
         return await client.SendAsync(request);
     }
 }

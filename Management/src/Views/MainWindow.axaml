@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="using:SciFiLarpNetwork.Management.ViewModels"
+    xmlns:skills="using:SciFiLarpNetwork.Management.Views.Skills"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -76,33 +77,34 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <Button
-              HorizontalAlignment="Stretch"
-              Command="{Binding OpenResourceCommand}"
-              Content="{Binding OpenResourceLabel}" />
         </StackPanel>
       </Border>
-      <ScrollViewer Grid.Column="1">
-        <StackPanel Margin="28" Spacing="16">
-          <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding ResourceTitle}" />
-          <TextBlock
-              FontSize="14"
-              Text="{Binding ResourceSummary}"
-              TextWrapping="Wrap" />
-          <TextBlock
-              FontSize="18"
-              FontWeight="SemiBold"
-              IsVisible="{Binding HasAvailableActions}"
-              Text="{Binding ActionsHeading}" />
-          <ItemsControl ItemsSource="{Binding AvailableActions}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="x:String">
-                <TextBlock Margin="0,4" Text="{Binding}" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </StackPanel>
-      </ScrollViewer>
+      <Grid Grid.Column="1">
+        <ScrollViewer IsVisible="{Binding IsResourceSummaryVisible}">
+          <StackPanel Margin="28" Spacing="16">
+            <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding ResourceTitle}" />
+            <TextBlock
+                FontSize="14"
+                Text="{Binding ResourceSummary}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                FontSize="18"
+                FontWeight="SemiBold"
+                IsVisible="{Binding HasAvailableActions}"
+                Text="{Binding ActionsHeading}" />
+            <ItemsControl ItemsSource="{Binding AvailableActions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Margin="0,4" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+        <Panel Margin="28" IsVisible="{Binding IsTalentCatalogOpen}">
+          <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
+        </Panel>
+      </Grid>
     </Grid>
   </Grid>
 </Window>

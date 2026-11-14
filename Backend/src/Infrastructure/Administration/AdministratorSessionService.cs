@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Administration;
 

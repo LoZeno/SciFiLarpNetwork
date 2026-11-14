@@ -4,6 +4,7 @@ using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
 using SciFiLarpNetwork.Management.ViewModels;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
@@ -61,7 +62,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task OpenResourceAsyncFollowsSelectedSirenLink()
+    public async Task SelectingANavigationItemOpensItsSirenLink()
     {
         var apiClient = new StubApiClient
         {
@@ -69,9 +70,8 @@ public sealed class MainWindowViewModelTests
         };
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         viewModel.NavigationItems.Add(new NavigationItem("News", "/api/v1/news"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(
             new { Href = "/api/v1/news", Title = "News", Summary = "Current bulletins" },
@@ -174,7 +174,6 @@ public sealed class MainWindowViewModelTests
                 ApiAddressLabel = "Indirizzo API",
                 LanguageLabel = "Lingua",
                 NavigationHeading = "Navigazione",
-                OpenResourceLabel = "Apri destinazione",
                 ActionsHeading = "Azioni disponibili",
                 Settings = (ManagementSettings?)new ManagementSettings("http://localhost:5001/api", "it")
             },
@@ -187,7 +186,6 @@ public sealed class MainWindowViewModelTests
                 viewModel.ApiAddressLabel,
                 viewModel.LanguageLabel,
                 viewModel.NavigationHeading,
-                viewModel.OpenResourceLabel,
                 viewModel.ActionsHeading,
                 Settings = settingsStore.SavedSettings
             });
@@ -363,9 +361,8 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         await viewModel.SignInCommand.ExecuteAsync();
         viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(
             new { IsAuthenticated = false, NavigationCount = 0, Status = "Sign in to continue." },
@@ -476,9 +473,8 @@ public sealed class MainWindowViewModelTests
     {
         var viewModel = CreateViewModel(new StubApiClient { ResourceException = failure }, new StubSettingsStore());
         viewModel.NavigationItems.Add(new NavigationItem("Messages", "/api/v1/messages"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.Equal(expectedMessage, viewModel.StatusMessage);
     }
@@ -493,9 +489,8 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
         await viewModel.SignInCommand.ExecuteAsync();
         viewModel.NavigationItems.Add(new NavigationItem("Accounts", "/api/v1/admin/accounts"));
-        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
-        await viewModel.OpenResourceCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
 
         Assert.True(viewModel.IsAuthenticated);
     }
@@ -569,7 +564,7 @@ public sealed class MainWindowViewModelTests
         StubApiClient apiClient,
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
-        new(apiClient, settingsStore, new JsonLocalizer(), settings ?? new ManagementSettings());
+        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()

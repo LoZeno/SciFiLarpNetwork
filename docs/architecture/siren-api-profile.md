@@ -17,6 +17,11 @@ The backend uses Siren (`application/vnd.siren+json`) for successful API resourc
 - Navigation affordances are contextual and may change with the current character, selected network, authorization, and game state. Clients render advertised navigation but must handle missing links and unknown relations gracefully.
 - The initial unauthenticated API root has no application navigation links or domain actions; those appear with their feature/authentication endpoints.
 
+## Collections
+
+- Collections that can hide archived entries link to both views: `urn:scifilarnetwork:rels:with-archived` (archived entries included) and `urn:scifilarnetwork:rels:without-archived` (active entries only). Clients follow these links instead of adding query parameters.
+- Catalog relations: `urn:scifilarnetwork:rels:talents`, `urn:scifilarnetwork:rels:skills`, and `urn:scifilarnetwork:rels:card-flags`. The talents navigation link carries the talents relation, and each talent item in a talent collection links to its own skills with the skills relation.
+
 ## Actions
 
 - Action names and resource classes are stable, language-neutral identifiers. `title` and field `title` are localized human-readable strings.
@@ -31,6 +36,7 @@ The backend uses Siren (`application/vnd.siren+json`) for successful API resourc
 - Classes, relation identifiers, action names, property names, and error `code` values are stable and never localized.
 - Errors use a Siren entity with `class: ["error"]`, `self` link, and properties `code`, `title`, `detail`, `traceId`, and `status`. Validation errors may include an `errors` object keyed by request field. Clients branch on `code`, not prose.
 - The initial error codes are `errors.validation`, `errors.unauthorized`, `errors.forbidden`, `errors.notFound`, `errors.conflict`, `errors.requestFailed`, `errors.serviceUnavailable`, and `errors.internalServerError`.
+- The talent and skill catalog adds `errors.staleVersion`, `errors.nameAlreadyUsed`, `errors.invalidName`, `errors.invalidCost`, `errors.unknownTalent`, `errors.talentArchived`, `errors.unknownCardFlag`, `errors.invalidCardFlagName`, `errors.emptyPrerequisiteGroup`, `errors.selfPrerequisite`, `errors.duplicatePrerequisite`, `errors.unknownPrerequisite`, and `errors.prerequisiteLoop`. Each code is also its localization key.
 - Unexpected server failures are logged with their exception and correlation context; responses do not disclose exception messages or stack traces.
 
 ## Compatibility
