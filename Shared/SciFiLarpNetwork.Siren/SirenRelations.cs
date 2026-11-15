@@ -9,4 +9,8 @@ public static class SirenRelations
     public const string CardFlags = "urn:scifilarnetwork:rels:card-flags";
     public const string WithArchived = "urn:scifilarnetwork:rels:with-archived";
     public const string WithoutArchived = "urn:scifilarnetwork:rels:without-archived";
+    public const string Networks = "urn:scifilarnetwork:rels:networks";
+    public const string WithDisabled = "urn:scifilarnetwork:rels:with-disabled";
+    public const string WithoutDisabled = "urn:scifilarnetwork:rels:without-disabled";
+    public const string BackgroundImage = "urn:scifilarnetwork:rels:background-image";
 }

@@ -21,6 +21,13 @@ The backend uses Siren (`application/vnd.siren+json`) for successful API resourc
 
 - Collections that can hide archived entries link to both views: `urn:scifilarnetwork:rels:with-archived` (archived entries included) and `urn:scifilarnetwork:rels:without-archived` (active entries only). Clients follow these links instead of adding query parameters.
 - Catalog relations: `urn:scifilarnetwork:rels:talents`, `urn:scifilarnetwork:rels:skills`, and `urn:scifilarnetwork:rels:card-flags`. The talents navigation link carries the talents relation, and each talent item in a talent collection links to its own skills with the skills relation.
+- Collections that can hide disabled entries link to `urn:scifilarnetwork:rels:with-disabled` and `urn:scifilarnetwork:rels:without-disabled` in the same way.
+- Network relations: `urn:scifilarnetwork:rels:networks` marks the networks navigation link, and `urn:scifilarnetwork:rels:background-image` links a network (and its collection item) to its uploaded background image. A network without that link uses its theme's background image.
+
+## Binary resources
+
+- Images are not Siren resources. A link with a binary relation (such as `background-image`) points to a `GET` endpoint that returns the image with its own media type (`image/png`, `image/jpeg`, or `image/webp`), `X-Content-Type-Options: nosniff`, and long private caching, because an image identifier always names the same bytes. The same authentication and authorization apply as for Siren resources.
+- Uploads are JSON actions: the file travels base64-encoded in a `content` field, and the server detects the format from the bytes rather than trusting a client-supplied name or type.
 
 ## Actions
 
@@ -37,6 +44,7 @@ The backend uses Siren (`application/vnd.siren+json`) for successful API resourc
 - Errors use a Siren entity with `class: ["error"]`, `self` link, and properties `code`, `title`, `detail`, `traceId`, and `status`. Validation errors may include an `errors` object keyed by request field. Clients branch on `code`, not prose.
 - The initial error codes are `errors.validation`, `errors.unauthorized`, `errors.forbidden`, `errors.notFound`, `errors.conflict`, `errors.requestFailed`, `errors.serviceUnavailable`, and `errors.internalServerError`.
 - The talent and skill catalog adds `errors.staleVersion`, `errors.nameAlreadyUsed`, `errors.invalidName`, `errors.invalidCost`, `errors.unknownTalent`, `errors.talentArchived`, `errors.unknownCardFlag`, `errors.invalidCardFlagName`, `errors.emptyPrerequisiteGroup`, `errors.selfPrerequisite`, `errors.duplicatePrerequisite`, `errors.unknownPrerequisite`, and `errors.prerequisiteLoop`. Each code is also its localization key.
+- The network catalog adds `errors.codeAlreadyUsed`, `errors.invalidCode`, `errors.invalidTheme`, `errors.invalidImage`, `errors.imageTooLarge`, `errors.networkDisabled`, and `errors.defaultNetworkCannotBeDisabled`, and reuses `errors.staleVersion`, `errors.nameAlreadyUsed`, and `errors.invalidName`.
 - Unexpected server failures are logged with their exception and correlation context; responses do not disclose exception messages or stack traces.
 
 ## Compatibility

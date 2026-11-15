@@ -33,6 +33,15 @@ public interface IManagementApiClient
         string locale,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Downloads a PNG, JPEG, or WebP image from an advertised link within the configured API origin and path.
+    /// </summary>
+    Task<byte[]> GetImageAsync(
+        string apiBaseUrl,
+        string href,
+        string locale,
+        CancellationToken cancellationToken = default);
+
     Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,
         SirenAction action,

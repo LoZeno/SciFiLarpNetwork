@@ -9,13 +9,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
+using SciFiLarpNetwork.Backend.Application.Networks;
 using SciFiLarpNetwork.Backend.Application.Skills;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CardFlagEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.Networks;
+using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 using SciFiLarpNetwork.Backend.Infrastructure.Skills;
 using SciFiLarpNetwork.Backend.Infrastructure.Skills.SkillDocuments;
@@ -39,6 +43,8 @@ public static class DependencyInjection
         services.AddSingleton<ITalentService, TalentService>();
         services.AddSingleton<ISkillService, SkillService>();
         services.AddSingleton<ICardFlagService, CardFlagService>();
+        services.AddSingleton<INetworkService, NetworkService>();
+        services.AddSingleton<INetworkBackgroundImageService, NetworkBackgroundImageService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -104,6 +110,25 @@ public static class DependencyInjection
                 .UniqueIndex(UniqueIndexType.Computed, skill => skill.NormalizedName);
             options.Schema.For<CardFlagDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, cardFlag => cardFlag.NormalizedName);
+
+            options.Events.AddEventType<NetworkCreated>();
+            options.Events.AddEventType<NetworkDetailsChanged>();
+            options.Events.AddEventType<NetworkBackgroundImageSet>();
+            options.Events.AddEventType<NetworkBackgroundImageRemoved>();
+            options.Events.AddEventType<NetworkEnabled>();
+            options.Events.AddEventType<NetworkDisabled>();
+            options.Events.AddEventType<NetworkMadeDefault>();
+            options.Events.AddEventType<NetworkDefaultCleared>();
+            options.Events.AddEventType<DefaultNetworkChosen>();
+
+            // Network commands decide on these write models (unique names and codes, the single default).
+            options.Projections.Add<NetworkProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<NetworkDefaultProjection>(ProjectionLifecycle.Inline);
+
+            // Two calls create two separate unique indexes; one call with both members would make one composite index.
+            options.Schema.For<NetworkDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, network => network.NormalizedName)
+                .UniqueIndex(UniqueIndexType.Computed, network => network.Code);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();

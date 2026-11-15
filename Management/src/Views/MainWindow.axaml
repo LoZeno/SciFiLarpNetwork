@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="using:SciFiLarpNetwork.Management.ViewModels"
     xmlns:skills="using:SciFiLarpNetwork.Management.Views.Skills"
+    xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -103,6 +104,9 @@
         </ScrollViewer>
         <Panel Margin="28" IsVisible="{Binding IsTalentCatalogOpen}">
           <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
+        </Panel>
+        <Panel Margin="28" IsVisible="{Binding IsNetworkCatalogOpen}">
+          <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
         </Panel>
       </Grid>
     </Grid>

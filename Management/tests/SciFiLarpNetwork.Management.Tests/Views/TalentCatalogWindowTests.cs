@@ -6,6 +6,7 @@ using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.ViewModels.Skills;
 using SciFiLarpNetwork.Management.Views;
@@ -93,6 +94,7 @@ public sealed class TalentCatalogWindowTests
             new NullSettingsStore(),
             new JsonLocalizer(),
             new FakeCatalogDialogs(),
+            new FakeNetworkDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

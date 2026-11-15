@@ -50,7 +50,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return (await query.LoadAsync<SkillDocument>(skillId, cancellationToken))?.ToSummary();
     }
 
-    public async Task<CatalogResult<SkillSummary>> CreateSkillAsync(SkillDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<CatalogResult<SkillSummary>> CreateSkillAsync(SkillDefinition definition,
+        CancellationToken cancellationToken = default)
     {
         if (ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
         {
@@ -59,7 +60,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var skillId = Guid.NewGuid();
         var groups = ToGroups(definition.PrerequisiteGroups);
-        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome and not CatalogOutcome.Succeeded)
+        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(structureOutcome);
         }
@@ -72,7 +74,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         }
 
         var talentIds = definition.TalentIds.Distinct().ToArray();
-        if (await LockAssignableTalentsAsync(session, talentIds, cancellationToken) is var talentOutcome and not CatalogOutcome.Succeeded)
+        if (await LockAssignableTalentsAsync(session, talentIds, cancellationToken) is var talentOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(talentOutcome);
         }
@@ -120,7 +123,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         }
 
         var groups = ToGroups(definition.PrerequisiteGroups);
-        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome and not CatalogOutcome.Succeeded)
+        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(structureOutcome);
         }
@@ -140,7 +144,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var talentIds = definition.TalentIds.Distinct().ToArray();
         var newlyAssignedTalents = talentIds.Except(current.TalentIds).ToArray();
-        if (await LockAssignableTalentsAsync(session, newlyAssignedTalents, cancellationToken) is var talentOutcome and not CatalogOutcome.Succeeded)
+        if (await LockAssignableTalentsAsync(session, newlyAssignedTalents, cancellationToken) is var talentOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(talentOutcome);
         }
@@ -154,7 +159,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var prerequisitesChanged = !SameGroups(current.PrerequisiteGroups, groups);
         if (prerequisitesChanged &&
-            await LockPrerequisiteGraphAsync(session, skillId, groups, now, cancellationToken) is var prerequisiteOutcome and not CatalogOutcome.Succeeded)
+            await LockPrerequisiteGraphAsync(session, skillId, groups, now, cancellationToken) is
+                var prerequisiteOutcome and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(prerequisiteOutcome);
         }
@@ -201,13 +207,16 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return await SaveAsync(session, skillId, cancellationToken);
     }
 
-    public Task<CatalogResult<SkillSummary>> ArchiveSkillAsync(Guid skillId, CancellationToken cancellationToken = default) =>
+    public Task<CatalogResult<SkillSummary>> ArchiveSkillAsync(Guid skillId,
+        CancellationToken cancellationToken = default) =>
         SetArchivedAsync(skillId, archived: true, cancellationToken);
 
-    public Task<CatalogResult<SkillSummary>> UnarchiveSkillAsync(Guid skillId, CancellationToken cancellationToken = default) =>
+    public Task<CatalogResult<SkillSummary>> UnarchiveSkillAsync(Guid skillId,
+        CancellationToken cancellationToken = default) =>
         SetArchivedAsync(skillId, archived: false, cancellationToken);
 
-    private async Task<CatalogResult<SkillSummary>> SetArchivedAsync(Guid skillId, bool archived, CancellationToken cancellationToken)
+    private async Task<CatalogResult<SkillSummary>> SetArchivedAsync(Guid skillId, bool archived,
+        CancellationToken cancellationToken)
     {
         await using var session = sessions.OpenSession();
         var stream = await session.Events.FetchForWriting<SkillDocument>(skillId, cancellationToken);
@@ -263,7 +272,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
     {
         try
         {
-            var stream = await session.Events.FetchForWriting<SkillDocument>(skillId, expectedVersion, cancellationToken);
+            var stream =
+                await session.Events.FetchForWriting<SkillDocument>(skillId, expectedVersion, cancellationToken);
             return stream.Aggregate is null ? (CatalogOutcome.NotFound, null) : (CatalogOutcome.Succeeded, stream);
         }
         catch (ConcurrencyException)
@@ -320,7 +330,9 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         CancellationToken cancellationToken)
     {
         var selected = definition.CardFlagIds.Distinct().ToList();
-        if (selected.Count > 0 && (await session.LoadManyAsync<CardFlagDocument>(cancellationToken, selected.ToArray())).Count != selected.Count)
+        if (selected.Count > 0 &&
+            (await session.LoadManyAsync<CardFlagDocument>(cancellationToken, selected.ToArray())).Count !=
+            selected.Count)
         {
             return (CatalogOutcome.UnknownCardFlag, []);
         }
@@ -343,7 +355,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
             }
 
             var cardFlagId = Guid.NewGuid();
-            session.Events.StartStream<CardFlagDocument>(cardFlagId, new CardFlagDefined(cardFlagId, name.Trim(), normalizedName, now));
+            session.Events.StartStream<CardFlagDocument>(cardFlagId,
+                new CardFlagDefined(cardFlagId, name.Trim(), normalizedName, now));
             selected.Add(cardFlagId);
         }
 
@@ -370,7 +383,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var graph = await session.Events.FetchForWriting<PrerequisiteGraphDocument>(PrerequisiteGraphDocument.StreamId, cancellationToken);
+        var graph = await session.Events.FetchForWriting<PrerequisiteGraphDocument>(PrerequisiteGraphDocument.StreamId,
+            cancellationToken);
         graph.AppendOne(new PrerequisiteGraphChanged(skillId, now));
         var prerequisitesBySkill = new Dictionary<Guid, IReadOnlyList<IReadOnlyList<Guid>>>();
         var directPrerequisites = SkillPrerequisites.ReferencedSkills(groups);
@@ -403,7 +417,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return createsLoop ? CatalogOutcome.PrerequisiteLoop : CatalogOutcome.Succeeded;
     }
 
-    private static async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId, CancellationToken cancellationToken)
+    private static async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId,
+        CancellationToken cancellationToken)
     {
         try
         {

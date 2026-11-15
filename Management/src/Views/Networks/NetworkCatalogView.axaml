@@ -1,0 +1,62 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.Networks.NetworkCatalogView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Networks"
+    x:DataType="vm:NetworkCatalogViewModel">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding NetworksHeading}" />
+      <TextBlock
+          AutomationProperties.LiveSetting="Polite"
+          IsVisible="{Binding HasStatusMessage}"
+          Text="{Binding StatusMessage}"
+          TextWrapping="Wrap" />
+      <TextBlock
+          AutomationProperties.LiveSetting="Polite"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasNoDefaultWarning}"
+          Text="{Binding NoDefaultWarning}"
+          TextWrapping="Wrap" />
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <TextBox
+            Grid.Column="0"
+            AutomationProperties.Name="{Binding SearchLabel}"
+            PlaceholderText="{Binding SearchLabel}"
+            Text="{Binding SearchText, Mode=TwoWay}" />
+        <CheckBox
+            Grid.Column="1"
+            Content="{Binding ShowDisabledLabel}"
+            IsChecked="{Binding ShowDisabled}" />
+      </Grid>
+    </StackPanel>
+    <StackPanel
+        Margin="0,8,0,0"
+        DockPanel.Dock="Bottom"
+        IsVisible="{Binding CanWrite}"
+        Orientation="Horizontal"
+        Spacing="8">
+      <Button Command="{Binding NewNetworkCommand}" Content="{Binding NewLabel}" />
+      <Button Command="{Binding EditNetworkCommand}" Content="{Binding EditLabel}" />
+      <Button Command="{Binding MakeDefaultCommand}" Content="{Binding MakeDefaultLabel}" />
+      <Button Command="{Binding ToggleEnabledCommand}" Content="{Binding ToggleEnabledLabel}" />
+    </StackPanel>
+    <TextBlock
+        Margin="0,8"
+        DockPanel.Dock="Top"
+        IsVisible="{Binding HasNetworksPlaceholder}"
+        Text="{Binding NetworksPlaceholder}"
+        TextWrapping="Wrap" />
+    <ListBox
+        Margin="0,8,0,0"
+        AutomationProperties.Name="{Binding NetworksHeading}"
+        ItemsSource="{Binding Networks}"
+        SelectedItem="{Binding SelectedNetwork, Mode=TwoWay}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:NetworkListItem">
+          <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

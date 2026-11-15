@@ -5,6 +5,7 @@ using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.ViewModels;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
@@ -564,7 +565,7 @@ public sealed class MainWindowViewModelTests
         StubApiClient apiClient,
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
-        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), settings ?? new ManagementSettings());
+        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()
@@ -672,5 +673,12 @@ public sealed class MainWindowViewModelTests
             string locale,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Resource);
+
+        public Task<byte[]> GetImageAsync(
+            string apiBaseUrl,
+            string href,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<byte[]>([]);
     }
 }

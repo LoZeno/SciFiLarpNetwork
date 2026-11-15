@@ -39,7 +39,8 @@ internal sealed class AdministratorAccountService(
         }
 
         await using var session = sessions.OpenSession();
-        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId, cancellationToken);
+        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId,
+            cancellationToken);
         if (actor.Aggregate is not { Role: AdministratorRoles.Administrator })
         {
             return new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
@@ -65,7 +66,8 @@ internal sealed class AdministratorAccountService(
                 passwordHasher.HashPassword(_passwordSubject, password),
                 role,
                 now));
-        session.StartAuditStream("administrator", actorAccountId, accountId, "AdministratorAccountCreated", "none", role, now);
+        session.StartAuditStream("administrator", actorAccountId, accountId, "AdministratorAccountCreated", "none",
+            role, now);
 
         try
         {
@@ -95,7 +97,8 @@ internal sealed class AdministratorAccountService(
         }
 
         await using var session = sessions.OpenSession();
-        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId, cancellationToken);
+        var actor = await session.Events.FetchForWriting<AdministratorAccountDocument>(actorAccountId,
+            cancellationToken);
         if (actor.Aggregate is not { Role: AdministratorRoles.Administrator })
         {
             return AdministratorOperationResult.ActorNoLongerAuthorized;
@@ -126,7 +129,9 @@ internal sealed class AdministratorAccountService(
         // cannot together remove the last administrator. The actor's own stream gets an authority event (unless it
         // is the target), so a concurrent demotion of the actor conflicts too.
         var now = timeProvider.GetUtcNow();
-        var roster = await session.Events.FetchForWriting<AdministratorRosterDocument>(AdministratorRosterDocument.StreamId, cancellationToken);
+        var roster =
+            await session.Events.FetchForWriting<AdministratorRosterDocument>(AdministratorRosterDocument.StreamId,
+                cancellationToken);
         roster.AppendOne(new AdministratorRosterChanged(actorAccountId, targetAccountId, now));
         if (actor != target)
         {
@@ -134,7 +139,8 @@ internal sealed class AdministratorAccountService(
         }
 
         target.AppendOne(new AccountRoleChanged(targetAccountId, previousRole, role, actorAccountId, now));
-        session.StartAuditStream("administrator", actorAccountId, targetAccountId, "AdministratorRoleChanged", previousRole, role, now);
+        session.StartAuditStream("administrator", actorAccountId, targetAccountId, "AdministratorRoleChanged",
+            previousRole, role, now);
 
         try
         {
