@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SciFiLarpNetwork.Backend.Api.Skills;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Localization.Text;
 using SciFiLarpNetwork.Common.Siren;
@@ -42,6 +43,10 @@ public sealed class AdministratorAccountsController(
                     StatusCodes.Status409Conflict,
                     ApiErrorCodes.Conflict,
                     ApiErrorCodes.Conflict),
+                AdministratorOperationResult.ConcurrentChange => new ApiException(
+                    StatusCodes.Status409Conflict,
+                    CatalogErrors.StaleVersion,
+                    CatalogErrors.StaleVersion),
                 AdministratorOperationResult.InvalidGrant => new ApiException(
                     StatusCodes.Status400BadRequest,
                     ApiErrorCodes.Validation,
@@ -126,6 +131,10 @@ public sealed class AdministratorAccountsController(
                     StatusCodes.Status409Conflict,
                     ApiErrorCodes.Conflict,
                     ApiErrorCodes.Conflict),
+                AdministratorOperationResult.ConcurrentChange => new ApiException(
+                    StatusCodes.Status409Conflict,
+                    CatalogErrors.StaleVersion,
+                    CatalogErrors.StaleVersion),
                 AdministratorOperationResult.AccountNotFound => new ApiException(
                     StatusCodes.Status404NotFound,
                     ApiErrorCodes.NotFound,

@@ -152,15 +152,19 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
         CancellationToken cancellationToken = default)
     {
         await using var session = sessions.OpenSession();
+
+        // Take the network-default stream before reading which network is the default: a default change committed
+        // before this fetch is then visible to the query below, and one committed after it fails this command's
+        // version check on that stream.
+        var defaultStream =
+            await session.Events.FetchForWriting<NetworkDefaultDocument>(NetworkDefaultDocument.StreamId,
+                cancellationToken);
         var previousDefaultIds = await session.Query<NetworkDocument>()
             .Where(network => network.IsDefault && network.Id != networkId)
             .Select(network => network.Id)
             .ToListAsync(cancellationToken);
         Guid[] streamIds = [NetworkDefaultDocument.StreamId, networkId, .. previousDefaultIds];
         var streams = await session.Events.FetchManyForWriting<NetworkDocument>(streamIds[1..], cancellationToken);
-        var defaultStream =
-            await session.Events.FetchForWriting<NetworkDefaultDocument>(NetworkDefaultDocument.StreamId,
-                cancellationToken);
         var target = streams[0];
         switch (target.Aggregate)
         {

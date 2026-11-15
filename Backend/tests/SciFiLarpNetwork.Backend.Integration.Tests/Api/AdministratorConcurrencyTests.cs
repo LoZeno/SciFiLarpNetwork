@@ -72,6 +72,39 @@ public sealed class AdministratorConcurrencyTests : IAsyncLifetime
         Assert.Equal((AdministratorOperationResult.Succeeded, AdministratorOperationResult.Succeeded), results);
     }
 
+    [Fact]
+    public async Task ALostRoleChangeRaceIsReportedAsAConcurrentChange()
+    {
+        var (first, second) = await TwoAdministratorsAsync();
+        var readerOne = await CreateAccountAsync(first, "reader-one", AdministratorRoles.Reader);
+        var readerTwo = await CreateAccountAsync(first, "reader-two", AdministratorRoles.Reader);
+
+        var results = await OverlapAsync(
+            () => Accounts.ChangeRoleAsync(first, readerOne, AdministratorRoles.Administrator, TestContext.Current.CancellationToken),
+            () => Accounts.ChangeRoleAsync(second, readerTwo, AdministratorRoles.Administrator, TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            [AdministratorOperationResult.Succeeded, AdministratorOperationResult.ConcurrentChange],
+            new[] { results.First, results.Second }.Order());
+    }
+
+    [Fact]
+    public async Task ALostAccountCreationRaceIsReportedAsAConcurrentChange()
+    {
+        var (first, _) = await TwoAdministratorsAsync();
+
+        var results = await OverlapAsync(
+            async () => (await Accounts.CreateAccountAsync(first, "reader-one", Password, AdministratorRoles.Reader, TestContext.Current.CancellationToken)).Result,
+            async () => (await Accounts.CreateAccountAsync(first, "reader-two", Password, AdministratorRoles.Reader, TestContext.Current.CancellationToken)).Result);
+
+        Assert.Equal(
+            [AdministratorOperationResult.Succeeded, AdministratorOperationResult.ConcurrentChange],
+            new[] { results.First, results.Second }.Order());
+    }
+
+    private async Task<Guid> CreateAccountAsync(Guid actor, string userName, string role) =>
+        (await Accounts.CreateAccountAsync(actor, userName, Password, role, TestContext.Current.CancellationToken)).Account!.AccountId;
+
     private async Task<(T First, T Second)> OverlapAsync<T>(Func<Task<T>> first, Func<Task<T>> second)
     {
         using var overlap = new Barrier(2);

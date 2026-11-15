@@ -400,6 +400,9 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
                     return CatalogOutcome.UnknownPrerequisite;
                 }
 
+                // A second guard: it rejects a prerequisite change committed before this save, even by a future
+                // writer that forgets to append to the prerequisite-graph stream.
+                stream.AlwaysEnforceConsistency = true;
                 prerequisitesBySkill[frontier[index]] = stream.Aggregate?.PrerequisiteGroups ?? [];
             }
 

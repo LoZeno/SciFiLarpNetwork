@@ -75,7 +75,7 @@ internal sealed class AdministratorAccountService(
                 ? new AdministratorAccountCreationResult(
                     AdministratorOperationResult.Succeeded,
                     new AdministratorSummary(accountId, userName.Trim(), role, now))
-                : new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
+                : new AdministratorAccountCreationResult(AdministratorOperationResult.ConcurrentChange, null);
         }
         catch (DocumentAlreadyExistsException)
         {
@@ -146,12 +146,12 @@ internal sealed class AdministratorAccountService(
         {
             return await session.TrySaveChangesAsync(cancellationToken)
                 ? AdministratorOperationResult.Succeeded
-                : AdministratorOperationResult.ActorNoLongerAuthorized;
+                : AdministratorOperationResult.ConcurrentChange;
         }
         catch (Marten.Exceptions.ExistingStreamIdCollisionException)
         {
             // Two first-ever role changes both started the roster stream; the later one lost.
-            return AdministratorOperationResult.ActorNoLongerAuthorized;
+            return AdministratorOperationResult.ConcurrentChange;
         }
     }
 
