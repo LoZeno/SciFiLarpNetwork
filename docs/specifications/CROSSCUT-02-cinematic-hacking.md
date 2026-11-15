@@ -18,6 +18,8 @@ The reusable React control accepts challenge state and callbacks for attempts, h
 
 ## Local demonstration profile
 
+> **Superseded in part:** the demonstration parameters below (difficulty-only hit formula, minimum hits, four penalties rotating on progress changes, and a fixed 60-second duration) are replaced by [CROSSCUT-04](CROSSCUT-04-hacking-simulation-rules-update.md) and the rules in [SPEC-26](SPEC-26-hacking-game-settings.md). The page remains local-only.
+
 - Provide the unlinked, direct-route-only `/theatrical-hacking-test` page. It lets a tester set difficulty (1–10), minimum hits (default 1), and attacker hacking level, then starts a 60-second **local-only** simulation.
 - The demo uses difficulty itself as `baseHits(difficulty)` and calculates:
 
