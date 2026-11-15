@@ -57,6 +57,8 @@ public static class DependencyInjection
             options.Events.AddEventType<SessionCreated>();
             options.Events.AddEventType<SessionRevoked>();
             options.Events.AddEventType<AuditEventLogged>();
+            options.Events.AddEventType<AccountAuthorityUsed>();
+            options.Events.AddEventType<AdministratorRosterChanged>();
 
             // Administrator accounts, sessions and grants are write models: sign-in, session
             // validation and grant checks must see every committed event immediately. Inline
@@ -66,6 +68,7 @@ public static class DependencyInjection
             options.Projections.Add<AdministratorSessionProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<AdministratorGrantProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<AdministratorAuditProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<AdministratorRosterProjection>(ProjectionLifecycle.Inline);
 
             options.Schema.For<AdministratorAccountDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, account => account.NormalizedUserName);
@@ -86,12 +89,14 @@ public static class DependencyInjection
             options.Events.AddEventType<SkillArchived>();
             options.Events.AddEventType<SkillUnarchived>();
             options.Events.AddEventType<CardFlagDefined>();
+            options.Events.AddEventType<PrerequisiteGraphChanged>();
 
             // Skill commands decide on these write models (unique names, archived talents, prerequisite loops),
             // so they are updated in the same transaction as the events.
             options.Projections.Add<TalentProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<SkillProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<CardFlagProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<PrerequisiteGraphProjection>(ProjectionLifecycle.Inline);
 
             options.Schema.For<TalentDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, talent => talent.NormalizedName);

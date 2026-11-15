@@ -369,25 +369,56 @@ public sealed class SkillServiceTests : IAsyncLifetime
     {
         var first = await CreateSkillAsync(Definition("Hacking I"));
         var second = await CreateSkillAsync(Definition("Hacking II"));
+        using var overlap = new Barrier(2);
+        _factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
-            Skills.UpdateSkillAsync(
+            Task.Run(() => Skills.UpdateSkillAsync(
                 first.SkillId,
                 first.Version,
                 Definition("Hacking I") with { PrerequisiteGroups = [[second.SkillId]] },
-                TestContext.Current.CancellationToken),
-            Skills.UpdateSkillAsync(
+                TestContext.Current.CancellationToken)),
+            Task.Run(() => Skills.UpdateSkillAsync(
                 second.SkillId,
                 second.Version,
                 Definition("Hacking II") with { PrerequisiteGroups = [[first.SkillId]] },
-                TestContext.Current.CancellationToken));
+                TestContext.Current.CancellationToken)));
+        _factory.Clock.ReadBarrier = null;
+
+        Assert.Equal(["Rejected", "Succeeded"], results.Select(result => LoopRaceOutcome(result.Outcome)).Order());
+    }
+
+    [Fact]
+    public async Task ParallelLoopClosingEditsAfterEarlierPrerequisiteChangesLetOnlyOneSucceed()
+    {
+        var first = await CreateSkillAsync(Definition("Hacking I"));
+        var second = await CreateSkillAsync(Definition("Hacking II"));
+        var tinkering = await CreateSkillAsync(Definition("Tinkering"));
+        var third = (await Skills.UpdateSkillAsync(
+            first.SkillId, first.Version, Definition("Hacking I") with { PrerequisiteGroups = [[tinkering.SkillId]] },
+            TestContext.Current.CancellationToken)).Value!;
+        using var overlap = new Barrier(2);
+        _factory.Clock.ReadBarrier = overlap;
+
+        var results = await Task.WhenAll(
+            Task.Run(() => Skills.UpdateSkillAsync(
+                third.SkillId,
+                third.Version,
+                Definition("Hacking I") with { PrerequisiteGroups = [[second.SkillId]] },
+                TestContext.Current.CancellationToken)),
+            Task.Run(() => Skills.UpdateSkillAsync(
+                second.SkillId,
+                second.Version,
+                Definition("Hacking II") with { PrerequisiteGroups = [[first.SkillId]] },
+                TestContext.Current.CancellationToken)));
+        _factory.Clock.ReadBarrier = null;
 
         Assert.Equal(["Rejected", "Succeeded"], results.Select(result => LoopRaceOutcome(result.Outcome)).Order());
     }
 
     /// <summary>
     /// A loop edit that loses the race is rejected either by validation (it saw the other edit) or by
-    /// Marten's consistency check on the prerequisite streams it read (it did not).
+    /// the version check on the shared prerequisite-graph stream (it did not).
     /// </summary>
     private static string LoopRaceOutcome(CatalogOutcome outcome) =>
         outcome is CatalogOutcome.PrerequisiteLoop or CatalogOutcome.StaleVersion ? "Rejected" : outcome.ToString();

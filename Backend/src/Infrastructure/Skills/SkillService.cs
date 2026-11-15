@@ -13,8 +13,9 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.Skills;
 /// <summary>
 /// Skill commands follow Marten's command handler workflow: one session, <c>FetchForWriting</c> on every stream
 /// the decision depends on, and one <c>SaveChangesAsync</c>. Streams that are read but not appended to are
-/// marked <c>AlwaysEnforceConsistency</c>, so a concurrent change to them (for example archiving a talent, or
-/// another edit that would close a prerequisite loop) rejects the commit instead of being overlooked.
+/// marked <c>AlwaysEnforceConsistency</c>, so a change committed to them before this command saves rejects the
+/// commit. That check cannot see a change that commits at the same moment, so prerequisite changes are also
+/// serialized through the single prerequisite-graph stream.
 /// </summary>
 internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvider timeProvider) : ISkillService
 {
@@ -153,7 +154,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var prerequisitesChanged = !SameGroups(current.PrerequisiteGroups, groups);
         if (prerequisitesChanged &&
-            await LockPrerequisiteGraphAsync(session, skillId, groups, cancellationToken) is var prerequisiteOutcome and not CatalogOutcome.Succeeded)
+            await LockPrerequisiteGraphAsync(session, skillId, groups, now, cancellationToken) is var prerequisiteOutcome and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(prerequisiteOutcome);
         }
@@ -357,16 +358,20 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         (await session.LoadManyAsync<SkillDocument>(cancellationToken, skillIds.ToArray())).Count == skillIds.Count;
 
     /// <summary>
-    /// Loads, for writing, every skill reachable from the requested prerequisites and checks that the edited skill is
-    /// not among them. Each loaded stream enforces consistency, so a concurrent prerequisite change anywhere in the
-    /// graph that was read rejects this commit.
+    /// Loads every skill reachable from the requested prerequisites and checks that the edited skill is not among
+    /// them. It also appends to the single prerequisite-graph stream: concurrent prerequisite changes both append
+    /// there, so the stream version check rejects the later one. Checking only the versions of the streams read is
+    /// not enough, because two overlapping commits each check before the other has committed.
     /// </summary>
     private static async Task<CatalogOutcome> LockPrerequisiteGraphAsync(
         IDocumentSession session,
         Guid skillId,
         Guid[][] groups,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        var graph = await session.Events.FetchForWriting<PrerequisiteGraphDocument>(PrerequisiteGraphDocument.StreamId, cancellationToken);
+        graph.AppendOne(new PrerequisiteGraphChanged(skillId, now));
         var prerequisitesBySkill = new Dictionary<Guid, IReadOnlyList<IReadOnlyList<Guid>>>();
         var directPrerequisites = SkillPrerequisites.ReferencedSkills(groups);
         var frontier = directPrerequisites.Where(id => id != skillId).ToArray();
@@ -381,7 +386,6 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
                     return CatalogOutcome.UnknownPrerequisite;
                 }
 
-                stream.AlwaysEnforceConsistency = true;
                 prerequisitesBySkill[frontier[index]] = stream.Aggregate?.PrerequisiteGroups ?? [];
             }
 
@@ -407,6 +411,11 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
             {
                 return CatalogResult<SkillSummary>.Failure(CatalogOutcome.StaleVersion);
             }
+        }
+        catch (Marten.Exceptions.ExistingStreamIdCollisionException)
+        {
+            // Two first-ever prerequisite changes both started the prerequisite-graph stream; the later one lost.
+            return CatalogResult<SkillSummary>.Failure(CatalogOutcome.StaleVersion);
         }
         catch (DocumentAlreadyExistsException)
         {

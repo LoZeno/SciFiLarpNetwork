@@ -45,17 +45,17 @@ internal sealed class AdministratorAccountService(
             return new AdministratorAccountCreationResult(AdministratorOperationResult.ActorNoLongerAuthorized, null);
         }
 
-        // Guards against the actor being demoted concurrently even though nothing is appended
-        // to the actor's own stream (Marten "Enforcing Consistency Without Appending Events").
-        actor.AlwaysEnforceConsistency = true;
-
         if (await session.FindAccountByUserNameAsync(userName, cancellationToken) is not null)
         {
             return new AdministratorAccountCreationResult(AdministratorOperationResult.AccountNameAlreadyUsed, null);
         }
 
+        // Appending to the actor's own stream makes a concurrent demotion of the actor (which appends there too)
+        // conflict with this command. Only checking the actor's version cannot see a demotion that commits at the
+        // same moment.
         var accountId = Guid.NewGuid();
         var now = timeProvider.GetUtcNow();
+        actor.AppendOne(new AccountAuthorityUsed(actorAccountId, "AdministratorAccountCreated", now));
         session.Events.StartStream<AdministratorAccountDocument>(
             accountId,
             new AccountCreated(
@@ -122,14 +122,31 @@ internal sealed class AdministratorAccountService(
             return AdministratorOperationResult.LastAdministrator;
         }
 
-        actor.AlwaysEnforceConsistency = true;
+        // Every role change appends to the single roster stream, so concurrent role changes conflict there and
+        // cannot together remove the last administrator. The actor's own stream gets an authority event (unless it
+        // is the target), so a concurrent demotion of the actor conflicts too.
         var now = timeProvider.GetUtcNow();
+        var roster = await session.Events.FetchForWriting<AdministratorRosterDocument>(AdministratorRosterDocument.StreamId, cancellationToken);
+        roster.AppendOne(new AdministratorRosterChanged(actorAccountId, targetAccountId, now));
+        if (actor != target)
+        {
+            actor.AppendOne(new AccountAuthorityUsed(actorAccountId, "AdministratorRoleChanged", now));
+        }
+
         target.AppendOne(new AccountRoleChanged(targetAccountId, previousRole, role, actorAccountId, now));
         session.StartAuditStream("administrator", actorAccountId, targetAccountId, "AdministratorRoleChanged", previousRole, role, now);
 
-        return await session.TrySaveChangesAsync(cancellationToken)
-            ? AdministratorOperationResult.Succeeded
-            : AdministratorOperationResult.ActorNoLongerAuthorized;
+        try
+        {
+            return await session.TrySaveChangesAsync(cancellationToken)
+                ? AdministratorOperationResult.Succeeded
+                : AdministratorOperationResult.ActorNoLongerAuthorized;
+        }
+        catch (Marten.Exceptions.ExistingStreamIdCollisionException)
+        {
+            // Two first-ever role changes both started the roster stream; the later one lost.
+            return AdministratorOperationResult.ActorNoLongerAuthorized;
+        }
     }
 
     private static bool IsKnownRole(string role) =>
