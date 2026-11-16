@@ -14,28 +14,19 @@ namespace SciFiLarpNetwork.Management.ViewModels.Skills;
 /// The talents and skills screen. It follows only the links and actions the API advertises, so readers see
 /// no change commands and the server still authorizes and validates every change.
 /// </summary>
-public sealed class TalentCatalogViewModel : ObservableViewModel
+public sealed class TalentCatalogViewModel : ScreenViewModel
 {
-    private const string StaleVersionCode = "errors.staleVersion";
-    private readonly IManagementApiClient _apiClient;
-    private readonly IManagementLocalizer _localizer;
     private readonly ICatalogDialogService _dialogs;
-    private readonly string _apiBaseUrl;
     private readonly string _talentsHref;
     private readonly AsyncCommand _loadSkillsCommand;
     private readonly AsyncCommand _reloadCommand;
-    private string _locale;
     private SirenEntity? _talentCollection;
     private TalentListItem? _selectedTalent;
     private SkillListItem? _selectedSkill;
     private bool _showArchivedTalents;
     private bool _showArchivedSkills;
-    private bool _isBusy;
-    private bool _canWrite;
-    private string? _statusMessage;
     private int _skillsLoadGeneration;
     private int _talentsLoadGeneration;
-    private int _runningOperations;
 
     public TalentCatalogViewModel(
         IManagementApiClient apiClient,
@@ -44,12 +35,9 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         string apiBaseUrl,
         string locale,
         string talentsHref)
+        : base(apiClient, localizer, apiBaseUrl, locale)
     {
-        _apiClient = apiClient;
-        _localizer = localizer;
         _dialogs = dialogs;
-        _apiBaseUrl = apiBaseUrl;
-        _locale = locale;
         _talentsHref = talentsHref;
         _loadSkillsCommand = new AsyncCommand(() => RunAsync(LoadSkillsCoreAsync), HandleUnexpectedFailure);
         _reloadCommand = new AsyncCommand(LoadAsync, HandleUnexpectedFailure);
@@ -60,9 +48,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         EditSkillCommand = new AsyncCommand(() => RunAsync(EditSkillAsync), HandleUnexpectedFailure, CanChangeSelectedSkill);
         ToggleSkillArchiveCommand = new AsyncCommand(() => RunAsync(ToggleSkillArchiveAsync), HandleUnexpectedFailure, CanChangeSelectedSkill);
     }
-
-    /// <summary>Raised when the API rejects the session, so the shell can clear its signed-in state.</summary>
-    public event EventHandler? SessionExpired;
 
     public AsyncCommand NewTalentCommand { get; }
 
@@ -79,23 +64,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
     public ObservableCollection<TalentListItem> Talents { get; } = [];
 
     public ObservableCollection<SkillListItem> Skills { get; } = [];
-
-    public string Locale
-    {
-        get => _locale;
-        set
-        {
-            if (_locale == value)
-            {
-                return;
-            }
-
-            _locale = value;
-            OnPropertyChanged();
-            OnLabelsChanged();
-            _reloadCommand.Execute(null);
-        }
-    }
 
     public TalentListItem? SelectedTalent
     {
@@ -163,59 +131,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         }
     }
 
-    public bool CanWrite
-    {
-        get => _canWrite;
-        private set
-        {
-            if (_canWrite == value)
-            {
-                return;
-            }
-
-            _canWrite = value;
-            OnPropertyChanged();
-            NotifyCommandsChanged();
-        }
-    }
-
-    public bool IsBusy
-    {
-        get => _isBusy;
-        private set
-        {
-            if (_isBusy == value)
-            {
-                return;
-            }
-
-            _isBusy = value;
-            OnPropertyChanged();
-            NotifyCommandsChanged();
-        }
-    }
-
-    public string? StatusMessage
-    {
-        get => _statusMessage;
-        private set
-        {
-            if (_statusMessage == value)
-            {
-                return;
-            }
-
-            _statusMessage = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(HasStatusMessage));
-        }
-    }
-
-    public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
-
-    /// <summary>Whether the talent list has been loaded at least once.</summary>
-    public bool IsLoaded { get; private set; }
-
     public string TalentsHeading => Translate("skills.talents");
 
     public string SkillsHeading => Translate("skills.skills");
@@ -240,7 +155,13 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
 
     public bool HasSkillsPlaceholder => SkillsPlaceholder is not null;
 
-    public Task LoadAsync() => RunAsync(LoadTalentsCoreAsync);
+    public override Task LoadAsync() => RunAsync(LoadTalentsCoreAsync);
+
+    private protected override void OnLocaleChanged()
+    {
+        OnLabelsChanged();
+        _reloadCommand.Execute(null);
+    }
 
     private async Task LoadTalentsCoreAsync()
     {
@@ -289,7 +210,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
     {
         var action = _talentCollection?.FindAction("create-talent") ?? throw MissingAction();
         var editor = new TalentEditorViewModel(
-            _localizer,
+            Localizer,
             Locale,
             "skills.newTalent",
             editor => SubmitEditorAsync(editor, () => SubmitAsync(action, editor.CreateRequestBody(null)), null));
@@ -305,7 +226,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         var talent = SirenProperties.Read<TalentProperties>(resource.Properties);
         var version = talent.Version;
         var editor = new TalentEditorViewModel(
-            _localizer,
+            Localizer,
             Locale,
             "skills.editTalent",
             editor => SubmitEditorAsync(
@@ -328,7 +249,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         var choices = await LoadSkillChoicesAsync(null, defaultTalents);
         var action = choices.AllSkills.FindAction("create-skill") ?? throw MissingAction();
         var editor = new SkillEditorViewModel(
-            _localizer,
+            Localizer,
             Locale,
             "skills.newSkill",
             choices.Choices,
@@ -346,7 +267,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         var version = skill.Version;
         var choices = await LoadSkillChoicesAsync(skill, skill.TalentIds);
         var editor = new SkillEditorViewModel(
-            _localizer,
+            Localizer,
             Locale,
             "skills.editSkill",
             choices.Choices,
@@ -473,42 +394,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
         }
     }
 
-    private async Task<bool> SubmitEditorAsync(
-        CatalogEditorViewModel editor,
-        Func<Task> submit,
-        Func<Task>? reloadAfterConflict)
-    {
-        try
-        {
-            await submit();
-            return true;
-        }
-        catch (Exception failure) when (IsExpectedFailure(failure))
-        {
-            var message = Report(failure);
-            if (failure is ManagementApiException { ErrorCode: StaleVersionCode } && reloadAfterConflict is not null)
-            {
-                message = await TryReloadAfterConflictAsync(reloadAfterConflict) ?? message;
-            }
-
-            editor.ErrorMessage = message;
-            return false;
-        }
-    }
-
-    private async Task<string?> TryReloadAfterConflictAsync(Func<Task> reload)
-    {
-        try
-        {
-            await reload();
-            return null;
-        }
-        catch (Exception failure) when (IsExpectedFailure(failure))
-        {
-            return Report(failure);
-        }
-    }
-
     private async Task ReloadAfterSaveAsync(CatalogEditorViewModel editor)
     {
         if (!editor.IsSaved)
@@ -527,12 +412,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
             ? await GetAsync(collection.FindLinkHref(SirenRelations.WithArchived) ?? throw MissingAction())
             : collection;
     }
-
-    private Task<SirenEntity> GetAsync(string href) =>
-        _apiClient.GetResourceAsync(_apiBaseUrl, href, Locale);
-
-    private Task<SirenEntity> SubmitAsync(SirenAction action, JsonElement? body) =>
-        _apiClient.SubmitActionAsync(_apiBaseUrl, action, body, Locale);
 
     private TalentListItem ToTalentItem(SirenSubEntity entity)
     {
@@ -560,15 +439,6 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
     private string DisplayName(string name, bool isArchived) =>
         isArchived ? $"{name} {Translate("skills.archivedTag")}" : name;
 
-    private static void ReplaceAll<T>(ObservableCollection<T> collection, IEnumerable<T> items)
-    {
-        collection.Clear();
-        foreach (var item in items)
-        {
-            collection.Add(item);
-        }
-    }
-
     private void SetSelectedTalent(TalentListItem? talent)
     {
         _selectedTalent = talent;
@@ -584,64 +454,7 @@ public sealed class TalentCatalogViewModel : ObservableViewModel
 
     private bool CanChangeSelectedSkill() => CanWrite && !IsBusy && SelectedSkill is not null;
 
-    private async Task RunAsync(Func<Task> operation)
-    {
-        _runningOperations++;
-        IsBusy = true;
-        StatusMessage = null;
-        try
-        {
-            await operation();
-        }
-        catch (Exception failure) when (IsExpectedFailure(failure))
-        {
-            StatusMessage = Report(failure);
-        }
-        finally
-        {
-            _runningOperations--;
-            IsBusy = _runningOperations > 0;
-        }
-    }
-
-    private static bool IsExpectedFailure(Exception failure) =>
-        failure is ManagementApiException or HttpRequestException or JsonException or InvalidOperationException
-            or UriFormatException;
-
-    private string Report(Exception failure)
-    {
-        switch (failure)
-        {
-            case ManagementApiException apiFailure:
-                if (apiFailure.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    SessionExpired?.Invoke(this, EventArgs.Empty);
-                }
-
-                return _localizer.TranslateApiError(apiFailure.ErrorCode, Locale);
-            case HttpRequestException:
-                return Translate("app.connectionError");
-            case UriFormatException:
-                return Translate("validation.invalid");
-            case InvalidOperationException:
-                return Translate("actions.unsupported");
-            default:
-                return Translate("common.error");
-        }
-    }
-
-    private static InvalidOperationException MissingAction() =>
-        new("The API did not advertise the link or action this screen needs.");
-
-    private void HandleUnexpectedFailure(Exception exception)
-    {
-        Trace.TraceError("Unhandled talent catalog exception: {0}", exception);
-        StatusMessage = Translate("common.error");
-    }
-
-    private string Translate(string key) => _localizer.Translate(key, Locale);
-
-    private void NotifyCommandsChanged()
+    private protected override void NotifyCommandsChanged()
     {
         NewTalentCommand.NotifyCanExecuteChanged();
         EditTalentCommand.NotifyCanExecuteChanged();

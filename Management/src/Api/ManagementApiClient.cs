@@ -12,6 +12,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly MediaTypeWithQualityHeaderValue SirenMediaType =
         new(SirenMediaTypes.Json);
+    private static readonly string[] ImageMediaTypes = ["image/png", "image/jpeg", "image/webp"];
     private string? _sessionToken;
     private Uri? _sessionApiRoot;
     private Uri? _sessionRenewTarget;
@@ -150,6 +151,37 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         return GetEntityAsync(target, locale, cancellationToken);
     }
 
+    public async Task<byte[]> GetImageAsync(
+        string apiBaseUrl,
+        string href,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, href, out var target))
+        {
+            throw new InvalidOperationException("The image target is outside the configured API origin or path.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, target);
+        foreach (var mediaType in ImageMediaTypes)
+        {
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
+        }
+
+        request.Headers.AcceptLanguage.ParseAdd(locale);
+        AddSessionAuthorization(request);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        if (response.Content.Headers.ContentType?.MediaType is not { } contentType ||
+            !ImageMediaTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The API response was not a supported image type.");
+        }
+
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
     public async Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,
         SirenAction action,
@@ -225,16 +257,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         HttpResponseMessage response,
         CancellationToken cancellationToken)
     {
-        if (!response.IsSuccessStatusCode)
-        {
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                ClearSession();
-            }
-
-            var errorCode = await ReadErrorCodeAsync(response, cancellationToken);
-            throw new ManagementApiException(errorCode, response.StatusCode);
-        }
+        await EnsureSuccessAsync(response, cancellationToken);
 
         if (response.Content.Headers.ContentType?.MediaType is not { } mediaType ||
             !IsJsonMediaType(mediaType))
@@ -248,6 +271,22 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
                 JsonOptions,
                 cancellationToken)
             ?? throw new JsonException("The API returned an empty Siren resource.");
+    }
+
+    private async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            ClearSession();
+        }
+
+        var errorCode = await ReadErrorCodeAsync(response, cancellationToken);
+        throw new ManagementApiException(errorCode, response.StatusCode);
     }
 
     private static async Task<string> ReadErrorCodeAsync(

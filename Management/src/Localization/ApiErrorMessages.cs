@@ -30,7 +30,16 @@ public static class ApiErrorMessages
         "errors.selfPrerequisite",
         "errors.duplicatePrerequisite",
         "errors.unknownPrerequisite",
-        "errors.prerequisiteLoop"
+        "errors.prerequisiteLoop",
+        "errors.concurrentChange",
+        "errors.codeAlreadyUsed",
+        "errors.invalidCode",
+        "errors.invalidTheme",
+        "errors.invalidImage",
+        "errors.imageTooLarge",
+        "errors.imageDimensionsTooLarge",
+        "errors.networkDisabled",
+        "errors.defaultNetworkCannotBeDisabled"
     ];
 
     extension(IManagementLocalizer localizer)

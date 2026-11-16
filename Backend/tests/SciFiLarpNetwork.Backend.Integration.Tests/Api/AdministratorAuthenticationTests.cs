@@ -895,7 +895,21 @@ public sealed class AdjustableTimeProvider : TimeProvider
 {
     private TimeSpan _offset;
 
-    public override DateTimeOffset GetUtcNow() => base.GetUtcNow() + _offset;
+    /// <summary>
+    /// When set, every read of the clock waits until all participants have read it, so commands that read the
+    /// clock between loading and saving are forced to overlap.
+    /// </summary>
+    public Barrier? ReadBarrier { get; set; }
+
+    public override DateTimeOffset GetUtcNow()
+    {
+        if (ReadBarrier is { } barrier && !barrier.SignalAndWait(TimeSpan.FromSeconds(10)))
+        {
+            throw new TimeoutException("Not every participant read the clock.");
+        }
+
+        return base.GetUtcNow() + _offset;
+    }
 
     public void Advance(TimeSpan amount) => _offset += amount;
 }

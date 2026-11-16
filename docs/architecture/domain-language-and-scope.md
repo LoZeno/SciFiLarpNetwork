@@ -14,7 +14,7 @@ The software is a configurable in-game information network and event-management 
 | **Player** | A real participant or account holder. Keep separate from their fictional roles. |
 | **Character** | A fictional persona controlled by a player. A player may have multiple characters if the campaign permits. |
 | **Account** | An authenticated application identity. It is not automatically the same as a character or an in-game network account. |
-| **Network** | A configurable in-game information service or communication environment. Do not use a fixed franchise/faction as its definition. |
+| **Network** | A configurable in-game information service or communication environment, with a fixed code, a product-defined theme, and an optional background image. Do not use a fixed franchise/faction as its definition. |
 | **Group** | A configurable in-game organization or affiliation. Use “faction” only as setting-configured display terminology, not a universal domain primitive. |
 | **Event** | A scheduled LARP gathering, with configurable dates/days and character participation. |
 | **Skill** | A configurable character capability used by game rules. Avoid magic numeric skill IDs in user-facing terminology or feature logic. |

@@ -12,6 +12,7 @@ public partial class AdministratorAccountProjection : SingleStreamProjection<Adm
         IncludeType<AccountCreated>();
         IncludeType<AccountPasswordChanged>();
         IncludeType<AccountRoleChanged>();
+        IncludeType<AccountAuthorityUsed>();
     }
 
     public override AdministratorAccountDocument? Evolve(

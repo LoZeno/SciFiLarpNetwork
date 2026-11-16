@@ -7,6 +7,7 @@ using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.ViewModels.Networks;
 using SciFiLarpNetwork.Management.ViewModels.Skills;
 
 namespace SciFiLarpNetwork.Management.ViewModels;
@@ -17,6 +18,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IManagementSettingsStore _settingsStore;
     private readonly IManagementLocalizer _localizer;
     private readonly ICatalogDialogService _catalogDialogs;
+    private readonly INetworkDialogService _networkDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -27,7 +29,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string _password = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
-    private TalentCatalogViewModel? _talentCatalog;
+    private IManagementScreen? _currentScreen;
     private int _openGeneration;
 
     public MainWindowViewModel(
@@ -35,6 +37,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         IManagementSettingsStore settingsStore,
         IManagementLocalizer localizer,
         ICatalogDialogService catalogDialogs,
+        INetworkDialogService networkDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
@@ -42,6 +45,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _settingsStore = settingsStore;
         _localizer = localizer;
         _catalogDialogs = catalogDialogs;
+        _networkDialogs = networkDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -96,7 +100,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged();
             OnPropertyChanged(nameof(LocaleIndex));
             OnLocalizedPropertiesChanged();
-            TalentCatalog?.Locale = normalized;
+            CurrentScreen?.Locale = normalized;
             SaveSettings();
         }
     }
@@ -231,37 +235,46 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public bool HasAvailableActions => AvailableActions.Count > 0;
 
-    /// <summary>The talents and skills screen, shown in place of the resource summary while open.</summary>
-    public TalentCatalogViewModel? TalentCatalog
+    /// <summary>The purpose-built screen shown in place of the resource summary, if one is open.</summary>
+    public IManagementScreen? CurrentScreen
     {
-        get => _talentCatalog;
+        get => _currentScreen;
         private set
         {
-            if (_talentCatalog == value)
+            if (_currentScreen == value)
             {
                 return;
             }
 
-            if (_talentCatalog is not null)
+            if (_currentScreen is not null)
             {
-                _talentCatalog.SessionExpired -= OnCatalogSessionExpired;
+                _currentScreen.SessionExpired -= OnCatalogSessionExpired;
             }
 
-            _talentCatalog = value;
-            if (_talentCatalog is not null)
+            _currentScreen = value;
+            if (_currentScreen is not null)
             {
-                _talentCatalog.SessionExpired += OnCatalogSessionExpired;
+                _currentScreen.SessionExpired += OnCatalogSessionExpired;
             }
 
             OnPropertyChanged();
+            OnPropertyChanged(nameof(TalentCatalog));
+            OnPropertyChanged(nameof(NetworkCatalog));
             OnPropertyChanged(nameof(IsTalentCatalogOpen));
+            OnPropertyChanged(nameof(IsNetworkCatalogOpen));
             OnPropertyChanged(nameof(IsResourceSummaryVisible));
         }
     }
 
+    public TalentCatalogViewModel? TalentCatalog => CurrentScreen as TalentCatalogViewModel;
+
+    public NetworkCatalogViewModel? NetworkCatalog => CurrentScreen as NetworkCatalogViewModel;
+
     public bool IsTalentCatalogOpen => TalentCatalog is not null;
 
-    public bool IsResourceSummaryVisible => TalentCatalog is null;
+    public bool IsNetworkCatalogOpen => NetworkCatalog is not null;
+
+    public bool IsResourceSummaryVisible => CurrentScreen is null;
 
     private async Task ConnectAsync()
     {
@@ -272,7 +285,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(HasAvailableActions));
         SelectedNavigationItem = null;
         _selectedResource = null;
-        TalentCatalog = null;
+        CurrentScreen = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
 
@@ -283,10 +296,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             var discovery = await _apiClient.DiscoverAsync(ApiBaseUrl, Locale);
             foreach (var link in discovery.NavigationLinks)
             {
-                NavigationItems.Add(new NavigationItem(
-                    link.Title!,
-                    link.Href!,
-                    link.Rel.Contains(SirenRelations.Talents, StringComparer.Ordinal)));
+                NavigationItems.Add(new NavigationItem(link.Title!, link.Href!, ScreenFor(link)));
             }
 
             SetResource(discovery.ApiResource);
@@ -393,9 +403,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var opened = false;
         try
         {
-            opened = item.OpensTalentCatalog
-                ? await OpenTalentCatalogAsync(item)
-                : await OpenGenericResourceAsync(item, generation);
+            opened = item.Screen == NavigationScreen.ResourceSummary
+                ? await OpenGenericResourceAsync(item, generation)
+                : await OpenScreenAsync(CreateScreen(item));
         }
         finally
         {
@@ -426,7 +436,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
             if (generation == _openGeneration)
             {
-                TalentCatalog = null;
+                CurrentScreen = null;
                 SetResource(resource);
                 SetStatus("app.apiConnected");
             }
@@ -473,13 +483,27 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
     }
 
-    private async Task<bool> OpenTalentCatalogAsync(NavigationItem item)
+    private static NavigationScreen ScreenFor(SirenLink link) =>
+        link.Rel.Contains(SirenRelations.Talents, StringComparer.Ordinal) ? NavigationScreen.TalentCatalog
+        : link.Rel.Contains(SirenRelations.Networks, StringComparer.Ordinal) ? NavigationScreen.NetworkCatalog
+        : NavigationScreen.ResourceSummary;
+
+    private IManagementScreen CreateScreen(NavigationItem item) =>
+        item.Screen switch
+        {
+            NavigationScreen.TalentCatalog =>
+                new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href),
+            NavigationScreen.NetworkCatalog =>
+                new NetworkCatalogViewModel(_apiClient, _localizer, _networkDialogs, ApiBaseUrl, Locale, item.Href),
+            _ => throw new ArgumentOutOfRangeException(nameof(item), item.Screen, "The entry opens the resource summary.")
+        };
+
+    private async Task<bool> OpenScreenAsync(IManagementScreen screen)
     {
-        var catalog = new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href);
-        TalentCatalog = catalog;
+        CurrentScreen = screen;
         SetStatus("app.apiConnected");
-        await catalog.LoadAsync();
-        return catalog.IsLoaded;
+        await screen.LoadAsync();
+        return screen.IsLoaded;
     }
 
     private void OnCatalogSessionExpired(object? sender, EventArgs e)
@@ -514,7 +538,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectedNavigationItem = null;
         AvailableActions.Clear();
         _selectedResource = null;
-        TalentCatalog = null;
+        CurrentScreen = null;
         OnPropertyChanged(nameof(ResourceTitle));
         OnPropertyChanged(nameof(ResourceSummary));
         OnPropertyChanged(nameof(HasAvailableActions));

@@ -4,6 +4,8 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 
+using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
+
 namespace SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
 
 public sealed class MainWindowTalentCatalogTests
@@ -15,7 +17,7 @@ public sealed class MainWindowTalentCatalogTests
 
         await viewModel.ConnectCommand.ExecuteAsync();
 
-        Assert.Equal([new NavigationItem("Talents", FakeCatalogApi.TalentsHref, true)], viewModel.NavigationItems);
+        Assert.Equal([new NavigationItem("Talents", FakeCatalogApi.TalentsHref, NavigationScreen.TalentCatalog)], viewModel.NavigationItems);
     }
 
     [Fact]
@@ -93,7 +95,7 @@ public sealed class MainWindowTalentCatalogTests
     }
 
     private static MainWindowViewModel CreateViewModel(FakeCatalogApi api) =>
-        new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new ManagementSettings());
+        new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {

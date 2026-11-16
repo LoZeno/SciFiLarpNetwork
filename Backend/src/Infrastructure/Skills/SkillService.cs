@@ -13,8 +13,9 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.Skills;
 /// <summary>
 /// Skill commands follow Marten's command handler workflow: one session, <c>FetchForWriting</c> on every stream
 /// the decision depends on, and one <c>SaveChangesAsync</c>. Streams that are read but not appended to are
-/// marked <c>AlwaysEnforceConsistency</c>, so a concurrent change to them (for example archiving a talent, or
-/// another edit that would close a prerequisite loop) rejects the commit instead of being overlooked.
+/// marked <c>AlwaysEnforceConsistency</c>, so a change committed to them before this command saves rejects the
+/// commit. That check cannot see a change that commits at the same moment, so prerequisite changes are also
+/// serialized through the single prerequisite-graph stream.
 /// </summary>
 internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvider timeProvider) : ISkillService
 {
@@ -49,7 +50,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return (await query.LoadAsync<SkillDocument>(skillId, cancellationToken))?.ToSummary();
     }
 
-    public async Task<CatalogResult<SkillSummary>> CreateSkillAsync(SkillDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<CatalogResult<SkillSummary>> CreateSkillAsync(SkillDefinition definition,
+        CancellationToken cancellationToken = default)
     {
         if (ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
         {
@@ -58,7 +60,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var skillId = Guid.NewGuid();
         var groups = ToGroups(definition.PrerequisiteGroups);
-        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome and not CatalogOutcome.Succeeded)
+        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(structureOutcome);
         }
@@ -71,7 +74,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         }
 
         var talentIds = definition.TalentIds.Distinct().ToArray();
-        if (await LockAssignableTalentsAsync(session, talentIds, cancellationToken) is var talentOutcome and not CatalogOutcome.Succeeded)
+        if (await LockAssignableTalentsAsync(session, talentIds, cancellationToken) is var talentOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(talentOutcome);
         }
@@ -104,7 +108,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
                 cardFlagIds,
                 groups,
                 now));
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, editedVersion: null, cancellationToken);
     }
 
     public async Task<CatalogResult<SkillSummary>> UpdateSkillAsync(
@@ -119,7 +123,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         }
 
         var groups = ToGroups(definition.PrerequisiteGroups);
-        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome and not CatalogOutcome.Succeeded)
+        if (ToOutcome(SkillPrerequisites.FindStructuralProblem(skillId, groups)) is var structureOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(structureOutcome);
         }
@@ -139,7 +144,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var talentIds = definition.TalentIds.Distinct().ToArray();
         var newlyAssignedTalents = talentIds.Except(current.TalentIds).ToArray();
-        if (await LockAssignableTalentsAsync(session, newlyAssignedTalents, cancellationToken) is var talentOutcome and not CatalogOutcome.Succeeded)
+        if (await LockAssignableTalentsAsync(session, newlyAssignedTalents, cancellationToken) is var talentOutcome
+            and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(talentOutcome);
         }
@@ -153,7 +159,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var prerequisitesChanged = !SameGroups(current.PrerequisiteGroups, groups);
         if (prerequisitesChanged &&
-            await LockPrerequisiteGraphAsync(session, skillId, groups, cancellationToken) is var prerequisiteOutcome and not CatalogOutcome.Succeeded)
+            await LockPrerequisiteGraphAsync(session, skillId, groups, now, cancellationToken) is
+                var prerequisiteOutcome and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(prerequisiteOutcome);
         }
@@ -197,16 +204,19 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
             stream.AppendOne(new SkillPrerequisitesChanged(skillId, groups, now));
         }
 
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, expectedVersion, cancellationToken);
     }
 
-    public Task<CatalogResult<SkillSummary>> ArchiveSkillAsync(Guid skillId, CancellationToken cancellationToken = default) =>
+    public Task<CatalogResult<SkillSummary>> ArchiveSkillAsync(Guid skillId,
+        CancellationToken cancellationToken = default) =>
         SetArchivedAsync(skillId, archived: true, cancellationToken);
 
-    public Task<CatalogResult<SkillSummary>> UnarchiveSkillAsync(Guid skillId, CancellationToken cancellationToken = default) =>
+    public Task<CatalogResult<SkillSummary>> UnarchiveSkillAsync(Guid skillId,
+        CancellationToken cancellationToken = default) =>
         SetArchivedAsync(skillId, archived: false, cancellationToken);
 
-    private async Task<CatalogResult<SkillSummary>> SetArchivedAsync(Guid skillId, bool archived, CancellationToken cancellationToken)
+    private async Task<CatalogResult<SkillSummary>> SetArchivedAsync(Guid skillId, bool archived,
+        CancellationToken cancellationToken)
     {
         await using var session = sessions.OpenSession();
         var stream = await session.Events.FetchForWriting<SkillDocument>(skillId, cancellationToken);
@@ -222,7 +232,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var now = timeProvider.GetUtcNow();
         stream.AppendOne(archived ? new SkillArchived(skillId, now) : new SkillUnarchived(skillId, now));
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, editedVersion: null, cancellationToken);
     }
 
     private static CatalogOutcome ValidateDetails(SkillDefinition definition)
@@ -262,7 +272,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
     {
         try
         {
-            var stream = await session.Events.FetchForWriting<SkillDocument>(skillId, expectedVersion, cancellationToken);
+            var stream =
+                await session.Events.FetchForWriting<SkillDocument>(skillId, expectedVersion, cancellationToken);
             return stream.Aggregate is null ? (CatalogOutcome.NotFound, null) : (CatalogOutcome.Succeeded, stream);
         }
         catch (ConcurrencyException)
@@ -319,7 +330,9 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         CancellationToken cancellationToken)
     {
         var selected = definition.CardFlagIds.Distinct().ToList();
-        if (selected.Count > 0 && (await session.LoadManyAsync<CardFlagDocument>(cancellationToken, selected.ToArray())).Count != selected.Count)
+        if (selected.Count > 0 &&
+            (await session.LoadManyAsync<CardFlagDocument>(cancellationToken, selected.ToArray())).Count !=
+            selected.Count)
         {
             return (CatalogOutcome.UnknownCardFlag, []);
         }
@@ -342,7 +355,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
             }
 
             var cardFlagId = Guid.NewGuid();
-            session.Events.StartStream<CardFlagDocument>(cardFlagId, new CardFlagDefined(cardFlagId, name.Trim(), normalizedName, now));
+            session.Events.StartStream<CardFlagDocument>(cardFlagId,
+                new CardFlagDefined(cardFlagId, name.Trim(), normalizedName, now));
             selected.Add(cardFlagId);
         }
 
@@ -357,16 +371,21 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         (await session.LoadManyAsync<SkillDocument>(cancellationToken, skillIds.ToArray())).Count == skillIds.Count;
 
     /// <summary>
-    /// Loads, for writing, every skill reachable from the requested prerequisites and checks that the edited skill is
-    /// not among them. Each loaded stream enforces consistency, so a concurrent prerequisite change anywhere in the
-    /// graph that was read rejects this commit.
+    /// Loads every skill reachable from the requested prerequisites and checks that the edited skill is not among
+    /// them. It also appends to the single prerequisite-graph stream: concurrent prerequisite changes both append
+    /// there, so the stream version check rejects the later one. Checking only the versions of the streams read is
+    /// not enough, because two overlapping commits each check before the other has committed.
     /// </summary>
     private static async Task<CatalogOutcome> LockPrerequisiteGraphAsync(
         IDocumentSession session,
         Guid skillId,
         Guid[][] groups,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        var graph = await session.Events.FetchForWriting<PrerequisiteGraphDocument>(PrerequisiteGraphDocument.StreamId,
+            cancellationToken);
+        graph.AppendOne(new PrerequisiteGraphChanged(skillId, now));
         var prerequisitesBySkill = new Dictionary<Guid, IReadOnlyList<IReadOnlyList<Guid>>>();
         var directPrerequisites = SkillPrerequisites.ReferencedSkills(groups);
         var frontier = directPrerequisites.Where(id => id != skillId).ToArray();
@@ -381,6 +400,8 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
                     return CatalogOutcome.UnknownPrerequisite;
                 }
 
+                // A second guard: it rejects a prerequisite change committed before this save, even by a future
+                // writer that forgets to append to the prerequisite-graph stream.
                 stream.AlwaysEnforceConsistency = true;
                 prerequisitesBySkill[frontier[index]] = stream.Aggregate?.PrerequisiteGroups ?? [];
             }
@@ -399,14 +420,26 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return createsLoop ? CatalogOutcome.PrerequisiteLoop : CatalogOutcome.Succeeded;
     }
 
-    private static async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Commits the command. A commit rejected by a version check is reported as <see cref="CatalogOutcome.StaleVersion"/>
+    /// only when the edited skill itself moved on from <paramref name="editedVersion"/>; otherwise another command
+    /// changed shared data first (the prerequisite graph or an assigned talent), which is
+    /// <see cref="CatalogOutcome.ConcurrentChange"/> so the client can keep the user's input and save again.
+    /// </summary>
+    private async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId,
+        long? editedVersion, CancellationToken cancellationToken)
     {
         try
         {
             if (!await session.TrySaveChangesAsync(cancellationToken))
             {
-                return CatalogResult<SkillSummary>.Failure(CatalogOutcome.StaleVersion);
+                return CatalogResult<SkillSummary>.Failure(await LostRaceOutcomeAsync(skillId, editedVersion, cancellationToken));
             }
+        }
+        catch (Marten.Exceptions.ExistingStreamIdCollisionException)
+        {
+            // Two first-ever prerequisite changes both started the prerequisite-graph stream; the later one lost.
+            return CatalogResult<SkillSummary>.Failure(CatalogOutcome.ConcurrentChange);
         }
         catch (DocumentAlreadyExistsException)
         {
@@ -416,5 +449,18 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var saved = await session.LoadAsync<SkillDocument>(skillId, cancellationToken);
         return CatalogResult<SkillSummary>.Success(saved!.ToSummary());
+    }
+
+    private async Task<CatalogOutcome> LostRaceOutcomeAsync(Guid skillId, long? editedVersion, CancellationToken cancellationToken)
+    {
+        if (editedVersion is not { } version)
+        {
+            return CatalogOutcome.ConcurrentChange;
+        }
+
+        await using var query = sessions.QuerySession();
+        return await query.LoadAsync<SkillDocument>(skillId, cancellationToken) is { } current && current.Version == version
+            ? CatalogOutcome.ConcurrentChange
+            : CatalogOutcome.StaleVersion;
     }
 }

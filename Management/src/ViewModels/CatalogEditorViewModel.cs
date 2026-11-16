@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using SciFiLarpNetwork.Management.Localization;
 
-namespace SciFiLarpNetwork.Management.ViewModels.Skills;
+namespace SciFiLarpNetwork.Management.ViewModels;
 
 /// <summary>
 /// Shared state of the talent and skill dialogs. Saving keeps the dialog open and shows the error when the

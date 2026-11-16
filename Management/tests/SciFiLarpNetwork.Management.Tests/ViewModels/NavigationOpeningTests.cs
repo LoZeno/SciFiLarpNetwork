@@ -4,6 +4,7 @@ using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.ViewModels;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels;
@@ -73,6 +74,7 @@ public sealed class NavigationOpeningTests
             new NullSettingsStore(),
             new JsonLocalizer(),
             new FakeCatalogDialogs(),
+            new FakeNetworkDialogs(),
             new ManagementSettings());
         viewModel.NavigationItems.Add(News);
         viewModel.NavigationItems.Add(Messages);
@@ -139,6 +141,13 @@ public sealed class NavigationOpeningTests
             string locale,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Titled("Done"));
+
+        public Task<byte[]> GetImageAsync(
+            string apiBaseUrl,
+            string href,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<byte[]>([]);
     }
 
     private sealed class NullSettingsStore : IManagementSettingsStore

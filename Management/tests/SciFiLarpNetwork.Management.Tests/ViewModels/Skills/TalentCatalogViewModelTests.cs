@@ -556,6 +556,31 @@ public sealed class TalentCatalogViewModelTests
     }
 
     [Fact]
+    public async Task ConcurrentChangeKeepsTheTypedValues()
+    {
+        var api = new FakeCatalogApi();
+        var medicine = api.AddTalent("Medicine");
+        var skill = api.AddSkill("First aid", medicine);
+        api.SubmitFailures["update-skill"] = new ManagementApiException("errors.concurrentChange", HttpStatusCode.Conflict);
+        var dialogs = new FakeCatalogDialogs
+        {
+            OnSkillEditor = editor =>
+            {
+                skill.Cost = 7;
+                editor.Name = "Bandaging";
+                return editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var catalog = await LoadWithSelectedSkillAsync(api, dialogs);
+
+        await catalog.EditSkillCommand.ExecuteAsync();
+
+        Assert.Equal(
+            new { Name = "Bandaging", Error = (string?)"Someone saved a related change at the same time. Your input is kept: save again." },
+            new { dialogs.LastSkillEditor!.Name, Error = dialogs.LastSkillEditor.ErrorMessage });
+    }
+
+    [Fact]
     public async Task SavedSkillAppearsInTheSelectedTalent()
     {
         var api = new FakeCatalogApi();

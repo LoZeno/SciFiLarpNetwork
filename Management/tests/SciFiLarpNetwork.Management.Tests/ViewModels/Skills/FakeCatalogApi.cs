@@ -109,6 +109,9 @@ internal sealed class FakeCatalogApi : IManagementApiClient
     public Task SignOutAsync(string apiBaseUrl, string locale, CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
 
+    public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default) =>
+        Task.FromException<byte[]>(new NotSupportedException("The talent catalog has no images."));
+
     public Task<ManagementSession> RenewSessionAsync(
         string apiBaseUrl,
         string locale,
