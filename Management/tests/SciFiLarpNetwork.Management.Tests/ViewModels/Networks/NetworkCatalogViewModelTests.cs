@@ -276,6 +276,45 @@ public sealed class NetworkCatalogViewModelTests
     }
 
     [Fact]
+    public async Task AnImageThatCannotBeDownloadedStillOpensTheDialog()
+    {
+        var api = new FakeNetworkApi();
+        api.AddNetwork("rim", "Outer Rim").ImageId = Guid.NewGuid();
+        var dialogs = new FakeNetworkDialogs();
+        var catalog = await LoadWithSelectionAsync(api, dialogs);
+
+        await catalog.EditNetworkCommand.ExecuteAsync();
+
+        Assert.Equal(
+            new
+            {
+                Opened = true,
+                HasPreview = false,
+                Error = (string?)"The saved background image could not be loaded. You can still edit the network, or replace or remove the image."
+            },
+            new
+            {
+                Opened = dialogs.LastEditor is not null,
+                HasPreview = dialogs.LastEditor?.HasPreviewImage ?? true,
+                Error = dialogs.LastEditor?.ErrorMessage
+            });
+    }
+
+    [Fact]
+    public async Task AnExpiredSessionDuringTheImageDownloadSignsOut()
+    {
+        var api = new FakeNetworkApi { ImageFailure = new ManagementApiException("errors.unauthorized", HttpStatusCode.Unauthorized) };
+        api.AddImage(api.AddNetwork("rim", "Outer Rim"), Png);
+        var catalog = await LoadWithSelectionAsync(api, new FakeNetworkDialogs());
+        var expired = false;
+        catalog.SessionExpired += (_, _) => expired = true;
+
+        await catalog.EditNetworkCommand.ExecuteAsync();
+
+        Assert.True(expired);
+    }
+
+    [Fact]
     public async Task EditShowsTheSavedImage()
     {
         var api = new FakeNetworkApi();

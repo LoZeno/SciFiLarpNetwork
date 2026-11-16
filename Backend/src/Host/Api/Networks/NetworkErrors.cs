@@ -13,6 +13,7 @@ public static class NetworkErrors
     public const string InvalidTheme = "errors.invalidTheme";
     public const string InvalidImage = "errors.invalidImage";
     public const string ImageTooLarge = "errors.imageTooLarge";
+    public const string ImageDimensionsTooLarge = "errors.imageDimensionsTooLarge";
     public const string NetworkDisabled = "errors.networkDisabled";
     public const string DefaultNetworkCannotBeDisabled = "errors.defaultNetworkCannotBeDisabled";
 
@@ -30,6 +31,7 @@ public static class NetworkErrors
             NetworkOutcome.InvalidTheme => Create(StatusCodes.Status400BadRequest, InvalidTheme),
             NetworkOutcome.InvalidImage => Create(StatusCodes.Status400BadRequest, InvalidImage),
             NetworkOutcome.ImageTooLarge => Create(StatusCodes.Status400BadRequest, ImageTooLarge),
+            NetworkOutcome.ImageDimensionsTooLarge => Create(StatusCodes.Status400BadRequest, ImageDimensionsTooLarge),
             _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "A successful outcome is not an error.")
         };
 

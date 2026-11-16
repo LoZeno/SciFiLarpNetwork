@@ -12,6 +12,7 @@ public enum NetworkOutcome
     InvalidTheme,
     InvalidImage,
     ImageTooLarge,
+    ImageDimensionsTooLarge,
     NetworkDisabled,
     DefaultNetworkCannotBeDisabled
 }

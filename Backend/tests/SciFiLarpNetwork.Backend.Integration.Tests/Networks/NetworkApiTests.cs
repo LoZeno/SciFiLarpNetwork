@@ -387,6 +387,20 @@ public sealed class NetworkApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ImageWithTooManyPixelsReturnsItsStableCode()
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Put, $"{NetworksPath}/{networkId:D}/background-image", token,
+            new { version = 1, content = NetworkTestImages.Png(size: 100, width: 60000, height: 60000) });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.imageDimensionsTooLarge"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task OversizedUploadReturnsTheImageTooLargeCode()
     {
         using var client = _factory.CreateClient();

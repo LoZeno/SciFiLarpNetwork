@@ -7,7 +7,7 @@ namespace SciFiLarpNetwork.Backend.Application.Networks;
 public interface INetworkBackgroundImageService
 {
     /// <summary>
-    /// Stores a PNG, JPEG, or WebP image of at most 2 MB as the network's background, if the network is still at
+    /// Stores a PNG, JPEG, or WebP image of at most 2 MB and 4096 × 4096 pixels as the network's background, if the network is still at
     /// <paramref name="expectedVersion"/>. The format is detected from the content.
     /// </summary>
     Task<NetworkResult> SetBackgroundImageAsync(

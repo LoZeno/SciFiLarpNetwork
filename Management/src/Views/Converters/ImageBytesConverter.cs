@@ -4,7 +4,10 @@ using Avalonia.Media.Imaging;
 
 namespace SciFiLarpNetwork.Management.Views.Converters;
 
-/// <summary>Turns encoded image bytes (PNG, JPEG, or WebP) into a bitmap; anything unreadable shows no image.</summary>
+/// <summary>
+/// Turns encoded image bytes (PNG, JPEG, or WebP) into a bitmap. Anything that fails to decode shows no image,
+/// because the server checks only the image header and a damaged file must never crash the dialog.
+/// </summary>
 public sealed class ImageBytesConverter : IValueConverter
 {
     public static ImageBytesConverter Instance { get; } = new();
@@ -21,7 +24,9 @@ public sealed class ImageBytesConverter : IValueConverter
             using var stream = new MemoryStream(content, writable: false);
             return new Bitmap(stream);
         }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or NotSupportedException)
+#pragma warning disable CA1031 // Any decode failure from the native image codec means "no preview"; nothing here can recover more specifically.
+        catch (Exception)
+#pragma warning restore CA1031
         {
             return null;
         }

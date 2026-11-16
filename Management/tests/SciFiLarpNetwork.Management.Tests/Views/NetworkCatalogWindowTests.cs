@@ -88,6 +88,18 @@ public sealed class NetworkCatalogWindowTests
     }
 
     [AvaloniaFact]
+    public void ImageConverterShowsNothingForAPngThatDeclaresAHugeSize()
+    {
+        byte[] hostile =
+        [
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0xEA, 0x60, 0x00, 0x00, 0xEA, 0x60, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        ];
+
+        Assert.Null(ImageBytesConverter.Instance.Convert(hostile, typeof(object), null, CultureInfo.InvariantCulture));
+    }
+
+    [AvaloniaFact]
     public void ImageConverterCannotConvertBack()
     {
         Assert.Throws<NotSupportedException>(() =>

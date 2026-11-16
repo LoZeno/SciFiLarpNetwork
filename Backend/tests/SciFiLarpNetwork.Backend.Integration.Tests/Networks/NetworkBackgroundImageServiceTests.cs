@@ -70,6 +70,45 @@ public sealed class NetworkBackgroundImageServiceTests : IAsyncLifetime
         Assert.Equal(NetworkOutcome.ImageTooLarge, result.Outcome);
     }
 
+    [Theory]
+    [InlineData(NetworkImageFormats.MaximumPixelDimension + 1, 10)]
+    [InlineData(10, NetworkImageFormats.MaximumPixelDimension + 1)]
+    [InlineData(int.MaxValue, int.MaxValue)]
+    public async Task ImageWithTooManyPixelsIsRejected(int width, int height)
+    {
+        var network = await CreateNetworkAsync();
+
+        var result = await Images.SetBackgroundImageAsync(
+            network.NetworkId, network.Version, NetworkTestImages.Png(size: 100, width, height), TestContext.Current.CancellationToken);
+
+        Assert.Equal(NetworkOutcome.ImageDimensionsTooLarge, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ImageAtThePixelLimitIsAccepted()
+    {
+        var network = await CreateNetworkAsync();
+
+        var result = await Images.SetBackgroundImageAsync(
+            network.NetworkId,
+            network.Version,
+            NetworkTestImages.Png(size: 100, NetworkImageFormats.MaximumPixelDimension, NetworkImageFormats.MaximumPixelDimension),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(NetworkOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ImageWithASignatureButNoReadableHeaderIsRejected()
+    {
+        var network = await CreateNetworkAsync();
+
+        var result = await Images.SetBackgroundImageAsync(
+            network.NetworkId, network.Version, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00], TestContext.Current.CancellationToken);
+
+        Assert.Equal(NetworkOutcome.InvalidImage, result.Outcome);
+    }
+
     [Fact]
     public async Task SvgIsRejected()
     {

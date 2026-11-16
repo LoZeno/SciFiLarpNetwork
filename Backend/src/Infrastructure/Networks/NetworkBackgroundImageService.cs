@@ -24,10 +24,17 @@ internal sealed class NetworkBackgroundImageService(AttributedSessionFactory ses
             return NetworkResult.Failure(NetworkOutcome.ImageTooLarge);
         }
 
-        if (NetworkImageFormats.DetectMediaType(content) is not { } mediaType)
+        if (NetworkImageFormats.Inspect(content) is not { } image)
         {
             return NetworkResult.Failure(NetworkOutcome.InvalidImage);
         }
+
+        if (!NetworkImageFormats.HasAcceptedDimensions(image))
+        {
+            return NetworkResult.Failure(NetworkOutcome.ImageDimensionsTooLarge);
+        }
+
+        var mediaType = image.MediaType;
 
         await using var session = sessions.OpenSession();
         var (outcome, stream) = await session.FetchExpectedNetworkAsync(networkId, expectedVersion, cancellationToken);

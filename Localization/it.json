@@ -216,12 +216,13 @@
   "networks.newNetwork": "Nuova rete",
   "networks.editNetwork": "Modifica rete",
   "networks.codeHelp": "Da 1 a 32 caratteri tra lettere minuscole, cifre e trattini. Il codice non potrà essere modificato.",
-  "networks.imageHelp": "PNG, JPEG o WebP, fino a 2 MB. Sostituisce l'immagine di sfondo del tema.",
+  "networks.imageHelp": "PNG, JPEG o WebP, fino a 2 MB e 4096 × 4096 pixel. Sostituisce l'immagine di sfondo del tema.",
   "networks.chooseImage": "Scegli immagine…",
   "networks.removeImage": "Rimuovi immagine",
   "networks.customImage": "Immagine di sfondo caricata",
   "networks.themeImage": "Viene usata l'immagine di sfondo del tema.",
   "networks.imageReadError": "Impossibile leggere il file dell'immagine.",
+  "networks.imageLoadError": "Impossibile caricare l'immagine di sfondo salvata. Puoi comunque modificare la rete, oppure sostituire o rimuovere l'immagine.",
   "networks.defaultTag": "(Predefinita)",
   "networks.disabledTag": "(Disattivata)",
   "networks.confirmDisable": "Disattivare la rete \"{0}\"? Personaggi e storico la mantengono, ma non potrà essere scelta per nuove assegnazioni.",
@@ -232,6 +233,7 @@
   "errors.invalidTheme": "Scegli uno dei temi disponibili.",
   "errors.invalidImage": "Carica un'immagine PNG, JPEG o WebP.",
   "errors.imageTooLarge": "L'immagine deve essere al massimo di 2 MB.",
+  "errors.imageDimensionsTooLarge": "L'immagine deve essere al massimo di 4096 × 4096 pixel.",
   "errors.networkDisabled": "Una rete disattivata non può essere la rete predefinita.",
   "errors.defaultNetworkCannotBeDisabled": "La rete predefinita non può essere disattivata. Scegli prima un'altra rete predefinita."
 }

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Net;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Api.Networks;
@@ -309,8 +310,26 @@ public sealed class NetworkCatalogViewModel : ScreenViewModel
         editor.Description = properties.Description ?? string.Empty;
         editor.SelectTheme(properties.Theme);
         editor.ShowSavedImage(network.FindLinkHref(SirenRelations.BackgroundImage) is { } imageHref
-            ? await ApiClient.GetImageAsync(ApiBaseUrl, imageHref, Locale)
+            ? await TryDownloadPreviewAsync(editor, imageHref)
             : null);
+    }
+
+    /// <summary>
+    /// Downloads the saved image for the preview. A failure leaves the preview empty and is shown in the dialog,
+    /// which still opens, so the user can replace or remove a broken image.
+    /// </summary>
+    private async Task<byte[]?> TryDownloadPreviewAsync(NetworkEditorViewModel editor, string imageHref)
+    {
+        try
+        {
+            return await ApiClient.GetImageAsync(ApiBaseUrl, imageHref, Locale);
+        }
+        catch (Exception failure) when (IsExpectedFailure(failure) &&
+                                        failure is not ManagementApiException { StatusCode: HttpStatusCode.Unauthorized })
+        {
+            editor.ErrorMessage = Translate("networks.imageLoadError");
+            return null;
+        }
     }
 
     private async Task ReloadAfterSaveAsync(NetworkEditorViewModel editor, SirenEntity? saved)

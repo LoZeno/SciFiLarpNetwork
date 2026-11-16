@@ -29,6 +29,9 @@ internal sealed class FakeNetworkApi : IManagementApiClient
 
     public Exception? GetFailure { get; set; }
 
+    /// <summary>When set, every image download fails with this exception.</summary>
+    public Exception? ImageFailure { get; init; }
+
     public FakeNetwork AddNetwork(string code, string name, bool isEnabled = true, bool isDefault = false)
     {
         var network = new FakeNetwork(Guid.NewGuid(), code, name) { IsEnabled = isEnabled, IsDefault = isDefault };
@@ -63,9 +66,11 @@ internal sealed class FakeNetworkApi : IManagementApiClient
     }
 
     public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default) =>
-        Images.TryGetValue(Guid.Parse(href.Split('/')[^1]), out var image)
-            ? Task.FromResult(image)
-            : Task.FromException<byte[]>(new ManagementApiException("errors.notFound", HttpStatusCode.NotFound));
+        ImageFailure is { } failure
+            ? Task.FromException<byte[]>(failure)
+            : Images.TryGetValue(Guid.Parse(href.Split('/')[^1]), out var image)
+                ? Task.FromResult(image)
+                : Task.FromException<byte[]>(new ManagementApiException("errors.notFound", HttpStatusCode.NotFound));
 
     public Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,

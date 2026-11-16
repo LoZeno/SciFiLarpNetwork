@@ -36,6 +36,7 @@ public static class ApiErrorMessages
         "errors.invalidTheme",
         "errors.invalidImage",
         "errors.imageTooLarge",
+        "errors.imageDimensionsTooLarge",
         "errors.networkDisabled",
         "errors.defaultNetworkCannotBeDisabled"
     ];

@@ -216,12 +216,13 @@
   "networks.newNetwork": "New network",
   "networks.editNetwork": "Edit network",
   "networks.codeHelp": "1 to 32 lower-case letters, digits, and hyphens. The code cannot be changed later.",
-  "networks.imageHelp": "PNG, JPEG, or WebP, up to 2 MB. It replaces the theme's background image.",
+  "networks.imageHelp": "PNG, JPEG, or WebP, up to 2 MB and 4096 × 4096 pixels. It replaces the theme's background image.",
   "networks.chooseImage": "Choose image…",
   "networks.removeImage": "Remove image",
   "networks.customImage": "Uploaded background image",
   "networks.themeImage": "The theme's background image is used.",
   "networks.imageReadError": "The image file could not be read.",
+  "networks.imageLoadError": "The saved background image could not be loaded. You can still edit the network, or replace or remove the image.",
   "networks.defaultTag": "(Default)",
   "networks.disabledTag": "(Disabled)",
   "networks.confirmDisable": "Disable the network \"{0}\"? Characters and history keep it, but it cannot be chosen for new assignments.",
@@ -232,6 +233,7 @@
   "errors.invalidTheme": "Choose one of the available themes.",
   "errors.invalidImage": "Upload a PNG, JPEG, or WebP image.",
   "errors.imageTooLarge": "The image must be 2 MB or smaller.",
+  "errors.imageDimensionsTooLarge": "The image must be at most 4096 × 4096 pixels.",
   "errors.networkDisabled": "A disabled network cannot be the default network.",
   "errors.defaultNetworkCannotBeDisabled": "The default network cannot be disabled. Choose another default network first."
 }
