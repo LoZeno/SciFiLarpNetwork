@@ -175,6 +175,7 @@
   "api.archiveSkill": "Archive skill",
   "api.unarchiveSkill": "Restore skill",
   "errors.staleVersion": "Someone else changed this item. Reload it and try again.",
+  "errors.concurrentChange": "Someone saved a related change at the same time. Your input is kept: save again.",
   "errors.nameAlreadyUsed": "This name is already used.",
   "errors.invalidName": "Enter a name of 1 to 64 characters.",
   "errors.invalidCost": "Enter a cost from 0 to 999.",

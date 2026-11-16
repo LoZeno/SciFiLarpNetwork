@@ -33,7 +33,37 @@ public sealed class AdministratorConcurrencyTests : IAsyncLifetime
             () => Accounts.ChangeRoleAsync(second, first, AdministratorRoles.Reader, TestContext.Current.CancellationToken),
             async () => (await Accounts.CreateAccountAsync(first, "new-reader", Password, AdministratorRoles.Reader, TestContext.Current.CancellationToken)).Result);
 
-        Assert.Single(new[] { demotion, creation }, result => result == AdministratorOperationResult.Succeeded);
+        Assert.Equal(
+            [AdministratorOperationResult.Succeeded, AdministratorOperationResult.ConcurrentChange],
+            new[] { demotion, creation }.Order());
+    }
+
+    [Fact]
+    public async Task AdministratorsDemotingEachOtherReallyRace()
+    {
+        var (first, second) = await TwoAdministratorsAsync();
+
+        var results = await OverlapAsync(
+            () => Accounts.ChangeRoleAsync(first, second, AdministratorRoles.Reader, TestContext.Current.CancellationToken),
+            () => Accounts.ChangeRoleAsync(second, first, AdministratorRoles.Reader, TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            [AdministratorOperationResult.Succeeded, AdministratorOperationResult.ConcurrentChange],
+            new[] { results.First, results.Second }.Order());
+    }
+
+    [Fact]
+    public async Task LastTwoAdministratorsDemotingThemselvesReallyRace()
+    {
+        var (first, second) = await TwoAdministratorsAsync();
+
+        var results = await OverlapAsync(
+            () => Accounts.ChangeRoleAsync(first, first, AdministratorRoles.Reader, TestContext.Current.CancellationToken),
+            () => Accounts.ChangeRoleAsync(second, second, AdministratorRoles.Reader, TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            [AdministratorOperationResult.Succeeded, AdministratorOperationResult.ConcurrentChange],
+            new[] { results.First, results.Second }.Order());
     }
 
     [Fact]

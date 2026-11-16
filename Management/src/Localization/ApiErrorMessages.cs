@@ -31,6 +31,7 @@ public static class ApiErrorMessages
         "errors.duplicatePrerequisite",
         "errors.unknownPrerequisite",
         "errors.prerequisiteLoop",
+        "errors.concurrentChange",
         "errors.codeAlreadyUsed",
         "errors.invalidCode",
         "errors.invalidTheme",

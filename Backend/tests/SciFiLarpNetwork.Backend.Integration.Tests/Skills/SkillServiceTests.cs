@@ -385,7 +385,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
                 TestContext.Current.CancellationToken)));
         _factory.Clock.ReadBarrier = null;
 
-        Assert.Equal(["Rejected", "Succeeded"], results.Select(result => LoopRaceOutcome(result.Outcome)).Order());
+        Assert.Equal([CatalogOutcome.Succeeded, CatalogOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
     }
 
     [Fact]
@@ -413,15 +413,9 @@ public sealed class SkillServiceTests : IAsyncLifetime
                 TestContext.Current.CancellationToken)));
         _factory.Clock.ReadBarrier = null;
 
-        Assert.Equal(["Rejected", "Succeeded"], results.Select(result => LoopRaceOutcome(result.Outcome)).Order());
+        Assert.Equal([CatalogOutcome.Succeeded, CatalogOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
     }
 
-    /// <summary>
-    /// A loop edit that loses the race is rejected either by validation (it saw the other edit) or by
-    /// the version check on the shared prerequisite-graph stream (it did not).
-    /// </summary>
-    private static string LoopRaceOutcome(CatalogOutcome outcome) =>
-        outcome is CatalogOutcome.PrerequisiteLoop or CatalogOutcome.StaleVersion ? "Rejected" : outcome.ToString();
     private static SkillDefinition Definition(
         string name,
         string? description = null,

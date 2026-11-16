@@ -175,6 +175,7 @@
   "api.archiveSkill": "Archivia abilità",
   "api.unarchiveSkill": "Ripristina abilità",
   "errors.staleVersion": "Qualcun altro ha modificato questo elemento. Ricaricalo e riprova.",
+  "errors.concurrentChange": "Qualcuno ha salvato una modifica collegata nello stesso momento. I tuoi dati sono stati mantenuti: salva di nuovo.",
   "errors.nameAlreadyUsed": "Questo nome è già in uso.",
   "errors.invalidName": "Inserisci un nome da 1 a 64 caratteri.",
   "errors.invalidCost": "Inserisci un costo da 0 a 999.",

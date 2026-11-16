@@ -108,7 +108,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
                 cardFlagIds,
                 groups,
                 now));
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, editedVersion: null, cancellationToken);
     }
 
     public async Task<CatalogResult<SkillSummary>> UpdateSkillAsync(
@@ -204,7 +204,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
             stream.AppendOne(new SkillPrerequisitesChanged(skillId, groups, now));
         }
 
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, expectedVersion, cancellationToken);
     }
 
     public Task<CatalogResult<SkillSummary>> ArchiveSkillAsync(Guid skillId,
@@ -232,7 +232,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var now = timeProvider.GetUtcNow();
         stream.AppendOne(archived ? new SkillArchived(skillId, now) : new SkillUnarchived(skillId, now));
-        return await SaveAsync(session, skillId, cancellationToken);
+        return await SaveAsync(session, skillId, editedVersion: null, cancellationToken);
     }
 
     private static CatalogOutcome ValidateDetails(SkillDefinition definition)
@@ -420,20 +420,26 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         return createsLoop ? CatalogOutcome.PrerequisiteLoop : CatalogOutcome.Succeeded;
     }
 
-    private static async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId,
-        CancellationToken cancellationToken)
+    /// <summary>
+    /// Commits the command. A commit rejected by a version check is reported as <see cref="CatalogOutcome.StaleVersion"/>
+    /// only when the edited skill itself moved on from <paramref name="editedVersion"/>; otherwise another command
+    /// changed shared data first (the prerequisite graph or an assigned talent), which is
+    /// <see cref="CatalogOutcome.ConcurrentChange"/> so the client can keep the user's input and save again.
+    /// </summary>
+    private async Task<CatalogResult<SkillSummary>> SaveAsync(IDocumentSession session, Guid skillId,
+        long? editedVersion, CancellationToken cancellationToken)
     {
         try
         {
             if (!await session.TrySaveChangesAsync(cancellationToken))
             {
-                return CatalogResult<SkillSummary>.Failure(CatalogOutcome.StaleVersion);
+                return CatalogResult<SkillSummary>.Failure(await LostRaceOutcomeAsync(skillId, editedVersion, cancellationToken));
             }
         }
         catch (Marten.Exceptions.ExistingStreamIdCollisionException)
         {
             // Two first-ever prerequisite changes both started the prerequisite-graph stream; the later one lost.
-            return CatalogResult<SkillSummary>.Failure(CatalogOutcome.StaleVersion);
+            return CatalogResult<SkillSummary>.Failure(CatalogOutcome.ConcurrentChange);
         }
         catch (DocumentAlreadyExistsException)
         {
@@ -443,5 +449,18 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
 
         var saved = await session.LoadAsync<SkillDocument>(skillId, cancellationToken);
         return CatalogResult<SkillSummary>.Success(saved!.ToSummary());
+    }
+
+    private async Task<CatalogOutcome> LostRaceOutcomeAsync(Guid skillId, long? editedVersion, CancellationToken cancellationToken)
+    {
+        if (editedVersion is not { } version)
+        {
+            return CatalogOutcome.ConcurrentChange;
+        }
+
+        await using var query = sessions.QuerySession();
+        return await query.LoadAsync<SkillDocument>(skillId, cancellationToken) is { } current && current.Version == version
+            ? CatalogOutcome.ConcurrentChange
+            : CatalogOutcome.StaleVersion;
     }
 }

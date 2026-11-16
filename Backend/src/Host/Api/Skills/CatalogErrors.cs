@@ -20,6 +20,7 @@ public static class CatalogErrors
     public const string DuplicatePrerequisite = "errors.duplicatePrerequisite";
     public const string UnknownPrerequisite = "errors.unknownPrerequisite";
     public const string PrerequisiteLoop = "errors.prerequisiteLoop";
+    public const string ConcurrentChange = "errors.concurrentChange";
 
     public static ApiException ToApiException(CatalogOutcome outcome) =>
         outcome switch
@@ -38,6 +39,7 @@ public static class CatalogErrors
             CatalogOutcome.DuplicatePrerequisite => Create(StatusCodes.Status400BadRequest, DuplicatePrerequisite),
             CatalogOutcome.UnknownPrerequisite => Create(StatusCodes.Status400BadRequest, UnknownPrerequisite),
             CatalogOutcome.PrerequisiteLoop => Create(StatusCodes.Status400BadRequest, PrerequisiteLoop),
+            CatalogOutcome.ConcurrentChange => Create(StatusCodes.Status409Conflict, ConcurrentChange),
             _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "A successful outcome is not an error.")
         };
 
