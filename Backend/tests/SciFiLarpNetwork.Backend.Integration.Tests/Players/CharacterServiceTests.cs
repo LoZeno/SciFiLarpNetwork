@@ -333,26 +333,84 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task NewStatIsShownOnEveryCharacterWithItsDefault()
+    public async Task NewStatGivesItsFirstValueToEveryExistingCharacter()
     {
         var player = await CreatePlayerAsync("Ann");
         var other = await CreateCharacterAsync(player, "Vel");
-        await Characters.CreateCharacterAsync(player.PlayerId,
-            CharacterDefinitions.Named("Kira") with
-            {
-                NewStats =
-                [
-                    new NewCharacterStat("Dark Side", CharacterStatType.Number, 3, null),
-                    new NewCharacterStat("Teaching", CharacterStatType.Text, null, "adept")
-                ]
-            },
-            TestContext.Current.CancellationToken);
+        await CreateCharacterAsync(player, "Kira", newStats:
+        [
+            new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null),
+            new NewCharacterStat("Teaching", CharacterStatType.Text, null, "adept")
+        ]);
 
         var reloaded = await Characters.GetCharacterAsync(other.CharacterId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            "Dark Side=0, Teaching=",
-            string.Join(", ", reloaded!.Stats.Select(stat => $"{stat.Name}={stat.Number?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? stat.Text}")));
+        Assert.Equal("Dark Side=5, Teaching=adept", StatText(reloaded!));
+    }
+
+    [Fact]
+    public async Task CharacterCreatedLaterStartsWithTheStatsDefault()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
+
+        var later = await CreateCharacterAsync(player, "Vel");
+
+        Assert.Equal("Dark Side=5", StatText(later));
+    }
+
+    [Fact]
+    public async Task OwnValueReplacesTheDefaultOnlyForThatCharacter()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var kira = await CreateCharacterAsync(player, "Kira", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
+        var vel = await CreateCharacterAsync(player, "Vel");
+        await Characters.UpdateCharacterAsync(kira.CharacterId, kira.Version,
+            CharacterDefinitions.From(kira) with { StatValues = [new CharacterStatInput(kira.Stats[0].StatId, 2, null)] },
+            TestContext.Current.CancellationToken);
+
+        var reloaded = await Characters.GetCharacterAsync(vel.CharacterId, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Dark Side=5", StatText(reloaded!));
+    }
+
+    [Fact]
+    public async Task TypingAnExistingStatNameDoesNotChangeItsDefault()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
+        await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("dark side", CharacterStatType.Number, 1, null)]);
+
+        var later = await CreateCharacterAsync(player, "Cai");
+
+        Assert.Equal("Dark Side=5", StatText(later));
+    }
+
+    [Fact]
+    public async Task ClearedTextStatStaysEmptyInsteadOfShowingTheDefault()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var kira = await CreateCharacterAsync(player, "Kira", newStats: [new NewCharacterStat("Teaching", CharacterStatType.Text, null, "adept")]);
+
+        var result = await Characters.UpdateCharacterAsync(kira.CharacterId, kira.Version,
+            CharacterDefinitions.From(kira) with { StatValues = [new CharacterStatInput(kira.Stats[0].StatId, null, " ")] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("Teaching=", StatText(result.Value!));
+    }
+
+    [Fact]
+    public async Task SavingTheDefaultValueChangesNothing()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
+        var vel = await CreateCharacterAsync(player, "Vel");
+
+        var result = await Characters.UpdateCharacterAsync(vel.CharacterId, vel.Version,
+            CharacterDefinitions.From(vel) with { StatValues = [new CharacterStatInput(vel.Stats[0].StatId, 5, null)] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(vel.Version, result.Value!.Version);
     }
 
     [Fact]
@@ -457,6 +515,10 @@ public sealed class CharacterServiceTests : IAsyncLifetime
 
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
+
+    private static string StatText(CharacterSummary character) =>
+        string.Join(", ", character.Stats.Select(stat =>
+            $"{stat.Name}={stat.Number?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? stat.Text}"));
 
     private static bool IsStoredIdentifier(string identifier) =>
         identifier.Length == 32 && identifier.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');

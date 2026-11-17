@@ -313,7 +313,7 @@
   "characters.qrIdentifier": "QR identifier",
   "characters.stats": "Stats",
   "characters.newStats": "New stats",
-  "characters.newStatsHelp": "A new stat is added to every character, with 0 or an empty text for the others.",
+  "characters.newStatsHelp": "A new stat is added to every character. The value typed here becomes its starting value for every character.",
   "characters.addStat": "Add stat",
   "characters.newCharacter": "New character",
   "characters.editCharacter": "Edit character",

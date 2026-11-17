@@ -313,7 +313,7 @@
   "characters.qrIdentifier": "Identificativo QR",
   "characters.stats": "Statistiche",
   "characters.newStats": "Nuove statistiche",
-  "characters.newStatsHelp": "Una nuova statistica viene aggiunta a ogni personaggio, con 0 o un testo vuoto per gli altri.",
+  "characters.newStatsHelp": "Una nuova statistica viene aggiunta a ogni personaggio. Il valore inserito qui diventa il valore iniziale per ogni personaggio.",
   "characters.addStat": "Aggiungi statistica",
   "characters.newCharacter": "Nuovo personaggio",
   "characters.editCharacter": "Modifica personaggio",

@@ -24,7 +24,12 @@ internal static class RosterMappings
 
     extension(CharacterStatDocument stat)
     {
-        public CharacterStatSummary ToSummary() => new(stat.Id, stat.Name, stat.Type, stat.IsArchived, stat.Version);
+        public CharacterStatSummary ToSummary() =>
+            new(stat.Id, stat.Name, stat.Type, stat.DefaultNumber, stat.DefaultText, stat.IsArchived, stat.Version);
+
+        /// <summary>The value of a character that has no value of its own for this stat.</summary>
+        public CharacterStatValue DefaultValue() =>
+            new(stat.Id, stat.Type == CharacterStatType.Number ? stat.DefaultNumber ?? 0 : null, stat.DefaultText);
     }
 
     extension(CharacterDocument character)
@@ -48,14 +53,14 @@ internal static class RosterMappings
                 character.DeathDate,
                 character.NetworkId,
                 character.QrIdentifier,
-                stats.Select(stat => ToValueSummary(stat, values.GetValueOrDefault(stat.Id))).ToArray(),
+                stats.Select(stat => ToValueSummary(stat, values.GetValueOrDefault(stat.Id) ?? stat.DefaultValue())).ToArray(),
                 character.IsArchived,
                 character.Version);
         }
     }
 
-    private static CharacterStatValueSummary ToValueSummary(CharacterStatDocument stat, CharacterStatValue? value) =>
+    private static CharacterStatValueSummary ToValueSummary(CharacterStatDocument stat, CharacterStatValue value) =>
         stat.Type == CharacterStatType.Number
-            ? new CharacterStatValueSummary(stat.Id, stat.Name, stat.Type, value?.Number ?? 0, null, stat.IsArchived)
-            : new CharacterStatValueSummary(stat.Id, stat.Name, stat.Type, null, value?.Text ?? string.Empty, stat.IsArchived);
+            ? new CharacterStatValueSummary(stat.Id, stat.Name, stat.Type, value.Number ?? 0, null, stat.IsArchived)
+            : new CharacterStatValueSummary(stat.Id, stat.Name, stat.Type, null, value.Text ?? string.Empty, stat.IsArchived);
 }

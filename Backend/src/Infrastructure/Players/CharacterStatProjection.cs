@@ -23,6 +23,8 @@ public partial class CharacterStatProjection : SingleStreamProjection<CharacterS
                 defined.Name,
                 defined.NormalizedName,
                 defined.Type,
+                defined.DefaultNumber,
+                defined.DefaultText,
                 IsArchived: false),
             CharacterStatRenamed renamed when snapshot is not null => snapshot with
             {

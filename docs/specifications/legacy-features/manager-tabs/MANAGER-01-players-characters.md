@@ -64,10 +64,11 @@ These rules replace the legacy personal-data fields, the player password, the ch
 
 ### Character stats
 
-- Stats are administrator-defined values on characters (for example a “Dark Side” number from 0 to 5, or a “Teaching Competence” text such as “adept”). They have no effect on any application feature.
+- Stats are administrator-defined values on characters that are not tied to skills (for example a “Dark Side” score that starts at 5 and goes down as the character spends it, or a “Teaching Competence” text such as “adept”). They have no effect on any application feature. Values that are counted from skills are card flags (MANAGER-02).
 - A stat has a generated identifier, a name, and a type: **Number** or **Text**. Names are required, are 1–64 characters after trimming, and are unique among all stats (case- and Unicode-normalization–insensitive). The type cannot change after the stat is created.
-- In the character dialog, an administrator can set values for existing stats and type a new stat name with its type. A new name creates the stat, which is then available on every character.
-- Number values are whole numbers from 0 to 2,147,483,647. Text values are free text up to 64 characters after trimming. A character with no value for a stat shows 0 for a Number stat and an empty text for a Text stat.
+- In the character dialog, an administrator can set values for existing stats and type a new stat name with its type. A new name creates the stat, which then becomes part of every character, including characters created later.
+- The value typed when a stat is defined becomes that stat's default. Every character without its own value has the default; giving one character its own value does not change any other character. Typing the name of an existing stat uses that stat and does not change its default.
+- Number values are whole numbers from 0 to 2,147,483,647. Text values are free text up to 64 characters after trimming. A character's own Text value can be empty, which hides the default for that character.
 - Stats can be renamed. Character values are stored by stat identifier, so a rename changes no character.
 - Stats can be archived and unarchived. An archived stat keeps every character value, is hidden from the character dialog by default, and is clearly marked when shown.
 

@@ -310,7 +310,8 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
 
     /// <summary>
     /// Checks the values for existing stats against their types, and defines each newly typed stat name that does
-    /// not exist yet. A typed name that already exists uses that stat, which must have the same type.
+    /// not exist yet, with the typed value as its default for every character. A typed name that already exists uses
+    /// that stat, which must have the same type; its default does not change.
     /// </summary>
     private static async Task<(RosterOutcome Outcome, IReadOnlyList<ResolvedStatValue> Values)> ResolveStatValuesAsync(
         IDocumentSession session,
@@ -327,8 +328,8 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             return (RosterOutcome.UnknownStat, []);
         }
 
-        var types = stats.ToDictionary(stat => stat.Id, stat => stat.Type);
-        if (definition.StatValues.Any(input => !CharacterStatValues.IsValid(types[input.StatId], input.Number, input.Text)))
+        var statsById = stats.ToDictionary(stat => stat.Id);
+        if (definition.StatValues.Any(input => !CharacterStatValues.IsValid(statsById[input.StatId].Type, input.Number, input.Text)))
         {
             return (RosterOutcome.InvalidStatValue, []);
         }
@@ -340,7 +341,9 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
 
         var resolved = definition.StatValues
             .Select(input => new ResolvedStatValue(
-                CharacterStatValues.Normalize(input.StatId, input.Number, input.Text), types[input.StatId]))
+                CharacterStatValues.Normalize(input.StatId, input.Number, input.Text),
+                statsById[input.StatId].Type,
+                statsById[input.StatId].DefaultValue()))
             .ToList();
         foreach (var newStat in definition.NewStats.DistinctBy(stat => CatalogNames.Normalize(stat.Name)))
         {
@@ -354,14 +357,15 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             }
 
             var statId = existing?.Id ?? Guid.NewGuid();
+            var value = CharacterStatValues.Normalize(statId, newStat.Number, newStat.Text);
             if (existing is null)
             {
                 session.Events.StartStream<CharacterStatDocument>(statId,
-                    new CharacterStatDefined(statId, newStat.Name.Trim(), normalizedName, newStat.Type, now));
+                    new CharacterStatDefined(statId, newStat.Name.Trim(), normalizedName, newStat.Type, value.Number,
+                        value.Text, now));
             }
 
-            resolved.Add(new ResolvedStatValue(
-                CharacterStatValues.Normalize(statId, newStat.Number, newStat.Text), newStat.Type));
+            resolved.Add(new ResolvedStatValue(value, newStat.Type, existing?.DefaultValue() ?? value));
         }
 
         return (RosterOutcome.Succeeded, resolved.DistinctBy(value => value.Value.StatId).ToArray());
@@ -416,12 +420,14 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         }
     }
 
+    /// <summary>Whether the character already has the requested value, either its own or the stat's default.</summary>
     private static bool SameValue(CharacterDocument character, ResolvedStatValue requested)
     {
-        var current = character.StatValues.FirstOrDefault(value => value.StatId == requested.Value.StatId);
+        var current = character.StatValues.FirstOrDefault(value => value.StatId == requested.Value.StatId)
+                      ?? requested.Default;
         return requested.Type == CharacterStatType.Number
-            ? (current?.Number ?? 0) == requested.Value.Number
-            : current?.Text == requested.Value.Text;
+            ? current.Number == requested.Value.Number
+            : current.Text == requested.Value.Text;
     }
 
     /// <summary>
@@ -506,5 +512,6 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             .ToArray();
     }
 
-    private sealed record ResolvedStatValue(CharacterStatValue Value, CharacterStatType Type);
+    /// <param name="Default">The value of a character that has no value of its own for the stat.</param>
+    private sealed record ResolvedStatValue(CharacterStatValue Value, CharacterStatType Type, CharacterStatValue Default);
 }

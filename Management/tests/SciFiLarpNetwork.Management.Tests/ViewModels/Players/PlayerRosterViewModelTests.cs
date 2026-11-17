@@ -283,6 +283,22 @@ public sealed class PlayerRosterViewModelTests
             api.Submissions.Single());
     }
 
+    [Fact]
+    public async Task NewCharacterDialogStartsEachStatAtItsDefault()
+    {
+        var api = new FakePlayerApi();
+        api.AddPlayer("Ann");
+        api.AddStat("Dark Side", "number").DefaultNumber = 5;
+        api.AddStat("Teaching", "text").DefaultText = "adept";
+        var dialogs = new FakePlayerDialogs();
+        var roster = await LoadedRosterAsync(api, dialogs);
+        roster.SelectedPlayer = roster.Players[0];
+
+        await roster.NewCharacterCommand.ExecuteAsync();
+
+        Assert.Equal(["5", "adept"], dialogs.LastCharacterEditor!.Stats.Select(stat => stat.Value));
+    }
+
     [Theory]
     [InlineData("-1")]
     [InlineData("lots")]

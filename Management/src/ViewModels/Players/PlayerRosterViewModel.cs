@@ -591,7 +591,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         editor.SetStats((stats.Entities ?? []).Select(entity =>
         {
             var stat = SirenProperties.Read<CharacterStatProperties>(entity.Properties);
-            return new CharacterStatValueProperties(stat.StatId, stat.Name, stat.Type, null, null, stat.IsArchived);
+            return new CharacterStatValueProperties(stat.StatId, stat.Name, stat.Type, stat.DefaultNumber, stat.DefaultText, stat.IsArchived);
         }));
         await ApplyNetworksAsync(editor, player, null);
         await _dialogs.ShowCharacterEditorAsync(editor);

@@ -477,7 +477,7 @@ internal sealed class FakePlayerApi : IManagementApiClient
         });
 
     private static JsonElement StatProperties(FakeStat stat) =>
-        Json(new { statId = stat.Id, name = stat.Name, type = stat.Type, isArchived = stat.IsArchived, version = stat.Version });
+        Json(new { statId = stat.Id, name = stat.Name, type = stat.Type, defaultNumber = stat.DefaultNumber, defaultText = stat.DefaultText, isArchived = stat.IsArchived, version = stat.Version });
 
     private static void RequireVersion(JsonElement body, long version)
     {
@@ -563,6 +563,10 @@ internal sealed class FakeStat(Guid id, string name, string type)
     public string Name { get; set; } = name;
 
     public string Type { get; } = type;
+
+    public int? DefaultNumber { get; set; }
+
+    public string? DefaultText { get; set; }
 
     public bool IsArchived { get; set; }
 
