@@ -226,7 +226,7 @@ public sealed class PlayerRosterViewModelTests
         roster.QrIdentifierSearch = "nope";
         await roster.FindByQrCommand.ExecuteAsync();
 
-        Assert.Equal(new JsonLocalizer().TranslateApiError("errors.invalidQrIdentifier", "en"), roster.StatusMessage);
+        Assert.Equal("This is not a valid QR identifier.", roster.StatusMessage);
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public sealed class PlayerRosterViewModelTests
         await roster.NewCharacterCommand.ExecuteAsync();
 
         Assert.Equal(
-            new { Sent = 0, Error = (string?)new JsonLocalizer().TranslateApiError("errors.invalidExperiencePoints", "en") },
+            new { Sent = 0, Error = (string?)"Enter experience points as a whole number of 0 or more." },
             new { Sent = api.Submissions.Count, Error = shown!.ErrorMessage });
     }
 

@@ -102,6 +102,17 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task EditStartedBeforeACharacterWasCreatedIsStale()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira");
+
+        var result = await Players.UpdatePlayerAsync(player.PlayerId, player.Version, Definition("Ann B"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.StaleVersion, result.Outcome);
+    }
+
+    [Fact]
     public async Task StaleEditIsRejected()
     {
         var player = await CreatePlayerAsync("Ann");

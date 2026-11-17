@@ -43,6 +43,7 @@ These rules replace the legacy personal-data fields, the player password, the ch
 - Names are required, are 1–64 characters after trimming, and are not unique. Title, species, gender, and type are optional free text, 1–64 characters after trimming when present. They are user content and are not translated.
 - Experience points are a whole number from 0 to 2,147,483,647.
 - A character's status is **Active**, **Retired**, or **Dead**. A Dead character has a required death date. Status can change between any of the three, except that a character cannot become Active while its player is Inactive. Characters cannot be created for an Inactive player.
+- Creating a character, or making one Active, counts as a change to its player, so it cannot race the player becoming Inactive. A player edit started before that change is rejected as stale and reloads the latest values.
 
 ### Networks of a character
 
