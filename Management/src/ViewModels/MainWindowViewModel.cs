@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels.Networks;
+using SciFiLarpNetwork.Management.ViewModels.Players;
 using SciFiLarpNetwork.Management.ViewModels.Skills;
 
 namespace SciFiLarpNetwork.Management.ViewModels;
@@ -19,6 +20,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IManagementLocalizer _localizer;
     private readonly ICatalogDialogService _catalogDialogs;
     private readonly INetworkDialogService _networkDialogs;
+    private readonly IPlayerDialogService _playerDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -38,6 +40,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         IManagementLocalizer localizer,
         ICatalogDialogService catalogDialogs,
         INetworkDialogService networkDialogs,
+        IPlayerDialogService playerDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
@@ -46,6 +49,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _localizer = localizer;
         _catalogDialogs = catalogDialogs;
         _networkDialogs = networkDialogs;
+        _playerDialogs = playerDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -262,9 +266,15 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged(nameof(NetworkCatalog));
             OnPropertyChanged(nameof(IsTalentCatalogOpen));
             OnPropertyChanged(nameof(IsNetworkCatalogOpen));
+            OnPropertyChanged(nameof(PlayerRoster));
+            OnPropertyChanged(nameof(IsPlayerRosterOpen));
             OnPropertyChanged(nameof(IsResourceSummaryVisible));
         }
     }
+
+    public PlayerRosterViewModel? PlayerRoster => CurrentScreen as PlayerRosterViewModel;
+
+    public bool IsPlayerRosterOpen => PlayerRoster is not null;
 
     public TalentCatalogViewModel? TalentCatalog => CurrentScreen as TalentCatalogViewModel;
 
@@ -486,6 +496,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private static NavigationScreen ScreenFor(SirenLink link) =>
         link.Rel.Contains(SirenRelations.Talents, StringComparer.Ordinal) ? NavigationScreen.TalentCatalog
         : link.Rel.Contains(SirenRelations.Networks, StringComparer.Ordinal) ? NavigationScreen.NetworkCatalog
+        : link.Rel.Contains(SirenRelations.Players, StringComparer.Ordinal) ? NavigationScreen.PlayerRoster
         : NavigationScreen.ResourceSummary;
 
     private IManagementScreen CreateScreen(NavigationItem item) =>
@@ -495,6 +506,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
                 new TalentCatalogViewModel(_apiClient, _localizer, _catalogDialogs, ApiBaseUrl, Locale, item.Href),
             NavigationScreen.NetworkCatalog =>
                 new NetworkCatalogViewModel(_apiClient, _localizer, _networkDialogs, ApiBaseUrl, Locale, item.Href),
+            NavigationScreen.PlayerRoster =>
+                new PlayerRosterViewModel(_apiClient, _localizer, _playerDialogs, ApiBaseUrl, Locale, item.Href),
             _ => throw new ArgumentOutOfRangeException(nameof(item), item.Screen, "The entry opens the resource summary.")
         };
 

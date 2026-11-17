@@ -10,10 +10,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Application.Networks;
+using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Application.Skills;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CardFlagEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.RunningNumberEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
@@ -21,6 +26,8 @@ using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocume
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
+using SciFiLarpNetwork.Backend.Infrastructure.Players;
+using SciFiLarpNetwork.Backend.Infrastructure.Players.PlayerDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Skills;
 using SciFiLarpNetwork.Backend.Infrastructure.Skills.SkillDocuments;
 using Weasel.Core;
@@ -45,6 +52,9 @@ public static class DependencyInjection
         services.AddSingleton<ICardFlagService, CardFlagService>();
         services.AddSingleton<INetworkService, NetworkService>();
         services.AddSingleton<INetworkBackgroundImageService, NetworkBackgroundImageService>();
+        services.AddSingleton<IPlayerService, PlayerService>();
+        services.AddSingleton<ICharacterService, CharacterService>();
+        services.AddSingleton<ICharacterStatService, CharacterStatService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -129,6 +139,42 @@ public static class DependencyInjection
             options.Schema.For<NetworkDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, network => network.NormalizedName)
                 .UniqueIndex(UniqueIndexType.Computed, network => network.Code);
+
+            options.Events.AddEventType<RunningNumberIssued>();
+            options.Events.AddEventType<PlayerRegistered>();
+            options.Events.AddEventType<PlayerDetailsChanged>();
+            options.Events.AddEventType<PlayerDeactivated>();
+            options.Events.AddEventType<PlayerActivated>();
+            options.Events.AddEventType<PlayerArchived>();
+            options.Events.AddEventType<PlayerUnarchived>();
+            options.Events.AddEventType<PlayerCharacterActivated>();
+            options.Events.AddEventType<CharacterCreated>();
+            options.Events.AddEventType<CharacterDetailsChanged>();
+            options.Events.AddEventType<CharacterNetworkChanged>();
+            options.Events.AddEventType<CharacterStatusChanged>();
+            options.Events.AddEventType<CharacterStatValuesChanged>();
+            options.Events.AddEventType<CharacterQrIdentifierRegenerated>();
+            options.Events.AddEventType<CharacterArchived>();
+            options.Events.AddEventType<CharacterUnarchived>();
+            options.Events.AddEventType<CharacterStatDefined>();
+            options.Events.AddEventType<CharacterStatRenamed>();
+            options.Events.AddEventType<CharacterStatArchived>();
+            options.Events.AddEventType<CharacterStatUnarchived>();
+
+            // Player and character commands decide on these write models (running numbers, player status,
+            // unique stat names and QR identifiers).
+            options.Projections.Add<RunningNumberProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<PlayerProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<CharacterProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<CharacterStatProjection>(ProjectionLifecycle.Inline);
+
+            options.Schema.For<PlayerDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, player => player.Number);
+            options.Schema.For<CharacterDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, character => character.Number)
+                .UniqueIndex(UniqueIndexType.Computed, character => character.QrIdentifier);
+            options.Schema.For<CharacterStatDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, stat => stat.NormalizedName);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();

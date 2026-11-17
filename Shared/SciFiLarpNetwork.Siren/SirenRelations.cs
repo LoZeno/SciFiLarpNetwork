@@ -13,4 +13,12 @@ public static class SirenRelations
     public const string WithDisabled = "urn:scifilarnetwork:rels:with-disabled";
     public const string WithoutDisabled = "urn:scifilarnetwork:rels:without-disabled";
     public const string BackgroundImage = "urn:scifilarnetwork:rels:background-image";
+    public const string Players = "urn:scifilarnetwork:rels:players";
+    public const string Player = "urn:scifilarnetwork:rels:player";
+    public const string Characters = "urn:scifilarnetwork:rels:characters";
+    public const string CharacterStats = "urn:scifilarnetwork:rels:character-stats";
+    public const string First = "first";
+    public const string Previous = "prev";
+    public const string Next = "next";
+    public const string Last = "last";
 }

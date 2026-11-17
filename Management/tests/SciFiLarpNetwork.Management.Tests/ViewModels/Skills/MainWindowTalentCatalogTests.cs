@@ -1,4 +1,5 @@
 using System.Net;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
@@ -95,7 +96,7 @@ public sealed class MainWindowTalentCatalogTests
     }
 
     private static MainWindowViewModel CreateViewModel(FakeCatalogApi api) =>
-        new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new ManagementSettings());
+        new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {

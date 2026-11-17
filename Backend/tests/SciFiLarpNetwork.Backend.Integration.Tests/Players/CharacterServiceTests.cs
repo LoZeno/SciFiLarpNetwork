@@ -1,0 +1,486 @@
+using Marten;
+using Microsoft.Extensions.DependencyInjection;
+using SciFiLarpNetwork.Backend.Application.Networks;
+using SciFiLarpNetwork.Backend.Application.Players;
+using SciFiLarpNetwork.Backend.Domain.Characters;
+using SciFiLarpNetwork.Backend.Domain.Networks;
+using SciFiLarpNetwork.Backend.Domain.Players;
+using SciFiLarpNetwork.Backend.Tests.Integration.Api;
+
+namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
+
+[Collection("Backend database integration")]
+public sealed class CharacterServiceTests : IAsyncLifetime
+{
+    private readonly AdministratorAuthenticationFactory _factory = new();
+
+    public static TheoryData<CharacterDefinition, RosterOutcome> InvalidDefinitions => new()
+    {
+        { CharacterDefinitions.Named(" "), RosterOutcome.InvalidName },
+        { CharacterDefinitions.Named("Kira") with { Title = new string('t', 65) }, RosterOutcome.InvalidCharacterText },
+        { CharacterDefinitions.Named("Kira") with { Species = new string('s', 65) }, RosterOutcome.InvalidCharacterText },
+        { CharacterDefinitions.Named("Kira") with { ExperiencePoints = -1 }, RosterOutcome.InvalidExperiencePoints },
+        { CharacterDefinitions.Named("Kira") with { Status = CharacterStatus.Retired }, RosterOutcome.InvalidCharacterStatus },
+        { CharacterDefinitions.Named("Kira") with { Status = CharacterStatus.Dead }, RosterOutcome.DeathDateRequired },
+        { CharacterDefinitions.Named("Kira") with { StatValues = [new CharacterStatInput(Guid.NewGuid(), 1, null)] }, RosterOutcome.UnknownStat },
+        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat(" ", CharacterStatType.Number, 1, null)] }, RosterOutcome.InvalidStatName },
+        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", (CharacterStatType)9, 1, null)] }, RosterOutcome.InvalidStatType },
+        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Number, -1, null)] }, RosterOutcome.InvalidStatValue },
+        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Number, null, "high")] }, RosterOutcome.InvalidStatValue },
+        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Text, null, new string('x', 65))] }, RosterOutcome.InvalidStatValue }
+    };
+
+    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+
+    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
+
+    private INetworkService Networks => _factory.Services.GetRequiredService<INetworkService>();
+
+    public async ValueTask InitializeAsync()
+    {
+        await _factory.InitializeAsync();
+        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
+    }
+
+    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+
+    [Fact]
+    public async Task CreatedCharacterKeepsEveryField()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var network = await CreateNetworkAsync("rim");
+
+        var result = await Characters.CreateCharacterAsync(
+            player.PlayerId,
+            new CharacterDefinition(" Kira ", " Captain ", " Human ", " Female ", " Pilot ", int.MaxValue, CharacterStatus.Active,
+                null, network.NetworkId, [], []),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new CharacterSummary(result.Value!.CharacterId, 1, player.PlayerId, "Ann", "Kira", "Captain", "Human", "Female", "Pilot",
+                int.MaxValue, CharacterStatus.Active, null, network.NetworkId, result.Value.QrIdentifier, [], false, 1),
+            result.Value with { Stats = [] });
+    }
+
+    [Fact]
+    public async Task NewCharactersGetUniqueThirtyTwoDigitQrIdentifiers()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var first = await CreateCharacterAsync(player, "Kira");
+        var second = await CreateCharacterAsync(player, "Vel");
+
+        Assert.Equal(
+            new { FirstValid = true, SecondValid = true, Different = true },
+            new
+            {
+                FirstValid = IsStoredIdentifier(first.QrIdentifier),
+                SecondValid = IsStoredIdentifier(second.QrIdentifier),
+                Different = first.QrIdentifier != second.QrIdentifier
+            });
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidDefinitions))]
+    public async Task InvalidDetailsAreRejected(CharacterDefinition definition, RosterOutcome expected)
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId, definition, TestContext.Current.CancellationToken);
+
+        Assert.Equal(expected, result.Outcome);
+    }
+
+    [Fact]
+    public async Task CharacterOfAnUnknownPlayerIsNotFound()
+    {
+        var result = await Characters.CreateCharacterAsync(Guid.NewGuid(), CharacterDefinitions.Named("Kira"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.NotFound, result.Outcome);
+    }
+
+    [Fact]
+    public async Task InactivePlayerCannotGetNewCharacters()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Kira"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.PlayerInactive, result.Outcome);
+    }
+
+    [Fact]
+    public async Task UnknownNetworkIsRejected()
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NetworkId = Guid.NewGuid() }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.UnknownNetwork, result.Outcome);
+    }
+
+    [Fact]
+    public async Task DisabledNetworkCannotBeChosen()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var network = await CreateNetworkAsync("rim");
+        await Networks.DisableNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NetworkId = network.NetworkId }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.NetworkDisabled, result.Outcome);
+    }
+
+    [Fact]
+    public async Task DefaultNetworkCannotBeChosen()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var network = await CreateNetworkAsync("core");
+        await Networks.MakeDefaultNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NetworkId = network.NetworkId }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.DefaultNetworkNotSelectable, result.Outcome);
+    }
+
+    [Fact]
+    public async Task NetworkThatLaterBecameTheDefaultIsKeptByOtherEdits()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var network = await CreateNetworkAsync("rim");
+        var character = await CreateCharacterAsync(player, "Kira", network.NetworkId);
+        await Networks.MakeDefaultNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Title = "Captain" }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(network.NetworkId, result.Value!.NetworkId);
+    }
+
+    [Fact]
+    public async Task NetworkCanBeRemoved()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var network = await CreateNetworkAsync("rim");
+        var character = await CreateCharacterAsync(player, "Kira", network.NetworkId);
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { NetworkId = null }, TestContext.Current.CancellationToken);
+
+        Assert.Null(result.Value!.NetworkId);
+    }
+
+    [Fact]
+    public async Task DeadCharacterKeepsItsDeathDate()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Status = CharacterStatus.Dead, DeathDate = new DateOnly(2026, 5, 1) },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new { Status = CharacterStatus.Dead, DeathDate = (DateOnly?)new DateOnly(2026, 5, 1) },
+            new { result.Value!.Status, result.Value.DeathDate });
+    }
+
+    [Fact]
+    public async Task DeathDateIsClearedWhenTheCharacterIsNoLongerDead()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+        var dead = (await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Status = CharacterStatus.Dead, DeathDate = new DateOnly(2026, 5, 1) },
+            TestContext.Current.CancellationToken)).Value!;
+
+        var result = await Characters.UpdateCharacterAsync(dead.CharacterId, dead.Version,
+            CharacterDefinitions.From(dead) with { Status = CharacterStatus.Retired }, TestContext.Current.CancellationToken);
+
+        Assert.Null(result.Value!.DeathDate);
+    }
+
+    [Fact]
+    public async Task DeadCharacterNeedsADeathDate()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Status = CharacterStatus.Dead }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.DeathDateRequired, result.Outcome);
+    }
+
+    [Fact]
+    public async Task CharacterOfAnInactivePlayerCannotBecomeActive()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira");
+        await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken);
+        var retired = (await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken))[0];
+
+        var result = await Characters.UpdateCharacterAsync(retired.CharacterId, retired.Version,
+            CharacterDefinitions.From(retired) with { Status = CharacterStatus.Active }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.PlayerInactive, result.Outcome);
+    }
+
+    [Fact]
+    public async Task StaleEditIsRejected()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+        await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Title = "Captain" }, TestContext.Current.CancellationToken);
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Title = "Major" }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.StaleVersion, result.Outcome);
+    }
+
+    [Fact]
+    public async Task UnchangedEditKeepsTheVersion()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1L, result.Value!.Version);
+    }
+
+    [Fact]
+    public async Task ActiveCharacterCannotBeArchived()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+
+        var result = await Characters.ArchiveCharacterAsync(character.CharacterId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.CharacterNotArchivable, result.Outcome);
+    }
+
+    [Fact]
+    public async Task RetiredCharacterCanBeArchivedAndIsThenHidden()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var retired = await RetireAsync(await CreateCharacterAsync(player, "Kira"));
+
+        await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
+
+        Assert.Empty(await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ArchivedCharacterCannotBecomeActive()
+    {
+        var retired = await RetireAsync(await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira"));
+        var archived = (await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken)).Value!;
+
+        var result = await Characters.UpdateCharacterAsync(archived.CharacterId, archived.Version,
+            CharacterDefinitions.From(archived) with { Status = CharacterStatus.Active }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.Archived, result.Outcome);
+    }
+
+    [Fact]
+    public async Task UnarchivedCharacterIsListedAgain()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var retired = await RetireAsync(await CreateCharacterAsync(player, "Kira"));
+        await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
+
+        await Characters.UnarchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
+
+        Assert.Single(await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task RegeneratedQrIdentifierReplacesTheOldOne()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+        var regenerated = (await Characters.RegenerateQrIdentifierAsync(character.CharacterId, TestContext.Current.CancellationToken)).Value!;
+
+        var oldLookup = await Characters.FindByQrIdentifierAsync(character.QrIdentifier, TestContext.Current.CancellationToken);
+        var newLookup = await Characters.FindByQrIdentifierAsync(regenerated.QrIdentifier, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new { Old = RosterOutcome.NotFound, New = (Guid?)character.CharacterId },
+            new { Old = oldLookup.Outcome, New = newLookup.Value?.CharacterId });
+    }
+
+    [Fact]
+    public async Task QrLookupAcceptsTheHyphenatedForm()
+    {
+        var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
+
+        var result = await Characters.FindByQrIdentifierAsync(
+            Guid.ParseExact(character.QrIdentifier, "N").ToString("D").ToUpperInvariant(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(character.CharacterId, result.Value!.CharacterId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-code")]
+    public async Task MalformedQrIdentifierIsInvalid(string identifier)
+    {
+        var result = await Characters.FindByQrIdentifierAsync(identifier, TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.InvalidQrIdentifier, result.Outcome);
+    }
+
+    [Fact]
+    public async Task NewStatIsShownOnEveryCharacterWithItsDefault()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var other = await CreateCharacterAsync(player, "Vel");
+        await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with
+            {
+                NewStats =
+                [
+                    new NewCharacterStat("Dark Side", CharacterStatType.Number, 3, null),
+                    new NewCharacterStat("Teaching", CharacterStatType.Text, null, "adept")
+                ]
+            },
+            TestContext.Current.CancellationToken);
+
+        var reloaded = await Characters.GetCharacterAsync(other.CharacterId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            "Dark Side=0, Teaching=",
+            string.Join(", ", reloaded!.Stats.Select(stat => $"{stat.Name}={stat.Number?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? stat.Text}")));
+    }
+
+    [Fact]
+    public async Task TypedStatNameThatExistsWithTheSameTypeUsesThatStat()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Rank", CharacterStatType.Number, 1, null)]);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat(" RANK ", CharacterStatType.Number, 4, null)] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("Rank=4", string.Join(", ", result.Value!.Stats.Select(stat => $"{stat.Name}={stat.Number}")));
+    }
+
+    [Fact]
+    public async Task TypedStatNameThatExistsWithAnotherTypeIsRejected()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Rank", CharacterStatType.Number, 1, null)]);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Text, null, "high")] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.NameAlreadyUsed, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ValueOfTheWrongTypeForAnExistingStatIsRejected()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var vel = await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Rank", CharacterStatType.Number, 1, null)]);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { StatValues = [new CharacterStatInput(vel.Stats[0].StatId, null, "high")] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.InvalidStatValue, result.Outcome);
+    }
+
+    [Fact]
+    public async Task EditKeepsTheValuesOfStatsItDoesNotList()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var character = await CreateCharacterAsync(player, "Kira", newStats:
+        [
+            new NewCharacterStat("Dark Side", CharacterStatType.Number, 3, null),
+            new NewCharacterStat("Teaching", CharacterStatType.Text, null, "adept")
+        ]);
+        var darkSide = character.Stats.Single(stat => stat.Name == "Dark Side").StatId;
+
+        var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { StatValues = [new CharacterStatInput(darkSide, 5, null)] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            "Dark Side=5, Teaching=adept",
+            string.Join(", ", result.Value!.Stats.Select(stat => $"{stat.Name}={stat.Number?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? stat.Text}")));
+    }
+
+    [Fact]
+    public async Task SearchFindsCharactersOfEveryPlayerByName()
+    {
+        await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira Nerys");
+        await CreateCharacterAsync(await CreatePlayerAsync("Bob"), "Vel");
+
+        var page = await Characters.SearchCharactersAsync(new RosterQuery("nerys", false, 1), TestContext.Current.CancellationToken);
+
+        Assert.Equal("Kira Nerys (Ann)", string.Join(", ", page.Items.Select(character => $"{character.Name} ({character.PlayerDisplayName})")));
+    }
+
+    [Fact]
+    public async Task SearchFindsCharactersByRunningNumber()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira");
+        await CreateCharacterAsync(player, "Vel");
+
+        var page = await Characters.SearchCharactersAsync(new RosterQuery(" 2 ", false, 1), TestContext.Current.CancellationToken);
+
+        Assert.Equal("Vel", string.Join(", ", page.Items.Select(character => character.Name)));
+    }
+
+    [Fact]
+    public async Task OverlappingEditsDefiningTheSameStatNameLetOnlyOneSucceed()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        var kira = await CreateCharacterAsync(player, "Kira");
+        var vel = await CreateCharacterAsync(player, "Vel");
+        using var overlap = new Barrier(2);
+        _factory.Clock.ReadBarrier = overlap;
+
+        var results = await Task.WhenAll(
+            Task.Run(() => Characters.UpdateCharacterAsync(kira.CharacterId, kira.Version,
+                CharacterDefinitions.From(kira) with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Number, 1, null)] },
+                TestContext.Current.CancellationToken)),
+            Task.Run(() => Characters.UpdateCharacterAsync(vel.CharacterId, vel.Version,
+                CharacterDefinitions.From(vel) with { NewStats = [new NewCharacterStat("RANK", CharacterStatType.Number, 2, null)] },
+                TestContext.Current.CancellationToken)));
+        _factory.Clock.ReadBarrier = null;
+
+        Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
+    }
+
+    private static bool IsStoredIdentifier(string identifier) =>
+        identifier.Length == 32 && identifier.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    private async Task<PlayerSummary> CreatePlayerAsync(string name) =>
+        (await Players.CreatePlayerAsync(new PlayerDefinition(name, null, null, null, PlayerType.Player),
+            TestContext.Current.CancellationToken)).Value!;
+
+    private async Task<NetworkSummary> CreateNetworkAsync(string code) =>
+        (await Networks.CreateNetworkAsync(code, new NetworkDefinition(code, null, NetworkTheme.Blue),
+            TestContext.Current.CancellationToken)).Value!;
+
+    private async Task<CharacterSummary> CreateCharacterAsync(
+        PlayerSummary player,
+        string name,
+        Guid? networkId = null,
+        IReadOnlyList<NewCharacterStat>? newStats = null) =>
+        (await Characters.CreateCharacterAsync(
+            player.PlayerId,
+            CharacterDefinitions.Named(name) with { NetworkId = networkId, NewStats = newStats ?? [] },
+            TestContext.Current.CancellationToken)).Value!;
+
+    private async Task<CharacterSummary> RetireAsync(CharacterSummary character) =>
+        (await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
+            CharacterDefinitions.From(character) with { Status = CharacterStatus.Retired },
+            TestContext.Current.CancellationToken)).Value!;
+}

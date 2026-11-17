@@ -5,6 +5,7 @@
     xmlns:models="using:SciFiLarpNetwork.Management.ViewModels"
     xmlns:skills="using:SciFiLarpNetwork.Management.Views.Skills"
     xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
+    xmlns:players="using:SciFiLarpNetwork.Management.Views.Players"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -107,6 +108,9 @@
         </Panel>
         <Panel Margin="28" IsVisible="{Binding IsNetworkCatalogOpen}">
           <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
+        </Panel>
+        <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
+          <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
         </Panel>
       </Grid>
     </Grid>

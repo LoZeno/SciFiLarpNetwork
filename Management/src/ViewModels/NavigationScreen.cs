@@ -5,5 +5,6 @@ public enum NavigationScreen
 {
     ResourceSummary,
     TalentCatalog,
-    NetworkCatalog
+    NetworkCatalog,
+    PlayerRoster
 }
