@@ -1,0 +1,73 @@
+using SciFiLarpNetwork.Backend.Api.Skills;
+using SciFiLarpNetwork.Backend.Application.Players;
+
+namespace SciFiLarpNetwork.Backend.Api.Players;
+
+/// <summary>
+/// Maps player, character, and stat command outcomes to stable Siren error codes. Each code is also its
+/// localization key.
+/// </summary>
+public static class RosterErrors
+{
+    public const string InvalidEmail = "errors.invalidEmail";
+    public const string InvalidPhone = "errors.invalidPhone";
+    public const string InvalidNotes = "errors.invalidNotes";
+    public const string InvalidPlayerType = "errors.invalidPlayerType";
+    public const string InvalidCharacterText = "errors.invalidCharacterText";
+    public const string InvalidExperiencePoints = "errors.invalidExperiencePoints";
+    public const string InvalidCharacterStatus = "errors.invalidCharacterStatus";
+    public const string DeathDateRequired = "errors.deathDateRequired";
+    public const string PlayerInactive = "errors.playerInactive";
+    public const string PlayerNotInactive = "errors.playerNotInactive";
+    public const string CharacterNotArchivable = "errors.characterNotArchivable";
+    public const string Archived = "errors.archived";
+    public const string UnknownNetwork = "errors.unknownNetwork";
+    public const string DefaultNetworkNotSelectable = "errors.defaultNetworkNotSelectable";
+    public const string DisabledNetworkNotSelectable = "errors.disabledNetworkNotSelectable";
+    public const string UnknownStat = "errors.unknownStat";
+    public const string InvalidStatValue = "errors.invalidStatValue";
+    public const string InvalidStatName = "errors.invalidStatName";
+    public const string InvalidStatType = "errors.invalidStatType";
+    public const string InvalidQrIdentifier = "errors.invalidQrIdentifier";
+    public const string StatArchived = "errors.statArchived";
+
+    public static ApiException ToApiException(RosterOutcome outcome) =>
+        outcome switch
+        {
+            RosterOutcome.NotFound => Create(StatusCodes.Status404NotFound, ApiErrorCodes.NotFound),
+            RosterOutcome.StaleVersion => Create(StatusCodes.Status409Conflict, CatalogErrors.StaleVersion),
+            RosterOutcome.ConcurrentChange => Create(StatusCodes.Status409Conflict, CatalogErrors.ConcurrentChange),
+            RosterOutcome.NameAlreadyUsed => Create(StatusCodes.Status409Conflict, CatalogErrors.NameAlreadyUsed),
+            RosterOutcome.PlayerInactive => Create(StatusCodes.Status409Conflict, PlayerInactive),
+            RosterOutcome.PlayerNotInactive => Create(StatusCodes.Status409Conflict, PlayerNotInactive),
+            RosterOutcome.CharacterNotArchivable => Create(StatusCodes.Status409Conflict, CharacterNotArchivable),
+            RosterOutcome.Archived => Create(StatusCodes.Status409Conflict, Archived),
+            RosterOutcome.StatArchived => Create(StatusCodes.Status409Conflict, StatArchived),
+            RosterOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidName),
+            RosterOutcome.InvalidEmail => Create(StatusCodes.Status400BadRequest, InvalidEmail),
+            RosterOutcome.InvalidPhone => Create(StatusCodes.Status400BadRequest, InvalidPhone),
+            RosterOutcome.InvalidNotes => Create(StatusCodes.Status400BadRequest, InvalidNotes),
+            RosterOutcome.InvalidPlayerType => Create(StatusCodes.Status400BadRequest, InvalidPlayerType),
+            RosterOutcome.InvalidCharacterText => Create(StatusCodes.Status400BadRequest, InvalidCharacterText),
+            RosterOutcome.InvalidExperiencePoints => Create(StatusCodes.Status400BadRequest, InvalidExperiencePoints),
+            RosterOutcome.InvalidCharacterStatus => Create(StatusCodes.Status400BadRequest, InvalidCharacterStatus),
+            RosterOutcome.DeathDateRequired => Create(StatusCodes.Status400BadRequest, DeathDateRequired),
+            RosterOutcome.UnknownNetwork => Create(StatusCodes.Status400BadRequest, UnknownNetwork),
+            RosterOutcome.NetworkDisabled => Create(StatusCodes.Status400BadRequest, DisabledNetworkNotSelectable),
+            RosterOutcome.DefaultNetworkNotSelectable => Create(StatusCodes.Status400BadRequest, DefaultNetworkNotSelectable),
+            RosterOutcome.UnknownStat => Create(StatusCodes.Status400BadRequest, UnknownStat),
+            RosterOutcome.InvalidStatValue => Create(StatusCodes.Status400BadRequest, InvalidStatValue),
+            RosterOutcome.InvalidStatName => Create(StatusCodes.Status400BadRequest, InvalidStatName),
+            RosterOutcome.InvalidStatType => Create(StatusCodes.Status400BadRequest, InvalidStatType),
+            RosterOutcome.InvalidQrIdentifier => Create(StatusCodes.Status400BadRequest, InvalidQrIdentifier),
+            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "A successful outcome is not an error.")
+        };
+
+    public static T Unwrap<T>(RosterResult<T> result)
+        where T : class =>
+        result.Outcome == RosterOutcome.Succeeded && result.Value is { } value
+            ? value
+            : throw ToApiException(result.Outcome);
+
+    private static ApiException Create(int statusCode, string code) => new(statusCode, code, code);
+}

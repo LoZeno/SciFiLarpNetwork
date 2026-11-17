@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Headless.XUnit;
+using SciFiLarpNetwork.Management.Views.Players;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Application;
@@ -24,6 +25,7 @@ public sealed class DesktopApplicationBootstrapperTests
             new JsonLocalizer(),
             new WindowCatalogDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowNetworkDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
+            new WindowPlayerDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         var lifetime = new ClassicDesktopStyleApplicationLifetime();

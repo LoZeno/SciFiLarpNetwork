@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
@@ -95,6 +96,7 @@ public sealed class TalentCatalogWindowTests
             new JsonLocalizer(),
             new FakeCatalogDialogs(),
             new FakeNetworkDialogs(),
+            new FakePlayerDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

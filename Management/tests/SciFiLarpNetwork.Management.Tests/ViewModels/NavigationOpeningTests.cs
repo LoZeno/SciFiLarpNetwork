@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
@@ -75,6 +76,7 @@ public sealed class NavigationOpeningTests
             new JsonLocalizer(),
             new FakeCatalogDialogs(),
             new FakeNetworkDialogs(),
+            new FakePlayerDialogs(),
             new ManagementSettings());
         viewModel.NavigationItems.Add(News);
         viewModel.NavigationItems.Add(Messages);

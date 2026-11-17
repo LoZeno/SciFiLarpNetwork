@@ -39,7 +39,28 @@ public static class ApiErrorMessages
         "errors.imageTooLarge",
         "errors.imageDimensionsTooLarge",
         "errors.networkDisabled",
-        "errors.defaultNetworkCannotBeDisabled"
+        "errors.defaultNetworkCannotBeDisabled",
+        "errors.invalidEmail",
+        "errors.invalidPhone",
+        "errors.invalidNotes",
+        "errors.invalidPlayerType",
+        "errors.invalidCharacterText",
+        "errors.invalidExperiencePoints",
+        "errors.invalidCharacterStatus",
+        "errors.deathDateRequired",
+        "errors.playerInactive",
+        "errors.playerNotInactive",
+        "errors.characterNotArchivable",
+        "errors.archived",
+        "errors.unknownNetwork",
+        "errors.defaultNetworkNotSelectable",
+        "errors.disabledNetworkNotSelectable",
+        "errors.unknownStat",
+        "errors.invalidStatValue",
+        "errors.invalidStatName",
+        "errors.invalidStatType",
+        "errors.invalidQrIdentifier",
+        "errors.statArchived"
     ];
 
     extension(IManagementLocalizer localizer)

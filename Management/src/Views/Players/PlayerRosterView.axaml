@@ -1,0 +1,129 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.Players.PlayerRosterView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Players"
+    x:DataType="vm:PlayerRosterViewModel">
+  <DockPanel>
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+      <DockPanel Grid.Column="0">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding PlayersHeading}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding PlayerSearchLabel}"
+                PlaceholderText="{Binding PlayerSearchLabel}"
+                Text="{Binding PlayerSearch, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding SearchPlayersCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding SearchPlayersCommand}" Content="{Binding SearchLabel}" />
+          </Grid>
+          <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchivedPlayers}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding PreviousPlayersCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding PlayerPage}" />
+            <Button Command="{Binding NextPlayersCommand}" Content="{Binding NextLabel}" />
+          </StackPanel>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding NewPlayerCommand}" Content="{Binding NewLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding EditPlayerCommand}" Content="{Binding EditLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding TogglePlayerActiveCommand}" Content="{Binding TogglePlayerActiveLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding TogglePlayerArchivedCommand}" Content="{Binding TogglePlayerArchivedLabel}" />
+          </WrapPanel>
+          <Button Command="{Binding ManageStatsCommand}" Content="{Binding StatsLabel}" />
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasPlayersPlaceholder}"
+            Text="{Binding PlayersPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding PlayersHeading}"
+            ItemsSource="{Binding Players}"
+            SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:PlayerListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <DockPanel Grid.Column="1">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding CharactersHeading}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding CharacterSearchLabel}"
+                PlaceholderText="{Binding CharacterSearchLabel}"
+                Text="{Binding CharacterSearch, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding SearchCharactersCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding SearchCharactersCommand}" Content="{Binding SearchLabel}" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding QrIdentifierLabel}"
+                PlaceholderText="{Binding QrIdentifierLabel}"
+                Text="{Binding QrIdentifierSearch, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding FindByQrCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding FindByQrCommand}" Content="{Binding FindByQrLabel}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchivedCharacters}" />
+            <Button Command="{Binding ClearCharacterSearchCommand}" Content="{Binding ClearSearchLabel}" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <StackPanel IsVisible="{Binding IsCharacterSearchActive}" Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding PreviousCharactersCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding CharacterPage}" />
+            <Button Command="{Binding NextCharactersCommand}" Content="{Binding NextLabel}" />
+          </StackPanel>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding NewCharacterCommand}" Content="{Binding NewLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding EditCharacterCommand}" Content="{Binding EditLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ToggleCharacterArchivedCommand}" Content="{Binding ToggleCharacterArchivedLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding RegenerateQrCommand}" Content="{Binding RegenerateQrLabel}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasCharactersPlaceholder}"
+            Text="{Binding CharactersPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding CharactersHeading}"
+            ItemsSource="{Binding Characters}"
+            SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:CharacterListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

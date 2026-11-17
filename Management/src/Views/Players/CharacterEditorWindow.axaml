@@ -1,0 +1,142 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.Players.CharacterEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Players"
+    x:DataType="vm:CharacterEditorViewModel"
+    Title="{Binding Title}"
+    Width="680"
+    Height="820"
+    MinWidth="520"
+    MinHeight="520"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding SaveCommand}" Content="{Binding SaveLabel}" IsDefault="True" />
+        <Button Command="{Binding CancelCommand}" Content="{Binding CancelLabel}" IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <ScrollViewer>
+      <StackPanel Margin="0,0,12,0" Spacing="10">
+        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Text="{Binding CharacterNameLabel}" />
+        <TextBox AutomationProperties.Name="{Binding CharacterNameLabel}" MaxLength="64" Text="{Binding Name, Mode=TwoWay}" />
+        <TextBlock Text="{Binding CharacterTitleLabel}" />
+        <TextBox AutomationProperties.Name="{Binding CharacterTitleLabel}" MaxLength="64" Text="{Binding CharacterTitle, Mode=TwoWay}" />
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Column="0" Text="{Binding SpeciesLabel}" />
+          <TextBlock Grid.Column="1" Text="{Binding GenderLabel}" />
+          <TextBlock Grid.Column="2" Text="{Binding CharacterTypeLabel}" />
+          <TextBox Grid.Row="1" Grid.Column="0" AutomationProperties.Name="{Binding SpeciesLabel}" MaxLength="64" Text="{Binding Species, Mode=TwoWay}" />
+          <TextBox Grid.Row="1" Grid.Column="1" AutomationProperties.Name="{Binding GenderLabel}" MaxLength="64" Text="{Binding Gender, Mode=TwoWay}" />
+          <TextBox Grid.Row="1" Grid.Column="2" AutomationProperties.Name="{Binding CharacterTypeLabel}" MaxLength="64" Text="{Binding CharacterType, Mode=TwoWay}" />
+        </Grid>
+        <TextBlock Text="{Binding ExperiencePointsLabel}" />
+        <TextBox
+            Width="200"
+            HorizontalAlignment="Left"
+            AutomationProperties.Name="{Binding ExperiencePointsLabel}"
+            MaxLength="10"
+            Text="{Binding ExperiencePoints, Mode=TwoWay}" />
+        <StackPanel IsVisible="{Binding IsExisting}" Spacing="10">
+          <TextBlock Text="{Binding StatusLabel}" />
+          <ComboBox
+              MinWidth="200"
+              HorizontalAlignment="Left"
+              AutomationProperties.Name="{Binding StatusLabel}"
+              ItemsSource="{Binding Statuses}"
+              SelectedItem="{Binding SelectedStatus, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:RosterChoice">
+                <TextBlock Text="{Binding Title}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <StackPanel IsVisible="{Binding IsDead}" Spacing="6">
+            <TextBlock Text="{Binding DeathDateLabel}" />
+            <CalendarDatePicker AutomationProperties.Name="{Binding DeathDateLabel}" SelectedDate="{Binding DeathDate, Mode=TwoWay}" />
+          </StackPanel>
+          <TextBlock Text="{Binding QrIdentifierLabel}" />
+          <SelectableTextBlock FontFamily="Consolas, Menlo, monospace" Text="{Binding QrIdentifier}" />
+        </StackPanel>
+        <TextBlock FontWeight="SemiBold" Text="{Binding NetworksLabel}" />
+        <TextBlock Text="{Binding DefaultNetwork}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding NetworkLabel}" />
+        <ComboBox
+            MinWidth="240"
+            HorizontalAlignment="Left"
+            AutomationProperties.Name="{Binding NetworkLabel}"
+            ItemsSource="{Binding Networks}"
+            SelectedItem="{Binding SelectedNetwork, Mode=TwoWay}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NetworkChoice">
+              <TextBlock Text="{Binding Title}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock FontWeight="SemiBold" Text="{Binding StatsLabel}" />
+        <CheckBox Content="{Binding ShowArchivedStatsLabel}" IsChecked="{Binding ShowArchivedStats}" />
+        <ItemsControl ItemsSource="{Binding Stats}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CharacterStatRowViewModel">
+              <Grid Margin="0,2" ColumnDefinitions="2*,3*" ColumnSpacing="12">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding Name}" TextWrapping="Wrap" />
+                <TextBox
+                    Grid.Column="1"
+                    AutomationProperties.Name="{Binding Name}"
+                    MaxLength="64"
+                    Text="{Binding Value, Mode=TwoWay}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock FontWeight="SemiBold" Text="{Binding NewStatsLabel}" />
+        <TextBlock FontSize="12" Text="{Binding NewStatsHelp}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding NewStats}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:NewCharacterStatRowViewModel">
+              <Grid Margin="0,2" ColumnDefinitions="2*,Auto,2*,Auto" ColumnSpacing="8">
+                <TextBox
+                    Grid.Column="0"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).StatNameLabel}"
+                    MaxLength="64"
+                    PlaceholderText="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).StatNameLabel}"
+                    Text="{Binding Name, Mode=TwoWay}" />
+                <ComboBox
+                    Grid.Column="1"
+                    MinWidth="120"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).StatTypeLabel}"
+                    ItemsSource="{Binding Types}"
+                    SelectedItem="{Binding SelectedType, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RosterChoice">
+                      <TextBlock Text="{Binding Title}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBox
+                    Grid.Column="2"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).StatValueLabel}"
+                    MaxLength="64"
+                    PlaceholderText="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).StatValueLabel}"
+                    Text="{Binding Value, Mode=TwoWay}" />
+                <Button
+                    Grid.Column="3"
+                    Command="{Binding RemoveCommand}"
+                    Content="{Binding $parent[ItemsControl].((vm:CharacterEditorViewModel)DataContext).RemoveLabel}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Command="{Binding AddNewStatCommand}" Content="{Binding AddNewStatLabel}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

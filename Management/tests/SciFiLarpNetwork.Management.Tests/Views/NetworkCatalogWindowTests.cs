@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
@@ -117,6 +118,7 @@ public sealed class NetworkCatalogWindowTests
             new JsonLocalizer(),
             new FakeCatalogDialogs(),
             new FakeNetworkDialogs(),
+            new FakePlayerDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();
