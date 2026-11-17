@@ -70,7 +70,7 @@ These rules replace the legacy personal-data fields, the player password, the ch
 - The value typed when a stat is defined becomes that stat's default. Every character without its own value has the default; giving one character its own value does not change any other character. Typing the name of an existing stat uses that stat and does not change its default.
 - Number values are whole numbers from 0 to 2,147,483,647. Text values are free text up to 64 characters after trimming. A character's own Text value can be empty, which hides the default for that character.
 - Stats can be renamed. Character values are stored by stat identifier, so a rename changes no character.
-- Stats can be archived and unarchived. An archived stat keeps every character value, is hidden from the character dialog by default, and is clearly marked when shown.
+- Stats can be archived and unarchived. An archived stat keeps every character value, is hidden from the character dialog by default, and is clearly marked when shown. Typing the name of an archived stat as a new stat is rejected; the archived stat must be renamed or unarchived first.
 
 ### Archiving
 

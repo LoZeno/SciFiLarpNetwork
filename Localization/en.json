@@ -350,5 +350,6 @@
   "errors.invalidStatValue": "Enter whole numbers of 0 or more for number stats, and up to 64 characters for text stats.",
   "errors.invalidStatName": "Enter stat names of 1 to 64 characters.",
   "errors.invalidStatType": "Choose Number or Text for each new stat.",
-  "errors.invalidQrIdentifier": "This is not a valid QR identifier."
+  "errors.invalidQrIdentifier": "This is not a valid QR identifier.",
+  "errors.statArchived": "A stat with this name is archived. Rename or unarchive it first."
 }

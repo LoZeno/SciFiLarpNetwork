@@ -13,7 +13,7 @@ public sealed record PlayerUpdateRequest(
     string? Email,
     string? Phone,
     string? Notes,
-    PlayerType Type)
+    [property: JsonRequired] PlayerType Type)
 {
     public PlayerDefinition ToDefinition() => new(DisplayName, Email, Phone, Notes, Type);
 }

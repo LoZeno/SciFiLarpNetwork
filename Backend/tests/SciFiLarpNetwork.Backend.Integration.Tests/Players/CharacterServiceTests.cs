@@ -440,6 +440,22 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TypedStatNameOfAnArchivedStatIsRejected()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
+        var stats = _factory.Services.GetRequiredService<ICharacterStatService>();
+        var darkSide = (await stats.GetStatsAsync(includeArchived: false, TestContext.Current.CancellationToken)).Single();
+        await stats.ArchiveStatAsync(darkSide.StatId, TestContext.Current.CancellationToken);
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("dark side", CharacterStatType.Number, 3, null)] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.StatArchived, result.Outcome);
+    }
+
+    [Fact]
     public async Task ValueOfTheWrongTypeForAnExistingStatIsRejected()
     {
         var player = await CreatePlayerAsync("Ann");

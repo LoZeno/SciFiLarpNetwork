@@ -350,5 +350,6 @@
   "errors.invalidStatValue": "Inserisci numeri interi pari o superiori a 0 per le statistiche numeriche, e al massimo 64 caratteri per quelle di testo.",
   "errors.invalidStatName": "Inserisci nomi di statistica da 1 a 64 caratteri.",
   "errors.invalidStatType": "Scegli Numero o Testo per ogni nuova statistica.",
-  "errors.invalidQrIdentifier": "Questo non è un identificativo QR valido."
+  "errors.invalidQrIdentifier": "Questo non è un identificativo QR valido.",
+  "errors.statArchived": "Esiste una statistica archiviata con questo nome. Rinominala o ripristinala prima."
 }

@@ -39,7 +39,8 @@ public static class ApiErrorMessages
         "errors.imageTooLarge",
         "errors.imageDimensionsTooLarge",
         "errors.networkDisabled",
-        "errors.defaultNetworkCannotBeDisabled"
+        "errors.defaultNetworkCannotBeDisabled",
+        "errors.statArchived"
     ];
 
     extension(IManagementLocalizer localizer)

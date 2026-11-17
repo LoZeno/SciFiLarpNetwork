@@ -356,6 +356,11 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
                 return (RosterOutcome.NameAlreadyUsed, []);
             }
 
+            if (existing is { IsArchived: true })
+            {
+                return (RosterOutcome.StatArchived, []);
+            }
+
             var statId = existing?.Id ?? Guid.NewGuid();
             var value = CharacterStatValues.Normalize(statId, newStat.Number, newStat.Text);
             if (existing is null)

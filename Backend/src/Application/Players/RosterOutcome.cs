@@ -42,5 +42,9 @@ public enum RosterOutcome
     InvalidStatName,
     InvalidStatType,
     NameAlreadyUsed,
+
+    /// <summary>A typed stat name belongs to an archived stat, which must be renamed or unarchived first.</summary>
+    StatArchived,
+
     InvalidQrIdentifier
 }

@@ -29,6 +29,7 @@ public static class RosterErrors
     public const string InvalidStatName = "errors.invalidStatName";
     public const string InvalidStatType = "errors.invalidStatType";
     public const string InvalidQrIdentifier = "errors.invalidQrIdentifier";
+    public const string StatArchived = "errors.statArchived";
 
     public static ApiException ToApiException(RosterOutcome outcome) =>
         outcome switch
@@ -41,6 +42,7 @@ public static class RosterErrors
             RosterOutcome.PlayerNotInactive => Create(StatusCodes.Status409Conflict, PlayerNotInactive),
             RosterOutcome.CharacterNotArchivable => Create(StatusCodes.Status409Conflict, CharacterNotArchivable),
             RosterOutcome.Archived => Create(StatusCodes.Status409Conflict, Archived),
+            RosterOutcome.StatArchived => Create(StatusCodes.Status409Conflict, StatArchived),
             RosterOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidName),
             RosterOutcome.InvalidEmail => Create(StatusCodes.Status400BadRequest, InvalidEmail),
             RosterOutcome.InvalidPhone => Create(StatusCodes.Status400BadRequest, InvalidPhone),

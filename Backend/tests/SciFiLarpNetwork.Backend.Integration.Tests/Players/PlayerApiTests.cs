@@ -266,6 +266,34 @@ public sealed class PlayerApiTests : IAsyncLifetime
         Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.validation"), await ErrorAsync(response));
     }
 
+    [Theory]
+    [InlineData("{\"version\":1,\"name\":\"Kira\",\"status\":\"retired\"}")]
+    [InlineData("{\"version\":1,\"name\":\"Kira\",\"experiencePoints\":40}")]
+    public async Task CharacterEditWithoutStatusOrExperiencePointsIsAValidationError(string body)
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var characterId = await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
+
+        using var response = await SendAsync(client, token, HttpMethod.Put, $"{CharactersPath}/{characterId:D}",
+            JsonSerializer.Deserialize<JsonElement>(body));
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.validation"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task PlayerEditWithoutTypeIsAValidationError()
+    {
+        using var client = _factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var playerId = await CreatePlayerAsync(client, token, "Ann");
+
+        using var response = await SendAsync(client, token, HttpMethod.Put, $"{PlayersPath}/{playerId:D}",
+            new { version = 1, displayName = "Ann B" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.validation"), await ErrorAsync(response));
+    }
+
     [Fact]
     public async Task ActiveCharacterAdvertisesEditAndNewQrButNotArchiving()
     {
