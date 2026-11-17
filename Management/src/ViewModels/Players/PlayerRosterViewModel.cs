@@ -340,12 +340,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
     private async Task LoadPlayersCoreAsync(string? href)
     {
         var generation = ++_playerLoadGeneration;
-        var collection = await GetAsync(_playersHref);
-        if (href is not null)
-        {
-            collection = await GetAsync(href);
-        }
-        else if (!string.IsNullOrWhiteSpace(PlayerSearch) || ShowArchivedPlayers)
+        var collection = await GetAsync(href ?? _playersHref);
+        if (href is null && (!string.IsNullOrWhiteSpace(PlayerSearch) || ShowArchivedPlayers))
         {
             var search = collection.FindAction("search-players") ?? throw MissingAction();
             collection = await GetAsync(search.ToQueryHref(new Dictionary<string, string?>

@@ -532,6 +532,23 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
 
+    [Fact]
+    public async Task OverlappingCreationsBothSucceedWithTheirOwnRunningNumbers()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Kira");
+        using var overlap = new Barrier(2);
+        _factory.Clock.FirstReadBarrier = overlap;
+
+        var results = await Task.WhenAll(
+            Task.Run(() => Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Vel"),
+                TestContext.Current.CancellationToken)),
+            Task.Run(() => Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Zed"),
+                TestContext.Current.CancellationToken)));
+
+        Assert.Equal([2, 3], results.Select(result => result.Value?.Number).Order());
+    }
+
     private static string StatText(CharacterSummary character) =>
         string.Join(", ", character.Stats.Select(stat =>
             $"{stat.Name}={stat.Number?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? stat.Text}"));

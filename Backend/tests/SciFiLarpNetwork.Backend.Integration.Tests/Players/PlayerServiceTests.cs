@@ -266,32 +266,30 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task OverlappingCreationsNeverShareARunningNumber()
+    public async Task OverlappingCreationsBothSucceedWithTheirOwnRunningNumbers()
     {
         await CreatePlayerAsync("Ann");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        _factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Bob"), TestContext.Current.CancellationToken)),
             Task.Run(() => Players.CreatePlayerAsync(Definition("Cai"), TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
 
-        Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
+        Assert.Equal([2, 3], results.Select(result => result.Value?.Number).Order());
     }
 
     [Fact]
-    public async Task FirstEverOverlappingCreationsNeverShareARunningNumber()
+    public async Task FirstEverOverlappingCreationsBothSucceedWithTheirOwnRunningNumbers()
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        _factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Ann"), TestContext.Current.CancellationToken)),
             Task.Run(() => Players.CreatePlayerAsync(Definition("Bob"), TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
 
-        Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
+        Assert.Equal([1, 2], results.Select(result => result.Value?.Number).Order());
     }
 
     [Fact]
@@ -300,15 +298,14 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        _factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(async () => (await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken)).Outcome),
             Task.Run(async () => (await Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Vel"),
                 TestContext.Current.CancellationToken)).Outcome));
-        _factory.Clock.ReadBarrier = null;
 
-        Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.ConcurrentChange], results.Order());
+        Assert.Contains(string.Join(',', results.Order()), (string[])["Succeeded,ConcurrentChange", "Succeeded,PlayerInactive"]);
     }
 
     [Fact]

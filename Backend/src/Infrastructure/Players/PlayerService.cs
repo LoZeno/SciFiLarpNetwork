@@ -50,8 +50,12 @@ internal sealed class PlayerService(AttributedSessionFactory sessions, TimeProvi
         return (await session.LoadAsync<PlayerDocument>(playerId, cancellationToken))?.ToSummary();
     }
 
-    public async Task<RosterResult<PlayerSummary>> CreatePlayerAsync(PlayerDefinition definition,
-        CancellationToken cancellationToken = default)
+    public Task<RosterResult<PlayerSummary>> CreatePlayerAsync(PlayerDefinition definition,
+        CancellationToken cancellationToken = default) =>
+        RosterWrites.RetryLostRacesAsync(() => CreatePlayerOnceAsync(definition, cancellationToken));
+
+    private async Task<RosterResult<PlayerSummary>> CreatePlayerOnceAsync(PlayerDefinition definition,
+        CancellationToken cancellationToken)
     {
         if (Validate(definition) is { } invalid)
         {

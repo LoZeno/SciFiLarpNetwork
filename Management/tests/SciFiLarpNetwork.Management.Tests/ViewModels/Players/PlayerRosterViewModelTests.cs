@@ -91,6 +91,20 @@ public sealed class PlayerRosterViewModelTests
     }
 
     [Fact]
+    public async Task NextPageDoesNotReloadTheFirstPage()
+    {
+        var api = new FakePlayerApi { PageSize = 1 };
+        api.AddPlayer("Ann");
+        api.AddPlayer("Bob");
+        var roster = await LoadedRosterAsync(api);
+        api.Gets.Clear();
+
+        await roster.NextPlayersCommand.ExecuteAsync();
+
+        Assert.DoesNotContain(FakePlayerApi.PlayersHref, api.Gets);
+    }
+
+    [Fact]
     public async Task NewPlayerSubmitsTheDialogValues()
     {
         var api = new FakePlayerApi();

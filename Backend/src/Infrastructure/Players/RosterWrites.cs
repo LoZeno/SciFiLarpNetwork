@@ -78,6 +78,24 @@ internal static class RosterWrites
         }
     }
 
+    private const int CreationAttempts = 3;
+
+    /// <summary>
+    /// Runs a creation again while it loses a race on a shared stream, such as a running-number sequence that another
+    /// creation took first. Every attempt reads and checks everything again in a new session.
+    /// </summary>
+    public static async Task<RosterResult<T>> RetryLostRacesAsync<T>(Func<Task<RosterResult<T>>> creation)
+        where T : class
+    {
+        var result = await creation();
+        for (var attempt = 1; attempt < CreationAttempts && result.Outcome == RosterOutcome.ConcurrentChange; attempt++)
+        {
+            result = await creation();
+        }
+
+        return result;
+    }
+
     public static Task<RosterOutcome> ConcurrentChange() => Task.FromResult(RosterOutcome.ConcurrentChange);
 
     public static Task<RosterOutcome> NameAlreadyUsed() => Task.FromResult(RosterOutcome.NameAlreadyUsed);

@@ -17,7 +17,8 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.Players;
 /// <summary>
 /// Character commands follow Marten's command handler workflow: <c>FetchForWriting</c> on every stream the
 /// decision depends on, then one <c>SaveChangesAsync</c>. Creating a character or making it Active appends to the
-/// player's stream, so it conflicts with a concurrent deactivation of the player. A newly chosen network's stream is
+/// player's stream, so it conflicts with a concurrent deactivation of the player; a creation that loses such a race
+/// is run again, and then sees the Inactive player. A newly chosen network's stream is
 /// marked <c>AlwaysEnforceConsistency</c>; a network disabled or made default at the very moment of the commit can
 /// still be kept, which the specification allows for networks that change after they were chosen.
 /// </summary>
@@ -91,10 +92,16 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             : RosterResult<CharacterSummary>.Success((await ToSummariesAsync(session, [character], cancellationToken))[0]);
     }
 
-    public async Task<RosterResult<CharacterSummary>> CreateCharacterAsync(
+    public Task<RosterResult<CharacterSummary>> CreateCharacterAsync(
         Guid playerId,
         CharacterDefinition definition,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        RosterWrites.RetryLostRacesAsync(() => CreateCharacterOnceAsync(playerId, definition, cancellationToken));
+
+    private async Task<RosterResult<CharacterSummary>> CreateCharacterOnceAsync(
+        Guid playerId,
+        CharacterDefinition definition,
+        CancellationToken cancellationToken)
     {
         if (Validate(definition) is { } invalid)
         {

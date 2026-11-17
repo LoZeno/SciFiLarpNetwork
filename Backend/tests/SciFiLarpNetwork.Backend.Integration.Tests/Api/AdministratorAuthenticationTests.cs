@@ -901,14 +901,30 @@ public sealed class AdjustableTimeProvider : TimeProvider
     /// </summary>
     public Barrier? ReadBarrier { get; set; }
 
+    /// <summary>
+    /// Like <see cref="ReadBarrier"/>, but only for the first read: once every participant has read the clock it is
+    /// cleared, so a command that runs again after losing the race is not held.
+    /// </summary>
+    public Barrier? FirstReadBarrier { get; set; }
+
     public override DateTimeOffset GetUtcNow()
     {
-        if (ReadBarrier is { } barrier && !barrier.SignalAndWait(TimeSpan.FromSeconds(10)))
+        WaitFor(ReadBarrier);
+        if (FirstReadBarrier is { } first)
         {
-            throw new TimeoutException("Not every participant read the clock.");
+            WaitFor(first);
+            FirstReadBarrier = null;
         }
 
         return base.GetUtcNow() + _offset;
+    }
+
+    private static void WaitFor(Barrier? barrier)
+    {
+        if (barrier is not null && !barrier.SignalAndWait(TimeSpan.FromSeconds(10)))
+        {
+            throw new TimeoutException("Not every participant read the clock.");
+        }
     }
 
     public void Advance(TimeSpan amount) => _offset += amount;
