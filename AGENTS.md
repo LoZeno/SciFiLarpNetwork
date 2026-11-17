@@ -4,6 +4,7 @@
 - **Verify before editing:** Always verify theories against the actual codebase and documentation before making changes. Never assume.
 - **Prove fixes with tests:** Never claim a fix without running the full test suite to prove it. A fix is only a fix when tests pass.
 - **Read the documentation:** When documentation is available, read it completely before implementing. Follow the documented examples. Do not reinvent the wheel.
+- **Use local knowledge tool to access specs and documentation:** Use the `local_knowledge_search` when you need to read the SPEC-*, WEBFORM-*, MANAGER-* and CROSSCUT-* files, and when you need to read MartenDB documentation (marten-llms.txt)
 - **Verify before claiming:** Always verify before you claim, for everything — fixes, analysis, diagnosis, conclusions. Never state anything as true without evidence.
 - **Follow instructions in order:** Follow the user's instructions to the best of your abilities, in the order they are given, and to the letter. If any instruction is lacking, contradictory, unclear, or the order conflicts, do not take initiative — ask for clarification instead, explaining what appears lacking, contradictory, unclear, or conflicting.
 - **Understand before implementing:** Spend time fully understanding the problem and the correct solution before writing any code. Reading documentation is not optional.

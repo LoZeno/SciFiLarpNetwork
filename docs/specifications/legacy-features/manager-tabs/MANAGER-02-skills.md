@@ -60,7 +60,7 @@ A skill can carry any of these fixed game flags. They are product-defined, local
 - Example: “Skill X requires Skill Y AND Skill Z AND (Skill W OR Skill Q)” is stored as the groups `[Y]`, `[Z]`, `[W, Q]`. Any and/or rule can be entered this way; for example “(A AND B) OR C” is entered as `[A, C]`, `[B, C]`.
 - Validation rejects empty groups, a skill requiring itself, the same skill twice in one group, references to unknown skills, and any requirement loop (for example X requires Y and Y requires X, directly or through other skills, considering every skill in every group).
 - A prerequisite may be an archived skill; the skill dialog shows a warning for it.
-- Prerequisites are enforced when skills are assigned to characters, which is implemented by [MANAGER-01](MANAGER-01-players-characters.md).
+- Prerequisites are enforced when skills are assigned to characters, which is implemented by [MANAGER-12](MANAGER-12-character-skills.md).
 
 ## Acceptance criteria
 
