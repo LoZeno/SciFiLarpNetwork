@@ -51,7 +51,7 @@ jobs:
         run: cat coverage/dotnet/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload .NET coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dotnet-coverage
           path: |
@@ -79,7 +79,7 @@ jobs:
       - run: npm run check
       - name: Upload TypeScript coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-coverage
           path: Frontend/coverage/
