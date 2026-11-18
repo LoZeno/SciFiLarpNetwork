@@ -9,23 +9,17 @@ using SciFiLarpNetwork.Common.Siren;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Networks;
 
 [Collection("Backend database integration")]
-public sealed class NetworkApiTests : IAsyncLifetime
+public sealed class NetworkApiTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
     private const string NetworksPath = "/local/api/v1/networks";
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task VersionRootAdvertisesNetworksToReaders()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1", token);
@@ -36,7 +30,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousRequestCannotListNetworks()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
 
         using var response = await client.GetAsync(NetworksPath, TestContext.Current.CancellationToken);
 
@@ -46,7 +40,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCanListNetworksWithoutWriteActions()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, NetworksPath, token);
@@ -59,7 +53,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorSeesTheCreateNetworkAction()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, NetworksPath, token);
@@ -70,7 +64,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotCreateNetworks()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -82,7 +76,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorCreatesANetwork()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -104,7 +98,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DuplicateCodeReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -117,7 +111,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task MalformedCodeReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -130,7 +124,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [MemberData(nameof(InvalidThemes))]
     public async Task UnknownOrNumericThemesAreRejected(object theme)
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -144,7 +138,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task NetworkCollectionOffersEveryLocalizedTheme()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, NetworksPath, token, "it");
@@ -158,7 +152,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task EmptyCatalogReportsNoDefault()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, NetworksPath, token);
@@ -169,7 +163,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task MakingADefaultIsReportedByTheCollection()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await PostAsync(client, token, $"{NetworksPath}/{networkId:D}/make-default")).Dispose();
@@ -182,7 +176,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task EnabledNetworkOffersEditImageDefaultAndDisable()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -196,7 +190,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DefaultNetworkOffersNeitherDisableNorMakeDefault()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -208,7 +202,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DisabledNetworkOffersEnable()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -220,7 +214,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DisablingTheDefaultReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await PostAsync(client, token, $"{NetworksPath}/{networkId:D}/make-default")).Dispose();
@@ -233,7 +227,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task MakingADisabledNetworkDefaultReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await PostAsync(client, token, $"{NetworksPath}/{networkId:D}/disable")).Dispose();
@@ -246,7 +240,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DisabledNetworksAreReachedThroughTheirLink()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await PostAsync(client, token, $"{NetworksPath}/{networkId:D}/disable")).Dispose();
@@ -261,7 +255,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task DisabledNetworksAreHiddenByDefault()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await PostAsync(client, token, $"{NetworksPath}/{networkId:D}/disable")).Dispose();
@@ -274,7 +268,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task StaleEditReturnsTheStaleVersionCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         (await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -289,7 +283,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task UnknownNetworkReturnsNotFound()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"{NetworksPath}/{Guid.NewGuid():D}", token);
@@ -300,7 +294,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task UploadedImageIsServedWithItsMediaType()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         var content = NetworkTestImages.Png(size: 2048);
@@ -320,7 +314,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task UploadedImageIsLinkedFromTheNetworkList()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         var imageHref = await UploadImageAsync(client, token, networkId, NetworkTestImages.Png(size: 100));
@@ -333,8 +327,8 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCanDownloadImages()
     {
-        using var client = _factory.CreateClient();
-        var (adminToken, _) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (adminToken, _) = await factory.PrepareReaderWithTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, adminToken, "rim", "Outer Rim");
         var imageHref = await UploadImageAsync(client, adminToken, networkId, NetworkTestImages.Png(size: 100));
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
@@ -347,7 +341,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousRequestCannotDownloadImages()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         var imageHref = await UploadImageAsync(client, token, networkId, NetworkTestImages.Png(size: 100));
@@ -360,8 +354,8 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotUploadImages()
     {
-        using var client = _factory.CreateClient();
-        var (adminToken, _) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (adminToken, _) = await factory.PrepareReaderWithTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, adminToken, "rim", "Outer Rim");
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
@@ -375,7 +369,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task SvgUploadReturnsTheInvalidImageCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -389,7 +383,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task ImageWithTooManyPixelsReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -403,7 +397,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task OversizedUploadReturnsTheImageTooLargeCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
 
@@ -417,7 +411,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task RemovingTheImageRemovesItsLink()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
         await UploadImageAsync(client, token, networkId, NetworkTestImages.Png(size: 100));
@@ -431,7 +425,7 @@ public sealed class NetworkApiTests : IAsyncLifetime
     [Fact]
     public async Task UnknownImageReturnsNotFound()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(
@@ -442,13 +436,13 @@ public sealed class NetworkApiTests : IAsyncLifetime
 
     private async Task<string> AdministratorTokenAsync(HttpClient client)
     {
-        await _factory.BootstrapAdministratorAsync();
+        await factory.BootstrapAdministratorAsync();
         return await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
     }
 
     private async Task<string> ReaderTokenAsync(HttpClient client)
     {
-        await _factory.CreateReaderAccountAsync(client);
+        await factory.CreateReaderAccountAsync(client);
         return await AdministratorAuthenticationFactory.SignInReaderAsync(client);
     }
 

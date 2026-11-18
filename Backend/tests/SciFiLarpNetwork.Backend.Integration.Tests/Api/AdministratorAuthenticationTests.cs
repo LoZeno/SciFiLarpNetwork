@@ -22,28 +22,18 @@ using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocume
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 [Collection("Backend database integration")]
-public sealed class AdministratorAuthenticationTests : IAsyncLifetime
+public sealed class AdministratorAuthenticationTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        var store = _factory.Services.GetRequiredService<IDocumentStore>();
-        await store.Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _factory.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task BootstrapCreatesFirstAdministratorAccount()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
 
@@ -53,9 +43,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task BootstrapRejectsShortPassword()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "short", TestContext.Current.CancellationToken);
 
@@ -65,12 +55,12 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task BootstrapCredentialIsStoredAsHash()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
 
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
-        var grant = await _factory.LoadGrantDocumentAsync();
+        var grant = await factory.LoadGrantDocumentAsync();
 
         Assert.Equal(
             new { IsStored = true, IsPlaintext = false },
@@ -80,11 +70,11 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ExpiredBootstrapCredentialIsRejected()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
 
-        await _factory.WaitForProjectionsAsync();
-        _factory.ExpireCurrentGrant();
+        await factory.WaitForProjectionsAsync();
+        factory.ExpireCurrentGrant();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
 
@@ -94,9 +84,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ConcurrentBootstrapConsumesCredentialExactlyOnce()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
         var results = await Task.WhenAll(
             service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken),
@@ -110,8 +100,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task SignInReturnsSessionToken()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
 
         using var response = await client.PostAsync("/local/api/v1/admin/session",
             new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
@@ -130,8 +120,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task SignInWithWrongPasswordReturnsUnauthorized()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
 
         using var response = await client.PostAsync("/local/api/v1/admin/session",
             new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "wrong-password" }),
@@ -143,8 +133,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task SessionTokenIsStoredAsHash()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
 
         using var response = await client.PostAsync("/local/api/v1/admin/session",
             new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
@@ -152,9 +142,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
         response.EnsureSuccessStatusCode();
         var token = AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter!;
 
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
-        var sessions = await _factory.LoadSessionDocumentsAsync();
+        var sessions = await factory.LoadSessionDocumentsAsync();
 
         Assert.Equal(
             new { SessionCount = 1, IsPlaintext = false },
@@ -164,10 +154,10 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoverySucceedsWithValidCredential()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        await factory.BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
-        await _factory.WaitForProjectionsAsync();
+        await factory.WaitForProjectionsAsync();
 
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
 
@@ -177,12 +167,12 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ExpiredRecoveryCredentialIsRejected()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        await factory.BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
 
-        await _factory.WaitForProjectionsAsync();
-        _factory.ExpireCurrentGrant();
+        await factory.WaitForProjectionsAsync();
+        factory.ExpireCurrentGrant();
 
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
 
@@ -192,10 +182,10 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryRevokesExistingSessions()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
-        await _factory.RecoverAdministratorAsync();
+        await factory.RecoverAdministratorAsync();
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
 
@@ -205,9 +195,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryReplacesPassword()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
-        await _factory.RecoverAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
+        await factory.RecoverAdministratorAsync();
 
         using var response = await client.PostAsync("/local/api/v1/admin/session",
             new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "replacement-password-1" }),
@@ -219,9 +209,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryCredentialCannotBeReplayed()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var credential = await _factory.RecoverAdministratorAsync();
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        await factory.BootstrapAdministratorAsync();
+        var credential = await factory.RecoverAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
 
         var result = await service.RecoverAsync(credential, "local-admin", "another-replacement-password-1", TestContext.Current.CancellationToken);
 
@@ -231,9 +221,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task LogoutRevokesSession()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
-        await _factory.RecoverAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
+        await factory.RecoverAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "replacement-password-1");
 
         using var logout = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Delete, "/local/api/v1/admin/session", token);
@@ -247,8 +237,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RenewalReturnsNewToken()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Post, "/local/api/v1/admin/session/renew", token);
@@ -261,8 +251,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RenewalRevokesPreviousSession()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
         await AdministratorAuthenticationFactory.RenewSessionAsync(client, token);
 
@@ -274,8 +264,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCanViewAccounts()
     {
-        using var client = _factory.CreateClient();
-        await _factory.CreateReaderAccountAsync(client);
+        using var client = factory.CreateClient();
+        await factory.CreateReaderAccountAsync(client);
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", readerToken);
@@ -286,8 +276,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotCreateAccounts()
     {
-        using var client = _factory.CreateClient();
-        await _factory.CreateReaderAccountAsync(client);
+        using var client = factory.CreateClient();
+        await factory.CreateReaderAccountAsync(client);
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", readerToken,
@@ -299,8 +289,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotChangeRoles()
     {
-        using var client = _factory.CreateClient();
-        var readerId = await _factory.CreateReaderAccountAsync(client);
+        using var client = factory.CreateClient();
+        var readerId = await factory.CreateReaderAccountAsync(client);
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
@@ -312,12 +302,12 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task LastAdministratorCannotBeDemoted()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
-        await _factory.WaitForProjectionsAsync();
-        var accounts = await _factory.LoadAccountDocumentsAsync();
+        await factory.WaitForProjectionsAsync();
+        var accounts = await factory.LoadAccountDocumentsAsync();
         var adminId = accounts[0].Id;
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
@@ -329,7 +319,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousRequestsAreUnauthorized()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
 
         using var response = await client.GetAsync("/local/api/v1/admin/accounts", TestContext.Current.CancellationToken);
 
@@ -339,8 +329,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RemoteAuthenticationRequiresHttps()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/local/api/v1/admin/accounts");
@@ -355,10 +345,10 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task PasswordIsStoredAsVerifiableHash()
     {
-        await _factory.BootstrapAdministratorAsync();
-        await _factory.WaitForProjectionsAsync();
+        await factory.BootstrapAdministratorAsync();
+        await factory.WaitForProjectionsAsync();
 
-        var accounts = await _factory.LoadAccountDocumentsAsync();
+        var accounts = await factory.LoadAccountDocumentsAsync();
 
         Assert.Equal(
             new { AccountCount = 1, ContainsPlaintextPassword = false },
@@ -372,11 +362,11 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task AuditEventRecordsActor()
     {
-        using var client = _factory.CreateClient();
-        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (token, readerId) = await factory.PrepareReaderWithTokenAsync(client);
 
-        await _factory.WaitForProjectionsAsync();
-        var adminAccounts = await _factory.LoadAccountDocumentsAsync();
+        await factory.WaitForProjectionsAsync();
+        var adminAccounts = await factory.LoadAccountDocumentsAsync();
         var adminId = adminAccounts.FirstOrDefault(a => a.Role == AdministratorRoles.Administrator)?.Id
             ?? throw new InvalidOperationException("No admin account found");
 
@@ -384,8 +374,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
             $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
         response.EnsureSuccessStatusCode();
 
-        await _factory.WaitForProjectionsAsync();
-        var audits = await _factory.LoadAuditDocumentsAsync();
+        await factory.WaitForProjectionsAsync();
+        var audits = await factory.LoadAuditDocumentsAsync();
         var roleChangeAudit = audits.FirstOrDefault(a => a.TargetAccountId == readerId && a.EventType == "AdministratorRoleChanged");
 
         Assert.Equal(adminId, roleChangeAudit?.ActorAccountId);
@@ -394,16 +384,16 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RoleChangeEventIsAttributedToAuthenticatedAdministrator()
     {
-        using var client = _factory.CreateClient();
-        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
-        var adminAccounts = await _factory.LoadAccountDocumentsAsync();
+        using var client = factory.CreateClient();
+        var (token, readerId) = await factory.PrepareReaderWithTokenAsync(client);
+        var adminAccounts = await factory.LoadAccountDocumentsAsync();
         var adminId = adminAccounts.Single(a => a.Role == AdministratorRoles.Administrator).Id;
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
             $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
         response.EnsureSuccessStatusCode();
 
-        var readerEvents = await _factory.LoadStreamEventsAsync(readerId);
+        var readerEvents = await factory.LoadStreamEventsAsync(readerId);
 
         Assert.Equal(adminId.ToString("D"), readerEvents[^1].UserName);
     }
@@ -411,10 +401,10 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task StoreRejectsSecondAccountWithSameNormalizedUserName()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var existing = (await _factory.LoadAccountDocumentsAsync()).Single();
+        await factory.BootstrapAdministratorAsync();
+        var existing = (await factory.LoadAccountDocumentsAsync()).Single();
 
-        var exception = await Record.ExceptionAsync(() => _factory.AppendAccountCreatedAsync(existing.NormalizedUserName));
+        var exception = await Record.ExceptionAsync(() => factory.AppendAccountCreatedAsync(existing.NormalizedUserName));
 
         Assert.IsType<DocumentAlreadyExistsException>(exception);
     }
@@ -422,8 +412,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task CurrentSessionReturnsSignedInAccountName()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/session", token);
@@ -436,8 +426,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RemoteSignInWithoutHttpsIsForbidden()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         using var request = new HttpRequestMessage(HttpMethod.Post, "/local/api/v1/admin/session")
         {
             Content = new StringContent(JsonSerializer.Serialize(new { userName = "local-admin", password = "local-admin-password-1" }),
@@ -453,8 +443,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task SignInWithUnknownAccountReturnsUnauthorized()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
 
         using var response = await client.PostAsync("/local/api/v1/admin/session",
             new StringContent(JsonSerializer.Serialize(new { userName = "unknown-admin", password = "local-admin-password-1" }),
@@ -466,37 +456,37 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task SignInWithLegacyPasswordHashUpgradesTheStoredHash()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var legacyHash = new PasswordHasher<object>(Options.Create(new PasswordHasherOptions
         {
             CompatibilityMode = PasswordHasherCompatibilityMode.IdentityV2
         })).HashPassword(new object(), "legacy-password-123");
-        await _factory.AppendAccountCreatedAsync("LEGACY-ADMIN", "legacy-admin", legacyHash, AdministratorRoles.Administrator);
+        await factory.AppendAccountCreatedAsync("LEGACY-ADMIN", "legacy-admin", legacyHash, AdministratorRoles.Administrator);
 
         await AdministratorAuthenticationFactory.SignInAsync(client, "legacy-admin", "legacy-password-123");
 
-        var account = (await _factory.LoadAccountDocumentsAsync()).Single();
+        var account = (await factory.LoadAccountDocumentsAsync()).Single();
         Assert.NotEqual(legacyHash, account.PasswordHash);
     }
 
     [Fact]
     public async Task ExpiredSessionIsRevokedWhenItIsPresented()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
-        _factory.Clock.Advance(TimeSpan.FromHours(9));
+        factory.Clock.Advance(TimeSpan.FromHours(9));
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1/admin/accounts", token);
 
-        Assert.Empty(await _factory.LoadSessionDocumentsAsync());
+        Assert.Empty(await factory.LoadSessionDocumentsAsync());
     }
 
     [Fact]
     public async Task CreatingAccountWithUsedNameReturnsConflict()
     {
-        using var client = _factory.CreateClient();
-        var (token, _) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (token, _) = await factory.PrepareReaderWithTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
             new { userName = "Auditor", password = "another-reader-password-1", role = AdministratorRoles.Reader });
@@ -507,8 +497,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task CreatingAccountWithInvalidNameReturnsBadRequest()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, "/local/api/v1/admin/accounts", token,
@@ -520,8 +510,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task AccountCanBeReadById()
     {
-        using var client = _factory.CreateClient();
-        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (token, readerId) = await factory.PrepareReaderWithTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"/local/api/v1/admin/accounts/{readerId:D}", token);
 
@@ -533,8 +523,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ChangingRoleOfUnknownAccountReturnsNotFound()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
@@ -546,8 +536,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ChangingRoleToTheCurrentRoleSucceeds()
     {
-        using var client = _factory.CreateClient();
-        var (token, readerId) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (token, readerId) = await factory.PrepareReaderWithTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Put,
             $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Reader });
@@ -558,8 +548,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task VersionRootAdvertisesAccountsNavigationToAdministrators()
     {
-        using var client = _factory.CreateClient();
-        await _factory.BootstrapAdministratorAsync();
+        using var client = factory.CreateClient();
+        await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1", token);
@@ -572,9 +562,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task BootstrapIsRejectedWhenAnAccountAlreadyExists()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await _factory.AppendAccountCreatedAsync("EXISTING-ADMIN", "existing-admin", "not-a-real-hash", AdministratorRoles.Administrator);
+        await factory.AppendAccountCreatedAsync("EXISTING-ADMIN", "existing-admin", "not-a-real-hash", AdministratorRoles.Administrator);
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
 
@@ -584,7 +574,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task BootstrapRejectsNonHexadecimalCredential()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
 
         var result = await service.BootstrapAsync("not-a-hex-credential", "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
@@ -595,7 +585,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task BootstrapRejectsBlankUserName()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
 
         var result = await service.BootstrapAsync(credential, "   ", "local-admin-password-1", TestContext.Current.CancellationToken);
@@ -606,8 +596,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryRejectsShortPassword()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        await factory.BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
 
         var result = await service.RecoverAsync(credential, "local-admin", "short", TestContext.Current.CancellationToken);
@@ -618,8 +608,8 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryOfUnknownAccountReturnsAccountNotFound()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        await factory.BootstrapAdministratorAsync();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
 
         var result = await service.RecoverAsync(credential, "unknown-admin", "replacement-password-1", TestContext.Current.CancellationToken);
@@ -630,7 +620,7 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task RecoveryCredentialCannotBeIssuedWithoutAccounts()
     {
-        var service = _factory.Services.GetRequiredService<IAdministratorProvisioningService>();
+        var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken));
@@ -639,9 +629,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotCreateAccountsThroughTheService()
     {
-        using var client = _factory.CreateClient();
-        var readerId = await _factory.CreateReaderAccountAsync(client);
-        var service = _factory.Services.GetRequiredService<IAdministratorAccountService>();
+        using var client = factory.CreateClient();
+        var readerId = await factory.CreateReaderAccountAsync(client);
+        var service = factory.Services.GetRequiredService<IAdministratorAccountService>();
 
         var result = await service.CreateAccountAsync(readerId, "new-reader", "new-reader-password-1", AdministratorRoles.Reader, TestContext.Current.CancellationToken);
 
@@ -651,9 +641,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotChangeRolesThroughTheService()
     {
-        using var client = _factory.CreateClient();
-        var readerId = await _factory.CreateReaderAccountAsync(client);
-        var service = _factory.Services.GetRequiredService<IAdministratorAccountService>();
+        using var client = factory.CreateClient();
+        var readerId = await factory.CreateReaderAccountAsync(client);
+        var service = factory.Services.GetRequiredService<IAdministratorAccountService>();
 
         var result = await service.ChangeRoleAsync(readerId, readerId, AdministratorRoles.Administrator, TestContext.Current.CancellationToken);
 
@@ -663,9 +653,9 @@ public sealed class AdministratorAuthenticationTests : IAsyncLifetime
     [Fact]
     public async Task ChangingToAnUnknownRoleIsRejected()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var adminId = (await _factory.LoadAccountDocumentsAsync()).Single().Id;
-        var service = _factory.Services.GetRequiredService<IAdministratorAccountService>();
+        await factory.BootstrapAdministratorAsync();
+        var adminId = (await factory.LoadAccountDocumentsAsync()).Single().Id;
+        var service = factory.Services.GetRequiredService<IAdministratorAccountService>();
 
         var result = await service.ChangeRoleAsync(adminId, adminId, "superuser", TestContext.Current.CancellationToken);
 
@@ -725,6 +715,13 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     }
 
     public AdjustableTimeProvider Clock { get; } = new();
+
+    public async Task ResetAsync()
+    {
+        Clock.Reset();
+        LogMessages.Messages.Clear();
+        await Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
+    }
 
     public async Task WaitForProjectionsAsync()
     {
@@ -928,6 +925,13 @@ public sealed class AdjustableTimeProvider : TimeProvider
     }
 
     public void Advance(TimeSpan amount) => _offset += amount;
+
+    public void Reset()
+    {
+        _offset = TimeSpan.Zero;
+        ReadBarrier = null;
+        FirstReadBarrier = null;
+    }
 }
 
 public sealed class CapturingLoggerProvider : ILoggerProvider

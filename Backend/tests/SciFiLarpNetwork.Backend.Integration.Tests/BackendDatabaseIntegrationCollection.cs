@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration;
 
@@ -7,6 +8,6 @@ namespace SciFiLarpNetwork.Backend.Tests.Integration;
     "Naming",
     "CA1711:IdentifiersShouldNotHaveIncorrectSuffix",
     Justification = "xUnit's CollectionDefinition type convention requires the Collection suffix.")]
-public sealed class BackendDatabaseIntegrationCollection
+public sealed class BackendDatabaseIntegrationCollection : ICollectionFixture<AdministratorAuthenticationFactory>
 {
 }

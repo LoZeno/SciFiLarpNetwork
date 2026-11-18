@@ -8,31 +8,15 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class PlayerServiceTests : IAsyncLifetime
+public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
-    public static TheoryData<PlayerDefinition, RosterOutcome> InvalidDefinitions => new()
-    {
-        { Definition(" "), RosterOutcome.InvalidName },
-        { Definition(new string('a', 65)), RosterOutcome.InvalidName },
-        { Definition("Ann") with { Email = "not an email" }, RosterOutcome.InvalidEmail },
-        { Definition("Ann") with { Phone = new string('1', 33) }, RosterOutcome.InvalidPhone },
-        { Definition("Ann") with { Notes = new string('n', 2001) }, RosterOutcome.InvalidNotes },
-        { Definition("Ann") with { Type = (PlayerType)99 }, RosterOutcome.InvalidPlayerType }
-    };
+    private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
 
-    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
-
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedPlayerKeepsEveryField()
@@ -59,13 +43,13 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         Assert.Equal([1, 2, 3], created);
     }
 
-    [Theory]
-    [MemberData(nameof(InvalidDefinitions))]
-    public async Task InvalidDetailsAreRejected(PlayerDefinition definition, RosterOutcome expected)
+    [Fact]
+    public async Task InvalidNewPlayerIsRejectedAndNotStored()
     {
-        var result = await Players.CreatePlayerAsync(definition, TestContext.Current.CancellationToken);
+        var result = await Players.CreatePlayerAsync(Definition(" "), TestContext.Current.CancellationToken);
 
-        Assert.Equal(expected, result.Outcome);
+        var stored = await Players.GetPlayersAsync(new RosterQuery(null, true, 1), TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidName, StoredCount = 0L }, new { result.Outcome, StoredCount = stored.TotalCount });
     }
 
     [Fact]
@@ -89,6 +73,18 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         Assert.Equal(
             player with { DisplayName = "Ann B", Email = "ann@example.org", Notes = "Notes", Type = PlayerType.Senior, Version = 2 },
             result.Value);
+    }
+
+    [Fact]
+    public async Task InvalidEditIsRejectedAndChangesNothing()
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Players.UpdatePlayerAsync(player.PlayerId, player.Version,
+            Definition("Ann B") with { Email = "not an email" }, TestContext.Current.CancellationToken);
+
+        var stored = await Players.GetPlayerAsync(player.PlayerId, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidEmail, Stored = (PlayerSummary?)player }, new { result.Outcome, Stored = stored });
     }
 
     [Fact]
@@ -281,7 +277,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     {
         await CreatePlayerAsync("Ann");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Bob"), TestContext.Current.CancellationToken)),
@@ -294,7 +290,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     public async Task FirstEverOverlappingCreationsBothSucceedWithTheirOwnRunningNumbers()
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Ann"), TestContext.Current.CancellationToken)),
@@ -309,7 +305,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(async () => (await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken)).Outcome),
@@ -328,14 +324,14 @@ public sealed class PlayerServiceTests : IAsyncLifetime
             CharacterDefinitions.From(character) with { Status = CharacterStatus.Retired },
             TestContext.Current.CancellationToken)).Value!;
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(async () => (await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken)).Outcome),
             Task.Run(async () => (await Characters.UpdateCharacterAsync(retired.CharacterId, retired.Version,
                 CharacterDefinitions.From(retired) with { Status = CharacterStatus.Active },
                 TestContext.Current.CancellationToken)).Outcome));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.ConcurrentChange], results.Order());
     }

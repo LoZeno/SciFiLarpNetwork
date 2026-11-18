@@ -9,20 +9,14 @@ namespace SciFiLarpNetwork.Backend.Tests.Integration.Api;
 /// before saving, which is when a race between them can slip past the checks.
 /// </summary>
 [Collection("Backend database integration")]
-public sealed class AdministratorConcurrencyTests : IAsyncLifetime
+public sealed class AdministratorConcurrencyTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
     private const string Password = "second-admin-password-1";
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private IAdministratorAccountService Accounts => factory.Services.GetRequiredService<IAdministratorAccountService>();
 
-    private IAdministratorAccountService Accounts => _factory.Services.GetRequiredService<IAdministratorAccountService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatingAnAccountWhileBeingDemotedLetsOnlyOneSucceed()
@@ -138,7 +132,7 @@ public sealed class AdministratorConcurrencyTests : IAsyncLifetime
     private async Task<(T First, T Second)> OverlapAsync<T>(Func<Task<T>> first, Func<Task<T>> second)
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
         try
         {
             var results = await Task.WhenAll(Task.Run(first), Task.Run(second));
@@ -146,14 +140,14 @@ public sealed class AdministratorConcurrencyTests : IAsyncLifetime
         }
         finally
         {
-            _factory.Clock.ReadBarrier = null;
+            factory.Clock.ReadBarrier = null;
         }
     }
 
     private async Task<(Guid First, Guid Second)> TwoAdministratorsAsync()
     {
-        await _factory.BootstrapAdministratorAsync();
-        var first = (await _factory.LoadAccountDocumentsAsync()).Single().Id;
+        await factory.BootstrapAdministratorAsync();
+        var first = (await factory.LoadAccountDocumentsAsync()).Single().Id;
         var created = await Accounts.CreateAccountAsync(first, "second-admin", Password, AdministratorRoles.Administrator, TestContext.Current.CancellationToken);
         return (first, created.Account!.AccountId);
     }

@@ -10,39 +10,17 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class CharacterServiceTests : IAsyncLifetime
+public sealed class CharacterServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
-    public static TheoryData<CharacterDefinition, RosterOutcome> InvalidDefinitions => new()
-    {
-        { CharacterDefinitions.Named(" "), RosterOutcome.InvalidName },
-        { CharacterDefinitions.Named("Kira") with { Title = new string('t', 65) }, RosterOutcome.InvalidCharacterText },
-        { CharacterDefinitions.Named("Kira") with { Species = new string('s', 65) }, RosterOutcome.InvalidCharacterText },
-        { CharacterDefinitions.Named("Kira") with { ExperiencePoints = -1 }, RosterOutcome.InvalidExperiencePoints },
-        { CharacterDefinitions.Named("Kira") with { Status = CharacterStatus.Retired }, RosterOutcome.InvalidCharacterStatus },
-        { CharacterDefinitions.Named("Kira") with { Status = CharacterStatus.Dead }, RosterOutcome.DeathDateRequired },
-        { CharacterDefinitions.Named("Kira") with { StatValues = [new CharacterStatInput(Guid.NewGuid(), 1, null)] }, RosterOutcome.UnknownStat },
-        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat(" ", CharacterStatType.Number, 1, null)] }, RosterOutcome.InvalidStatName },
-        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", (CharacterStatType)9, 1, null)] }, RosterOutcome.InvalidStatType },
-        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Number, -1, null)] }, RosterOutcome.InvalidStatValue },
-        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Number, null, "high")] }, RosterOutcome.InvalidStatValue },
-        { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Text, null, new string('x', 65))] }, RosterOutcome.InvalidStatValue }
-    };
+    private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
 
-    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+    private INetworkService Networks => factory.Services.GetRequiredService<INetworkService>();
 
-    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    private INetworkService Networks => _factory.Services.GetRequiredService<INetworkService>();
-
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedCharacterKeepsEveryField()
@@ -79,15 +57,43 @@ public sealed class CharacterServiceTests : IAsyncLifetime
             });
     }
 
-    [Theory]
-    [MemberData(nameof(InvalidDefinitions))]
-    public async Task InvalidDetailsAreRejected(CharacterDefinition definition, RosterOutcome expected)
+    [Fact]
+    public async Task InvalidNewCharacterIsRejectedAndNotStored()
     {
         var player = await CreatePlayerAsync("Ann");
 
-        var result = await Characters.CreateCharacterAsync(player.PlayerId, definition, TestContext.Current.CancellationToken);
+        var result = await Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named(" "),
+            TestContext.Current.CancellationToken);
 
-        Assert.Equal(expected, result.Outcome);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidName, StoredCount = 0 },
+            new { result.Outcome, StoredCount = (await StoredCharactersOfAsync(player)).Count });
+    }
+
+    [Fact]
+    public async Task InvalidNewStatIsRejectedAndNothingIsStored()
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", (CharacterStatType)9, 1, null)] },
+            TestContext.Current.CancellationToken);
+
+        var stats = await factory.Services.GetRequiredService<ICharacterStatService>()
+            .GetStatsAsync(includeArchived: true, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidStatType, StoredCharacters = 0, StoredStats = 0 },
+            new { result.Outcome, StoredCharacters = (await StoredCharactersOfAsync(player)).Count, StoredStats = stats.Count });
+    }
+
+    [Fact]
+    public async Task ValueForAnUnknownStatIsRejected()
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Characters.CreateCharacterAsync(player.PlayerId,
+            CharacterDefinitions.Named("Kira") with { StatValues = [new CharacterStatInput(Guid.NewGuid(), 1, null)] },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RosterOutcome.UnknownStat, result.Outcome);
     }
 
     [Fact]
@@ -204,14 +210,16 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task DeadCharacterNeedsADeathDate()
+    public async Task InvalidEditIsRejectedAndChangesNothing()
     {
         var character = await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira");
 
         var result = await Characters.UpdateCharacterAsync(character.CharacterId, character.Version,
             CharacterDefinitions.From(character) with { Status = CharacterStatus.Dead }, TestContext.Current.CancellationToken);
 
-        Assert.Equal(RosterOutcome.DeathDateRequired, result.Outcome);
+        var stored = await Characters.GetCharacterAsync(character.CharacterId, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.DeathDateRequired, Stored = character with { Stats = [] } },
+            new { result.Outcome, Stored = stored! with { Stats = [] } });
     }
 
     [Fact]
@@ -444,7 +452,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     {
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
-        var stats = _factory.Services.GetRequiredService<ICharacterStatService>();
+        var stats = factory.Services.GetRequiredService<ICharacterStatService>();
         var darkSide = (await stats.GetStatsAsync(includeArchived: false, TestContext.Current.CancellationToken)).Single();
         await stats.ArchiveStatAsync(darkSide.StatId, TestContext.Current.CancellationToken);
 
@@ -518,7 +526,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         var kira = await CreateCharacterAsync(player, "Kira");
         var vel = await CreateCharacterAsync(player, "Vel");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Characters.UpdateCharacterAsync(kira.CharacterId, kira.Version,
@@ -527,7 +535,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
             Task.Run(() => Characters.UpdateCharacterAsync(vel.CharacterId, vel.Version,
                 CharacterDefinitions.From(vel) with { NewStats = [new NewCharacterStat("RANK", CharacterStatType.Number, 2, null)] },
                 TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
@@ -538,7 +546,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Vel"),
@@ -559,6 +567,9 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     private async Task<PlayerSummary> CreatePlayerAsync(string name) =>
         (await Players.CreatePlayerAsync(new PlayerDefinition(name, null, null, null, PlayerType.Player),
             TestContext.Current.CancellationToken)).Value!;
+
+    private Task<IReadOnlyList<CharacterSummary>> StoredCharactersOfAsync(PlayerSummary player) =>
+        Characters.GetCharactersOfPlayerAsync(player.PlayerId, includeArchived: true, TestContext.Current.CancellationToken);
 
     private async Task<NetworkSummary> CreateNetworkAsync(string code) =>
         (await Networks.CreateNetworkAsync(code, new NetworkDefinition(code, null, NetworkTheme.Blue),

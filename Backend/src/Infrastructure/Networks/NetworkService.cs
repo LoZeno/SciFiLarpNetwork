@@ -40,14 +40,9 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
     public async Task<NetworkResult> CreateNetworkAsync(string code, NetworkDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (Validate(definition) is { } invalid)
+        if (NetworkDefinitionValidator.ValidateCreation(code, definition) is { } invalid)
         {
             return NetworkResult.Failure(invalid);
-        }
-
-        if (!NetworkCodes.IsValid(code))
-        {
-            return NetworkResult.Failure(NetworkOutcome.InvalidCode);
         }
 
         await using var session = sessions.OpenSession();
@@ -84,7 +79,7 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
         NetworkDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (Validate(definition) is { } invalid)
+        if (NetworkDefinitionValidator.Validate(definition) is { } invalid)
         {
             return NetworkResult.Failure(invalid);
         }
@@ -197,11 +192,6 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
             return NetworkResult.Failure(NetworkOutcome.StaleVersion);
         }
     }
-
-    private static NetworkOutcome? Validate(NetworkDefinition definition) =>
-        !CatalogNames.IsValid(definition.Name) ? NetworkOutcome.InvalidName
-        : !Enum.IsDefined(definition.Theme) ? NetworkOutcome.InvalidTheme
-        : null;
 
     private async Task<NetworkOutcome> CreateConflictAsync(string normalizedCode, CancellationToken cancellationToken)
     {
