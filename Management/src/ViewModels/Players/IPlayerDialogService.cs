@@ -11,5 +11,7 @@ public interface IPlayerDialogService
 
     Task ShowStatsAsync(CharacterStatsViewModel stats);
 
+    Task ShowCharacterSkillsAsync(CharacterSkillsViewModel skills);
+
     Task<bool> ConfirmAsync(ConfirmationRequest request);
 }

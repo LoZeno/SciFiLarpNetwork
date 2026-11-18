@@ -60,7 +60,20 @@ public static class ApiErrorMessages
         "errors.invalidStatName",
         "errors.invalidStatType",
         "errors.invalidQrIdentifier",
-        "errors.statArchived"
+        "errors.statArchived",
+        "errors.tooManyTalents",
+        "errors.duplicateSkillPurchase",
+        "errors.invalidPurchaseCount",
+        "errors.invalidSpecifics",
+        "errors.archivedTalentNotSelectable",
+        "errors.unknownSkill",
+        "errors.talentNotOwned",
+        "errors.skillNotInTalent",
+        "errors.skillArchived",
+        "errors.notMultiPurchase",
+        "errors.prerequisitesNotMet",
+        "errors.requiredByOtherSkills",
+        "errors.insufficientFreePoints"
     ];
 
     extension(IManagementLocalizer localizer)

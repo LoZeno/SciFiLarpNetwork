@@ -605,11 +605,35 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
                 saved = await GetAsync(saved.FindLinkHref("self") ?? throw MissingAction());
                 editor.Apply(SirenProperties.Read<CharacterProperties>(saved.Properties));
             }));
+        editor.EnableManageSkills(async () =>
+        {
+            if (await ShowCharacterSkillsAsync(saved))
+            {
+                // Saving talents and skills raises the character version; the dialog's other fields are unchanged.
+                saved = await GetAsync(saved.FindLinkHref("self") ?? throw MissingAction());
+            }
+        });
         var character = SirenProperties.Read<CharacterProperties>(saved.Properties);
         editor.Apply(character);
         await ApplyNetworksAsync(editor, saved, character.NetworkId);
         await _dialogs.ShowCharacterEditorAsync(editor);
         await ReloadCharactersAfterSaveAsync(editor.IsSaved);
+    }
+
+    /// <summary>Shows the character's talents and skills window; returns whether anything was saved there.</summary>
+    private async Task<bool> ShowCharacterSkillsAsync(SirenEntity character)
+    {
+        var skills = new CharacterSkillsViewModel(
+            ApiClient,
+            Localizer,
+            ApiBaseUrl,
+            Locale,
+            character.FindLinkHref(SirenRelations.CharacterSkills) ?? throw MissingAction());
+        skills.SessionExpired += (_, _) =>
+            StatusMessage = Report(new ManagementApiException("errors.unauthorized", System.Net.HttpStatusCode.Unauthorized));
+        await skills.LoadAsync();
+        await _dialogs.ShowCharacterSkillsAsync(skills);
+        return skills.IsSaved;
     }
 
     /// <summary>

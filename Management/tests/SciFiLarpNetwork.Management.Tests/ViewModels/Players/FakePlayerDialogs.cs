@@ -12,6 +12,10 @@ internal sealed class FakePlayerDialogs : IPlayerDialogService
 
     public Func<CharacterStatsViewModel, Task> OnStats { get; init; } = _ => Task.CompletedTask;
 
+    public Func<CharacterSkillsViewModel, Task> OnCharacterSkills { get; init; } = _ => Task.CompletedTask;
+
+    public CharacterSkillsViewModel? LastCharacterSkills { get; private set; }
+
     public bool ConfirmResult { get; init; } = true;
 
     public CharacterEditorViewModel? LastCharacterEditor { get; private set; }
@@ -27,6 +31,12 @@ internal sealed class FakePlayerDialogs : IPlayerDialogService
     }
 
     public Task ShowStatsAsync(CharacterStatsViewModel stats) => OnStats(stats);
+
+    public Task ShowCharacterSkillsAsync(CharacterSkillsViewModel skills)
+    {
+        LastCharacterSkills = skills;
+        return OnCharacterSkills(skills);
+    }
 
     public Task<bool> ConfirmAsync(ConfirmationRequest request)
     {

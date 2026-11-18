@@ -285,11 +285,11 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
             ClearSession();
         }
 
-        var errorCode = await ReadErrorCodeAsync(response, cancellationToken);
-        throw new ManagementApiException(errorCode, response.StatusCode);
+        var (errorCode, errors) = await ReadErrorAsync(response, cancellationToken);
+        throw new ManagementApiException(errorCode, response.StatusCode, errors);
     }
 
-    private static async Task<string> ReadErrorCodeAsync(
+    private static async Task<(string Code, IReadOnlyDictionary<string, IReadOnlyList<string>>? Errors)> ReadErrorAsync(
         HttpResponseMessage response,
         CancellationToken cancellationToken)
     {
@@ -304,7 +304,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
                 code.ValueKind == JsonValueKind.String &&
                 !string.IsNullOrWhiteSpace(code.GetString()))
             {
-                return code.GetString()!;
+                return (code.GetString()!, ReadErrorDetails(properties));
             }
         }
         catch (JsonException)
@@ -312,7 +312,26 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
             // Non-Siren error responses are represented by their HTTP status instead.
         }
 
-        return $"http.{(int)response.StatusCode}";
+        return ($"http.{(int)response.StatusCode}", null);
+    }
+
+    /// <summary>Reads the error properties' <c>errors</c> object, keeping only lists of strings.</summary>
+    private static Dictionary<string, IReadOnlyList<string>>? ReadErrorDetails(JsonElement properties)
+    {
+        if (!properties.TryGetProperty("errors", out var errors) || errors.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return errors.EnumerateObject()
+            .Where(entry => entry.Value.ValueKind == JsonValueKind.Array)
+            .ToDictionary(
+                entry => entry.Name,
+                entry => (IReadOnlyList<string>)entry.Value.EnumerateArray()
+                    .Where(item => item.ValueKind == JsonValueKind.String)
+                    .Select(item => item.GetString()!)
+                    .ToArray(),
+                StringComparer.Ordinal);
     }
 
     private static SirenLink[] GetSafeNavigationLinks(Uri apiRoot, SirenEntity resource) =>

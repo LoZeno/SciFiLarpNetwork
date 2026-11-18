@@ -3,6 +3,7 @@ using Marten;
 using Marten.Pagination;
 using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Domain.Characters;
+using SciFiLarpNetwork.Backend.Domain.CharacterSkills;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
@@ -11,6 +12,7 @@ using SciFiLarpNetwork.Backend.Domain.Skills;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 using SciFiLarpNetwork.Backend.Infrastructure.Players.PlayerDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.Skills.SkillDocuments;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Players;
 
@@ -175,6 +177,11 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             return RosterResult<CharacterSummary>.Failure(fetchOutcome);
         }
 
+        if (await LeavesNegativeFreePointsAsync(session, current, definition.ExperiencePoints, cancellationToken))
+        {
+            return RosterResult<CharacterSummary>.Failure(RosterOutcome.InsufficientFreePoints);
+        }
+
         IEventStream<PlayerDocument>? activatingPlayer = null;
         if (definition.Status == CharacterStatus.Active && current.Status != CharacterStatus.Active)
         {
@@ -279,6 +286,27 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         return player.Aggregate is { Status: PlayerStatus.Active }
             ? (RosterOutcome.Succeeded, player)
             : (RosterOutcome.PlayerInactive, null);
+    }
+
+    /// <summary>
+    /// Whether lowering the experience points would make free points negative. Free points that are already negative
+    /// because a skill's cost was raised do not block other edits, or raising the experience points.
+    /// </summary>
+    private static async Task<bool> LeavesNegativeFreePointsAsync(
+        IQuerySession session,
+        CharacterDocument character,
+        int experiencePoints,
+        CancellationToken cancellationToken)
+    {
+        if (experiencePoints >= character.ExperiencePoints || character.SkillPurchases.Length == 0)
+        {
+            return false;
+        }
+
+        var skillIds = character.SkillPurchases.Select(purchase => purchase.SkillId).ToArray();
+        var costs = (await session.LoadManyAsync<SkillDocument>(cancellationToken, skillIds))
+            .ToDictionary(skill => skill.Id, skill => skill.Cost);
+        return CharacterSkillRules.FreePoints(experiencePoints, character.SkillPurchases, skillId => costs[skillId]) < 0;
     }
 
     private static async Task<RosterOutcome> LockSelectableNetworkAsync(

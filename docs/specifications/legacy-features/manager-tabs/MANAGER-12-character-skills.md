@@ -26,19 +26,36 @@ Let administrators choose a character's talents and buy skills for the character
 
 ### Skill purchases
 
+- A character owns each skill at most once: one purchase per skill, holding the talent it was bought through, a purchase count, and a specifics note. An administrator can change the talent of an owned skill to another owned talent the skill belongs to.
 - A character can buy a skill only through one of its talents, and only when the skill belongs to that talent. Archived skills cannot be bought; skills bought before they were archived are kept.
-- A skill without the multi-purchase flag is bought at most once. A multi-purchase skill has a purchase count of 1 or more.
+- A skill without the multi-purchase flag is bought at most once. A multi-purchase skill has a purchase count from 1 to 999.
 - Each purchase has an optional “specifics” note, 1–64 characters after trimming when present. It is user content and is not translated.
 - A purchase is accepted only when the character meets the skill's prerequisites (MANAGER-02).
 
+### Catalog changes after a purchase
+
+Rules are checked when a skill is bought or its purchase count is raised. Later catalog changes never remove or change a purchase:
+
+- If a skill's prerequisites change, characters that already own it keep it.
+- If a skill is taken off the talent it was bought through, or a talent or skill is archived, the purchase is kept with its talent.
+- If the multi-purchase flag is turned off, the purchase keeps its count. The count can be lowered but not raised.
+- If a skill's cost changes, free points are recalculated with the new cost (see below).
+
 ### Free points
 
-- Free points are the character's experience points minus the cost of each owned skill, multiplied by its purchase count.
-- Free points can never go below zero. A purchase, an extra purchase, or a lower experience-point value that would make free points negative is rejected with a clear, localized error.
+- Free points are the character's experience points minus the current cost of each owned skill, multiplied by its purchase count.
+- A purchase, an extra purchase, or a lower experience-point value that would make free points negative is rejected with a clear, localized error.
+- Raising a skill's cost (MANAGER-02) is allowed even when an owner's free points become negative. The free points are then shown as negative with a warning, and the character cannot buy skills or raise purchase counts until free points are zero or more again.
 
 ### Removing a skill
 
-- A skill cannot be removed (or its purchase count lowered to zero) while another owned skill needs it as a prerequisite. The error lists the dependent skills that must be removed first.
+- A skill cannot be removed (or its purchase count lowered to zero) while another owned skill needs it as a prerequisite, that is, while removing it leaves one of that skill's prerequisite groups with no owned skill. The error lists the dependent skills that must be removed first.
+
+### Saving
+
+- Talents and skills are saved together, as the full list for one character, against the character's version. Every rule is checked on the list being saved, so a skill and its prerequisite can be bought in the same save.
+- Talents and skills can be changed on characters of any status, archived or not, like the other character details (MANAGER-01).
+- A talent archived after being picked still counts toward the limit of 5.
 
 
 ## Acceptance criteria

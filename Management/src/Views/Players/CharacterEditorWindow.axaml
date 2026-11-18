@@ -45,6 +45,10 @@
             AutomationProperties.Name="{Binding ExperiencePointsLabel}"
             MaxLength="10"
             Text="{Binding ExperiencePoints, Mode=TwoWay}" />
+        <Button
+            Command="{Binding ManageSkillsCommand}"
+            Content="{Binding ManageSkillsLabel}"
+            IsVisible="{Binding CanManageSkills}" />
         <StackPanel IsVisible="{Binding IsExisting}" Spacing="10">
           <TextBlock Text="{Binding StatusLabel}" />
           <ComboBox
