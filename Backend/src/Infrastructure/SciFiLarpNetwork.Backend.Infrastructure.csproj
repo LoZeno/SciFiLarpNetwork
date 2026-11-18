@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Marten" Version="9.57.0" />
+    <PackageReference Include="Marten" Version="9.62.0" />
   </ItemGroup>
 
   <ItemGroup>
