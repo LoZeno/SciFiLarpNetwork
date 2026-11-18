@@ -107,12 +107,27 @@ public sealed class CharacterSkillsViewModelTests
     {
         var api = new FakePlayerApi();
         var kira = api.AddCharacter(api.AddPlayer("Ann"), "Kira");
-        kira.TalentIds = [.. Enumerable.Range(1, CharacterSkillsViewModel.MaxTalents).Select(number => api.AddTalent($"Talent {number}").Id)];
+        kira.TalentIds = [.. Enumerable.Range(1, 5).Select(number => api.AddTalent($"Talent {number}").Id)];
         api.AddTalent("One more");
 
         var skills = await OpenSkillsAsync(api);
 
         Assert.False(skills.AddTalentCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task TalentLimitFollowsTheServer()
+    {
+        var api = new FakePlayerApi { TalentLimit = 2 };
+        var kira = api.AddCharacter(api.AddPlayer("Ann"), "Kira");
+        kira.TalentIds = [api.AddTalent("Pilot").Id, api.AddTalent("Medic").Id];
+        api.AddTalent("Smuggler");
+
+        var skills = await OpenSkillsAsync(api);
+
+        Assert.Equal(
+            new { CanAdd = false, Limit = "A character can have up to 2 talents." },
+            new { CanAdd = skills.AddTalentCommand.CanExecute(null), Limit = skills.TalentLimitText });
     }
 
     [Fact]

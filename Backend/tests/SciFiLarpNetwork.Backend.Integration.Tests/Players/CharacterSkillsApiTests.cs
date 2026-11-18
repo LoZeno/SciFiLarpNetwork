@@ -112,6 +112,19 @@ public sealed class CharacterSkillsApiTests(AdministratorAuthenticationFactory f
     }
 
     [Fact]
+    public async Task NullSkillEntryIsAValidationError()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var characterId = await CreateCharacterAsync(client, token);
+
+        using var response = await SendAsync(client, token, SkillsPath(characterId),
+            new { version = 1, talentIds = Array.Empty<Guid>(), skills = new object?[] { null } });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.validation"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task InvalidPurchaseCountReturnsItsStableCode()
     {
         using var client = factory.CreateClient();

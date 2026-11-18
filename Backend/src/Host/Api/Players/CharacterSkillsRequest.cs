@@ -11,8 +11,17 @@ namespace SciFiLarpNetwork.Backend.Api.Players;
 public sealed record CharacterSkillsRequest(
     [Range(1, long.MaxValue)] long Version,
     [property: JsonRequired] IReadOnlyList<Guid> TalentIds,
-    [property: JsonRequired] IReadOnlyList<SkillPurchaseRequest> Skills)
+    [property: JsonRequired] IReadOnlyList<SkillPurchaseRequest> Skills) : IValidatableObject
 {
     public CharacterSkillsDefinition ToDefinition() =>
         new(TalentIds, Skills.Select(skill => skill.ToPurchase()).ToArray());
+
+    /// <summary>JSON can hold <c>null</c> list entries, which model validation does not reject on its own.</summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Skills.Any(skill => skill is null))
+        {
+            yield return new ValidationResult("A skill entry is missing.", [nameof(Skills)]);
+        }
+    }
 }

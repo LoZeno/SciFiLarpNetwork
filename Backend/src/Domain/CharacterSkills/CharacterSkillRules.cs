@@ -16,7 +16,7 @@ public static class CharacterSkillRules
 
     /// <summary>
     /// Finds the first broken rule, in this order: talents, skill and talent references, archived skills,
-    /// multi-purchase counts, prerequisites of new skills, skills still needed by others, and free points.
+    /// multi-purchase counts, prerequisites, skills still needed by others, and free points.
     /// Structural rules (the talent limit, duplicates, counts, specifics) are checked before this.
     /// </summary>
     public static CharacterSkillFinding Check(CharacterSkillChange change)
@@ -35,7 +35,7 @@ public static class CharacterSkillRules
             () => Find(CharacterSkillProblem.TalentNotOwned, change, current, (purchase, _) =>
                 !change.TalentIds.Contains(purchase.TalentId)),
             () => Find(CharacterSkillProblem.SkillNotInTalent, change, current, (purchase, previous) =>
-                previous?.TalentId != purchase.TalentId &&
+                (previous?.TalentId != purchase.TalentId || IsRaised(purchase, previous)) &&
                 !change.Skills[purchase.SkillId].TalentIds.Contains(purchase.TalentId)),
             () => Find(CharacterSkillProblem.SkillArchived, change, current, (purchase, previous) =>
                 IsRaised(purchase, previous) && change.Skills[purchase.SkillId].IsArchived),
@@ -89,7 +89,7 @@ public static class CharacterSkillRules
     {
         var owned = change.Purchases.Select(purchase => purchase.SkillId).ToHashSet();
         var unmet = change.Purchases
-            .Where(purchase => !current.ContainsKey(purchase.SkillId))
+            .Where(purchase => IsRaised(purchase, current.GetValueOrDefault(purchase.SkillId)))
             .Where(purchase => !change.Skills[purchase.SkillId].PrerequisiteGroups.All(group => group.Any(owned.Contains)))
             .Select(purchase => purchase.SkillId)
             .ToArray();

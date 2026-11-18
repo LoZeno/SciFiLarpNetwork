@@ -62,6 +62,7 @@ public static class ApiErrorMessages
         "errors.invalidQrIdentifier",
         "errors.statArchived",
         "errors.tooManyTalents",
+        "errors.duplicateTalent",
         "errors.duplicateSkillPurchase",
         "errors.invalidPurchaseCount",
         "errors.invalidSpecifics",

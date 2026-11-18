@@ -47,7 +47,7 @@ internal sealed class CharacterSkillService(AttributedSessionFactory sessions, T
             return Failure(fetchOutcome);
         }
 
-        var talentIds = definition.TalentIds.Distinct().ToArray();
+        var talentIds = definition.TalentIds.ToArray();
         var purchases = definition.Purchases
             .Select(purchase => purchase with { Specifics = CharacterTexts.Normalize(purchase.Specifics) })
             .ToArray();
@@ -145,6 +145,7 @@ internal sealed class CharacterSkillService(AttributedSessionFactory sessions, T
             character.ExperiencePoints,
             CharacterSkillRules.FreePoints(character.ExperiencePoints, character.SkillPurchases,
                 skillId => catalog.Skills[skillId].Cost),
+            CharacterSkillRules.MaxTalents,
             character.TalentIds
                 .Select(talentId => catalog.Talents[talentId])
                 .Select(talent => new CharacterTalentSummary(talent.Id, talent.Name, talent.IsArchived))

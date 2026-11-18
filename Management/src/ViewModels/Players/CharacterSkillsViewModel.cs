@@ -17,9 +17,6 @@ namespace SciFiLarpNetwork.Management.ViewModels.Players;
 /// </summary>
 public sealed class CharacterSkillsViewModel : ScreenViewModel
 {
-    /// <summary>The talent limit of MANAGER-12.</summary>
-    public const int MaxTalents = 5;
-
     private const string SkillsErrorKey = "skills";
     private readonly string _href;
     private readonly AsyncCommand _reloadCommand;
@@ -42,7 +39,7 @@ public sealed class CharacterSkillsViewModel : ScreenViewModel
     {
         _href = href;
         _reloadCommand = new AsyncCommand(LoadAsync, HandleUnexpectedFailure);
-        AddTalentCommand = new DelegateCommand(AddTalent, () => CanEdit() && SelectedNewTalent is not null && Talents.Count < MaxTalents);
+        AddTalentCommand = new DelegateCommand(AddTalent, () => CanEdit() && SelectedNewTalent is not null && Talents.Count < TalentLimit);
         AddSkillCommand = new DelegateCommand(AddSkill, () => CanEdit() && SelectedNewSkill is not null);
         SaveCommand = new AsyncCommand(() => RunAsync(SaveAsync), HandleUnexpectedFailure, CanEdit);
         ReloadCommand = new AsyncCommand(LoadAsync, HandleUnexpectedFailure, () => !IsBusy);
@@ -77,10 +74,13 @@ public sealed class CharacterSkillsViewModel : ScreenViewModel
 
     public string Title => string.Format(CultureInfo.CurrentCulture, Translate("characterSkills.title"), _characterName);
 
+    /// <summary>The most talents the character can have, as sent by the server.</summary>
+    public int TalentLimit { get; private set; }
+
     public string TalentsLabel => Translate("characterSkills.talents");
 
     public string TalentLimitText =>
-        string.Format(CultureInfo.CurrentCulture, Translate("characterSkills.talentLimit"), MaxTalents);
+        string.Format(CultureInfo.CurrentCulture, Translate("characterSkills.talentLimit"), TalentLimit);
 
     public string NewTalentLabel => Translate("characterSkills.newTalent");
 
@@ -218,6 +218,8 @@ public sealed class CharacterSkillsViewModel : ScreenViewModel
         var saved = SirenProperties.Read<CharacterSkillsProperties>(resource.Properties);
         _characterName = saved.CharacterName;
         _experiencePoints = saved.ExperiencePoints;
+        TalentLimit = saved.TalentLimit;
+        OnPropertyChanged(nameof(TalentLimitText));
         AffectedSkills = null;
         ReplaceAll(Talents, saved.Talents.Select(talent => NewTalentRow(talent.TalentId, talent.Name, talent.IsArchived)));
         ReplaceAll(Skills, saved.Skills.Select(skill => NewSkillRow(

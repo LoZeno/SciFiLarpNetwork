@@ -373,6 +373,7 @@
   "characterSkills.noTalents": "Add a talent to buy skills through it.",
   "characterSkills.affectedSkills": "Skills: {0}",
   "errors.tooManyTalents": "A character can have up to 5 talents.",
+  "errors.duplicateTalent": "A talent can be listed only once.",
   "errors.duplicateSkillPurchase": "A skill can be listed only once. Raise its purchases instead.",
   "errors.invalidPurchaseCount": "Enter purchases as a whole number from 1 to 999.",
   "errors.invalidSpecifics": "Specifics can be up to 64 characters.",

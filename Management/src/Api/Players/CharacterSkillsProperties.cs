@@ -6,6 +6,7 @@ internal sealed record CharacterSkillsProperties(
     string CharacterName,
     int ExperiencePoints,
     long FreePoints,
+    int TalentLimit,
     IReadOnlyList<CharacterTalentProperties> Talents,
     IReadOnlyList<CharacterSkillPurchaseProperties> Skills,
     long Version);

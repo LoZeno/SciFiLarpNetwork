@@ -13,6 +13,7 @@ public sealed class CharacterSkillRulesTests
     private static readonly Guid FirstAid = Guid.NewGuid();
     private static readonly Guid Stamina = Guid.NewGuid();
     private static readonly Guid Relic = Guid.NewGuid();
+    private static readonly Guid Endurance = Guid.NewGuid();
 
     private static readonly Dictionary<Guid, TalentFacts> Talents = new()
     {
@@ -28,8 +29,36 @@ public sealed class CharacterSkillRulesTests
         [Aces] = Skill(Aces, cost: 20, talents: [Pilot], prerequisites: [[Flying], [Gunnery, FirstAid]]),
         [FirstAid] = Skill(FirstAid, cost: 5, talents: [Medic, Pilot]),
         [Stamina] = Skill(Stamina, cost: 5, talents: [Medic], isMultiPurchase: true),
-        [Relic] = Skill(Relic, cost: 0, talents: [Pilot], isArchived: true)
+        [Relic] = Skill(Relic, cost: 0, talents: [Pilot], isArchived: true),
+        [Endurance] = Skill(Endurance, cost: 1, talents: [Medic], prerequisites: [[FirstAid]], isMultiPurchase: true)
     };
+
+    [Fact]
+    public void RaisingPurchasesOfASkillWhosePrerequisitesAreNoLongerMetIsRejected()
+    {
+        var finding = Check(currentTalents: [Medic], currentPurchases: [Buy(Endurance, Medic)], talents: [Medic],
+            purchases: [Buy(Endurance, Medic, count: 2)]);
+
+        Assert.Equivalent(new { Problem = CharacterSkillProblem.PrerequisitesNotMet, SkillIds = new[] { Endurance } }, finding, strict: true);
+    }
+
+    [Fact]
+    public void LoweringPurchasesOfASkillWhosePrerequisitesAreNoLongerMetIsAccepted()
+    {
+        var finding = Check(currentTalents: [Medic], currentPurchases: [Buy(Endurance, Medic, count: 3)], talents: [Medic],
+            purchases: [Buy(Endurance, Medic, count: 2)]);
+
+        Assert.Equal(CharacterSkillFinding.None, finding);
+    }
+
+    [Fact]
+    public void RaisingPurchasesOfASkillTakenOffItsTalentIsRejected()
+    {
+        var finding = Check(currentTalents: [Pilot], currentPurchases: [Buy(Stamina, Pilot)], talents: [Pilot],
+            purchases: [Buy(Stamina, Pilot, count: 2)]);
+
+        Assert.Equivalent(new { Problem = CharacterSkillProblem.SkillNotInTalent, SkillIds = new[] { Stamina } }, finding, strict: true);
+    }
 
     [Fact]
     public void FreePointsSubtractEachCostTimesItsPurchases()

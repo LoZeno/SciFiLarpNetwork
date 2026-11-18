@@ -34,7 +34,7 @@ public sealed class CharacterSkillServiceTests(AdministratorAuthenticationFactor
         var skills = await CharacterSkills.GetCharacterSkillsAsync(character.CharacterId, TestContext.Current.CancellationToken);
 
         Assert.Equivalent(
-            new CharacterSkillsSummary(character.CharacterId, "Kira", 30, 30, [], [], character.Version),
+            new CharacterSkillsSummary(character.CharacterId, "Kira", 30, 30, 5, [], [], character.Version),
             skills,
             strict: true);
     }
@@ -57,6 +57,7 @@ public sealed class CharacterSkillServiceTests(AdministratorAuthenticationFactor
                 "Kira",
                 30,
                 10,
+                5,
                 [new CharacterTalentSummary(medic.TalentId, "Medic", false), new CharacterTalentSummary(pilot.TalentId, "Pilot", false)],
                 [
                     new CharacterSkillPurchaseSummary(flying.SkillId, "Flying", pilot.TalentId, 1, "Shuttles", 10, false, false),

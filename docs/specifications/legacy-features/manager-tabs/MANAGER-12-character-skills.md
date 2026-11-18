@@ -34,7 +34,7 @@ Let administrators choose a character's talents and buy skills for the character
 
 ### Catalog changes after a purchase
 
-Rules are checked when a skill is bought or its purchase count is raised. Later catalog changes never remove or change a purchase:
+Rules are checked when a skill is bought or its purchase count is raised: raising a count also needs the skill to belong to its talent, its prerequisites to be met, the skill not to be archived, and enough free points. Later catalog changes never remove or change a purchase:
 
 - If a skill's prerequisites change, characters that already own it keep it.
 - If a skill is taken off the talent it was bought through, or a talent or skill is archived, the purchase is kept with its talent.

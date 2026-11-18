@@ -373,6 +373,7 @@
   "characterSkills.noTalents": "Aggiungi un'attitudine per acquistare abilità tramite essa.",
   "characterSkills.affectedSkills": "Abilità: {0}",
   "errors.tooManyTalents": "Un personaggio può avere fino a 5 attitudini.",
+  "errors.duplicateTalent": "Un'attitudine può comparire una sola volta.",
   "errors.duplicateSkillPurchase": "Un'abilità può comparire una sola volta. Aumentane invece gli acquisti.",
   "errors.invalidPurchaseCount": "Inserisci gli acquisti come numero intero da 1 a 999.",
   "errors.invalidSpecifics": "Le specifiche possono avere al massimo 64 caratteri.",

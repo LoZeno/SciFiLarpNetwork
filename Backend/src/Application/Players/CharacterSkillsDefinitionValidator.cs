@@ -10,7 +10,8 @@ namespace SciFiLarpNetwork.Backend.Application.Players;
 public static class CharacterSkillsDefinitionValidator
 {
     public static RosterOutcome? Validate(CharacterSkillsDefinition definition) =>
-        definition.TalentIds.Distinct().Count() > CharacterSkillRules.MaxTalents ? RosterOutcome.TooManyTalents
+        definition.TalentIds.Distinct().Count() != definition.TalentIds.Count ? RosterOutcome.DuplicateTalent
+        : definition.TalentIds.Count > CharacterSkillRules.MaxTalents ? RosterOutcome.TooManyTalents
         : definition.Purchases.DistinctBy(purchase => purchase.SkillId).Count() != definition.Purchases.Count
             ? RosterOutcome.DuplicateSkillPurchase
         : definition.Purchases.Any(purchase => purchase.Count is < 1 or > CharacterSkillRules.MaxPurchaseCount)

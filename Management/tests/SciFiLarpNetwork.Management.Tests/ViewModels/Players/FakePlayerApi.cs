@@ -24,6 +24,8 @@ internal sealed class FakePlayerApi : IManagementApiClient
 
     public int PageSize { get; init; } = 50;
 
+    public int TalentLimit { get; init; } = 5;
+
     public List<FakePlayer> Players { get; } = [];
 
     public List<FakeCharacter> Characters { get; } = [];
@@ -433,6 +435,7 @@ internal sealed class FakePlayerApi : IManagementApiClient
                 characterName = character.Name,
                 experiencePoints = character.ExperiencePoints,
                 freePoints = character.ExperiencePoints - spent,
+                talentLimit = TalentLimit,
                 talents = character.TalentIds.Select(id => Talents.Single(talent => talent.Id == id))
                     .Select(talent => new { talentId = talent.Id, name = talent.Name, isArchived = talent.IsArchived }),
                 skills = character.Purchases.Select(purchase =>

@@ -31,6 +31,7 @@ public static class RosterErrors
     public const string InvalidQrIdentifier = "errors.invalidQrIdentifier";
     public const string StatArchived = "errors.statArchived";
     public const string TooManyTalents = "errors.tooManyTalents";
+    public const string DuplicateTalent = "errors.duplicateTalent";
     public const string DuplicateSkillPurchase = "errors.duplicateSkillPurchase";
     public const string InvalidPurchaseCount = "errors.invalidPurchaseCount";
     public const string InvalidSpecifics = "errors.invalidSpecifics";
@@ -77,6 +78,7 @@ public static class RosterErrors
             RosterOutcome.InvalidStatType => Create(StatusCodes.Status400BadRequest, InvalidStatType),
             RosterOutcome.InvalidQrIdentifier => Create(StatusCodes.Status400BadRequest, InvalidQrIdentifier),
             RosterOutcome.TooManyTalents => Create(StatusCodes.Status400BadRequest, TooManyTalents),
+            RosterOutcome.DuplicateTalent => Create(StatusCodes.Status400BadRequest, DuplicateTalent),
             RosterOutcome.DuplicateSkillPurchase => Create(StatusCodes.Status400BadRequest, DuplicateSkillPurchase),
             RosterOutcome.InvalidPurchaseCount => Create(StatusCodes.Status400BadRequest, InvalidPurchaseCount),
             RosterOutcome.InvalidSpecifics => Create(StatusCodes.Status400BadRequest, InvalidSpecifics),

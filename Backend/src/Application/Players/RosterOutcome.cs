@@ -51,6 +51,8 @@ public enum RosterOutcome
     /// <summary>A character can have at most five talents.</summary>
     TooManyTalents,
 
+    DuplicateTalent,
+
     DuplicateSkillPurchase,
     InvalidPurchaseCount,
     InvalidSpecifics,
