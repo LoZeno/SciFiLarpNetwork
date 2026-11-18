@@ -10,23 +10,17 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
 
 [Collection("Backend database integration")]
-public sealed class SkillServiceTests : IAsyncLifetime
+public sealed class SkillServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private ISkillService Skills => factory.Services.GetRequiredService<ISkillService>();
 
-    private ISkillService Skills => _factory.Services.GetRequiredService<ISkillService>();
+    private ITalentService Talents => factory.Services.GetRequiredService<ITalentService>();
 
-    private ITalentService Talents => _factory.Services.GetRequiredService<ITalentService>();
+    private ICardFlagService CardFlags => factory.Services.GetRequiredService<ICardFlagService>();
 
-    private ICardFlagService CardFlags => _factory.Services.GetRequiredService<ICardFlagService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedSkillKeepsEveryField()
@@ -342,7 +336,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
     {
         await CreateSkillAsync(Definition("Welding"));
         var skillId = Guid.NewGuid();
-        await using var session = _factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        await using var session = factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
         session.Events.StartStream<SkillDocument>(
             skillId,
             new SkillCreated(skillId, "WELDING", CatalogNames.Normalize("WELDING"), null, 1, false, false, [], [], [], [], DateTimeOffset.UtcNow));
@@ -370,7 +364,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
         var first = await CreateSkillAsync(Definition("Hacking I"));
         var second = await CreateSkillAsync(Definition("Hacking II"));
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Skills.UpdateSkillAsync(
@@ -383,7 +377,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
                 second.Version,
                 Definition("Hacking II") with { PrerequisiteGroups = [[first.SkillId]] },
                 TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([CatalogOutcome.Succeeded, CatalogOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
     }
@@ -398,7 +392,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
             first.SkillId, first.Version, Definition("Hacking I") with { PrerequisiteGroups = [[tinkering.SkillId]] },
             TestContext.Current.CancellationToken)).Value!;
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Skills.UpdateSkillAsync(
@@ -411,7 +405,7 @@ public sealed class SkillServiceTests : IAsyncLifetime
                 second.Version,
                 Definition("Hacking II") with { PrerequisiteGroups = [[first.SkillId]] },
                 TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([CatalogOutcome.Succeeded, CatalogOutcome.ConcurrentChange], results.Select(result => result.Outcome).Order());
     }

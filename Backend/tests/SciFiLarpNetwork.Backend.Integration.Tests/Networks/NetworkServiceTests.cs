@@ -12,19 +12,13 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Networks;
 
 [Collection("Backend database integration")]
-public sealed class NetworkServiceTests : IAsyncLifetime
+public sealed class NetworkServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private INetworkService Networks => factory.Services.GetRequiredService<INetworkService>();
 
-    private INetworkService Networks => _factory.Services.GetRequiredService<INetworkService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedNetworkKeepsEveryField()
@@ -297,12 +291,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
         var first = await CreateAsync("rim", "Outer Rim");
         var second = await CreateAsync("core", "Core");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Networks.MakeDefaultNetworkAsync(first.NetworkId, TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.MakeDefaultNetworkAsync(second.NetworkId, TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([NetworkOutcome.Succeeded, NetworkOutcome.StaleVersion], results.Select(result => result.Outcome).Order());
     }
@@ -315,12 +309,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
         var third = await CreateAsync("mid", "Mid Rim");
         await Networks.MakeDefaultNetworkAsync(third.NetworkId, TestContext.Current.CancellationToken);
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Networks.MakeDefaultNetworkAsync(first.NetworkId, TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.MakeDefaultNetworkAsync(second.NetworkId, TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([NetworkOutcome.Succeeded, NetworkOutcome.StaleVersion], results.Select(result => result.Outcome).Order());
     }
@@ -331,12 +325,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
         var first = await CreateAsync("rim", "Outer Rim");
         var second = await CreateAsync("core", "Core");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         await Task.WhenAll(
             Task.Run(() => Networks.MakeDefaultNetworkAsync(first.NetworkId, TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.MakeDefaultNetworkAsync(second.NetworkId, TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Single(await DefaultFlagsAsync(), flag => flag.EndsWith(":True", StringComparison.Ordinal));
     }
@@ -345,12 +339,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
     public async Task ParallelCreatesWithTheSameCodeLetOnlyOneSucceed()
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Networks.CreateNetworkAsync("rim", Definition("Outer Rim"), TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.CreateNetworkAsync("rim", Definition("Inner Rim"), TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([NetworkOutcome.Succeeded, NetworkOutcome.CodeAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
@@ -359,12 +353,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
     public async Task ParallelCreatesWithTheSameNameLetOnlyOneSucceed()
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Networks.CreateNetworkAsync("rim", Definition("Outer Rim"), TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.CreateNetworkAsync("rim-2", Definition("Outer Rim"), TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([NetworkOutcome.Succeeded, NetworkOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
@@ -374,12 +368,12 @@ public sealed class NetworkServiceTests : IAsyncLifetime
     {
         var network = await CreateAsync("rim", "Outer Rim");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         await Task.WhenAll(
             Task.Run(() => Networks.MakeDefaultNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken)),
             Task.Run(() => Networks.DisableNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         var saved = await Networks.GetNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
         Assert.False(saved!.IsDefault && !saved.IsEnabled);
@@ -412,7 +406,7 @@ public sealed class NetworkServiceTests : IAsyncLifetime
         await Networks.UpdateNetworkAsync(network.NetworkId, network.Version, Definition("Far Rim"), TestContext.Current.CancellationToken);
         await Networks.MakeDefaultNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
 
-        await using var query = _factory.Services.GetRequiredService<IDocumentStore>().QuerySession();
+        await using var query = factory.Services.GetRequiredService<IDocumentStore>().QuerySession();
         var events = await query.Events.FetchStreamAsync(network.NetworkId, token: TestContext.Current.CancellationToken);
 
         Assert.Equal(
@@ -428,7 +422,7 @@ public sealed class NetworkServiceTests : IAsyncLifetime
     private async Task AppendCreatedAsync(string code, string name)
     {
         var networkId = Guid.NewGuid();
-        await using var session = _factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        await using var session = factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
         session.Events.StartStream<NetworkDocument>(
             networkId,
             new NetworkCreated(networkId, code, name, CatalogNames.Normalize(name), null, NetworkTheme.Blue, DateTimeOffset.UtcNow));

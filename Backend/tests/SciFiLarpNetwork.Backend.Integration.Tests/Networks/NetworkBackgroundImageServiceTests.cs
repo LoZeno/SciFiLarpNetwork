@@ -7,21 +7,15 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Networks;
 
 [Collection("Backend database integration")]
-public sealed class NetworkBackgroundImageServiceTests : IAsyncLifetime
+public sealed class NetworkBackgroundImageServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private INetworkService Networks => factory.Services.GetRequiredService<INetworkService>();
 
-    private INetworkService Networks => _factory.Services.GetRequiredService<INetworkService>();
+    private INetworkBackgroundImageService Images => factory.Services.GetRequiredService<INetworkBackgroundImageService>();
 
-    private INetworkBackgroundImageService Images => _factory.Services.GetRequiredService<INetworkBackgroundImageService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task StoredImageBytesRoundTripUnchanged()

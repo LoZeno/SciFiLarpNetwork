@@ -10,26 +10,20 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
 
 [Collection("Backend database integration")]
-public sealed class TalentServiceTests : IAsyncLifetime
+public sealed class TalentServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private ITalentService Talents => factory.Services.GetRequiredService<ITalentService>();
 
-    private ITalentService Talents => _factory.Services.GetRequiredService<ITalentService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task ADuplicateNormalizedTalentNameIsRejectedAsAnExistingDocument()
     {
         await Talents.CreateTalentAsync(new TalentDefinition("Medicine", null), TestContext.Current.CancellationToken);
         var talentId = Guid.NewGuid();
-        await using var session = _factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+        await using var session = factory.Services.GetRequiredService<IDocumentStore>().LightweightSession();
         session.Events.StartStream<TalentDocument>(
             talentId,
             new TalentCreated(talentId, "MEDICINE", CatalogNames.Normalize("MEDICINE"), null, DateTimeOffset.UtcNow));

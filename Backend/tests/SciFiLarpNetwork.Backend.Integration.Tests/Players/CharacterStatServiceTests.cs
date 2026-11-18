@@ -8,23 +8,17 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class CharacterStatServiceTests : IAsyncLifetime
+public sealed class CharacterStatServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
-    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+    private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
 
-    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
+    private ICharacterStatService Stats => factory.Services.GetRequiredService<ICharacterStatService>();
 
-    private ICharacterStatService Stats => _factory.Services.GetRequiredService<ICharacterStatService>();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task RenameKeepsEveryCharactersValue()

@@ -8,10 +8,8 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class PlayerServiceTests : IAsyncLifetime
+public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
-
     public static TheoryData<PlayerDefinition, RosterOutcome> InvalidDefinitions => new()
     {
         { Definition(" "), RosterOutcome.InvalidName },
@@ -22,17 +20,13 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         { Definition("Ann") with { Type = (PlayerType)99 }, RosterOutcome.InvalidPlayerType }
     };
 
-    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+    private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
-    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
+    private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedPlayerKeepsEveryField()
@@ -281,7 +275,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     {
         await CreatePlayerAsync("Ann");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Bob"), TestContext.Current.CancellationToken)),
@@ -294,7 +288,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
     public async Task FirstEverOverlappingCreationsBothSucceedWithTheirOwnRunningNumbers()
     {
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Players.CreatePlayerAsync(Definition("Ann"), TestContext.Current.CancellationToken)),
@@ -309,7 +303,7 @@ public sealed class PlayerServiceTests : IAsyncLifetime
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(async () => (await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken)).Outcome),
@@ -328,14 +322,14 @@ public sealed class PlayerServiceTests : IAsyncLifetime
             CharacterDefinitions.From(character) with { Status = CharacterStatus.Retired },
             TestContext.Current.CancellationToken)).Value!;
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(async () => (await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken)).Outcome),
             Task.Run(async () => (await Characters.UpdateCharacterAsync(retired.CharacterId, retired.Version,
                 CharacterDefinitions.From(retired) with { Status = CharacterStatus.Active },
                 TestContext.Current.CancellationToken)).Outcome));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.ConcurrentChange], results.Order());
     }

@@ -8,26 +8,20 @@ using SciFiLarpNetwork.Common.Siren;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Skills;
 
 [Collection("Backend database integration")]
-public sealed class SkillCatalogApiTests : IAsyncLifetime
+public sealed class SkillCatalogApiTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
     private const string TalentsPath = "/local/api/v1/talents";
     private const string SkillsPath = "/local/api/v1/skills";
     private static readonly string[] HackingFlags = ["improvesHacking", "accessHacking"];
     private static readonly string[] ToughnessFlag = ["Toughness"];
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task VersionRootAdvertisesTalentsToReaders()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, "/local/api/v1", token);
@@ -38,7 +32,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousRequestCannotListTalents()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
 
         using var response = await client.GetAsync(TalentsPath, TestContext.Current.CancellationToken);
 
@@ -48,7 +42,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCanListTalentsWithoutWriteActions()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, TalentsPath, token);
@@ -61,7 +55,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorSeesTheCreateTalentAction()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, TalentsPath, token);
@@ -72,7 +66,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotCreateTalents()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, TalentsPath, token, new { name = "Medicine" });
@@ -83,7 +77,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorCreatesATalent()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -98,7 +92,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task DuplicateTalentNameReturnsAStableConflictCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreateTalentAsync(client, token, "Medicine");
 
@@ -110,7 +104,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task StaleTalentEditReturnsTheStaleVersionCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var talentId = await CreateTalentAsync(client, token, "Medicine");
         (await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -125,7 +119,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task UnknownTalentReturnsNotFound()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"{TalentsPath}/{Guid.NewGuid():D}/skills", token);
@@ -136,7 +130,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task ArchivedTalentAdvertisesRestoreInsteadOfArchive()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var talentId = await CreateTalentAsync(client, token, "Medicine");
 
@@ -149,7 +143,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task TalentSkillsListsOnlyAssignedSkills()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var talentId = await CreateTalentAsync(client, token, "Medicine");
         await CreateSkillAsync(client, token, new { name = "First aid", cost = 1, talentIds = new[] { talentId } });
@@ -163,7 +157,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task SkillCollectionOffersEveryLocalizedGameFlag()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, SkillsPath, token, "it");
@@ -176,7 +170,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task SkillGameFlagsAreExchangedByName()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -191,7 +185,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [MemberData(nameof(NumericGameFlags))]
     public async Task NumericGameFlagsAreRejected(object gameFlag)
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
@@ -205,7 +199,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task InvalidCostReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, HttpMethod.Post, SkillsPath, token, new { name = "Hacking I", cost = 1000 });
@@ -216,7 +210,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task PrerequisiteLoopReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var first = await CreateSkillAsync(client, token, new { name = "Hacking I", cost = 1 });
         await CreateSkillAsync(client, token, new { name = "Hacking II", cost = 1, prerequisiteGroups = new[] { new[] { first } } });
@@ -231,7 +225,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task SkillEditReturnsTheNextVersion()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var skillId = await CreateSkillAsync(client, token, new { name = "Welding", cost = 1 });
 
@@ -244,8 +238,8 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotArchiveSkills()
     {
-        using var client = _factory.CreateClient();
-        var (adminToken, _) = await _factory.PrepareReaderWithTokenAsync(client);
+        using var client = factory.CreateClient();
+        var (adminToken, _) = await factory.PrepareReaderWithTokenAsync(client);
         var skillId = await CreateSkillAsync(client, adminToken, new { name = "Welding", cost = 1 });
         var readerToken = await AdministratorAuthenticationFactory.SignInReaderAsync(client);
 
@@ -258,7 +252,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task TypedCardFlagIsListedInTheCardFlagCatalog()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreateSkillAsync(client, token, new { name = "Toughness I", cost = 1, newCardFlagNames = ToughnessFlag });
 
@@ -272,7 +266,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task TalentCollectionLinksToItsArchivedView()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, TalentsPath, token);
@@ -283,7 +277,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task ArchivedTalentViewLinksBackToTheActiveView()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(
@@ -295,7 +289,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task TalentItemsLinkToTheirSkills()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var talentId = await CreateTalentAsync(client, token, "Medicine");
 
@@ -307,7 +301,7 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
     [Fact]
     public async Task TalentSkillsLinkToTheirArchivedView()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var talentId = await CreateTalentAsync(client, token, "Medicine");
 
@@ -328,13 +322,13 @@ public sealed class SkillCatalogApiTests : IAsyncLifetime
 
     private async Task<string> AdministratorTokenAsync(HttpClient client)
     {
-        await _factory.BootstrapAdministratorAsync();
+        await factory.BootstrapAdministratorAsync();
         return await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
     }
 
     private async Task<string> ReaderTokenAsync(HttpClient client)
     {
-        await _factory.CreateReaderAccountAsync(client);
+        await factory.CreateReaderAccountAsync(client);
         return await AdministratorAuthenticationFactory.SignInReaderAsync(client);
     }
 

@@ -8,25 +8,19 @@ using SciFiLarpNetwork.Common.Siren;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class PlayerApiTests : IAsyncLifetime
+public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
     private const string PlayersPath = "/local/api/v1/players";
     private const string CharactersPath = "/local/api/v1/characters";
     private const string StatsPath = "/local/api/v1/character-stats";
-    private readonly AdministratorAuthenticationFactory _factory = new();
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
-
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task VersionRootAdvertisesPlayersToReaders()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await GetAsync(client, token, "/local/api/v1");
@@ -37,7 +31,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task AnonymousRequestCannotListPlayers()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
 
         using var response = await client.GetAsync(PlayersPath, TestContext.Current.CancellationToken);
 
@@ -47,7 +41,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderSeesOnlyTheSearchActions()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await GetAsync(client, token, PlayersPath);
@@ -58,7 +52,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorAlsoSeesTheCreatePlayerAction()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await GetAsync(client, token, PlayersPath);
@@ -69,7 +63,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task ReaderCannotCreatePlayers()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await SendAsync(client, token, HttpMethod.Post, PlayersPath, new { displayName = "Ann", type = "player" });
@@ -80,7 +74,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorCreatesAPlayer()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await SendAsync(client, token, HttpMethod.Post, PlayersPath,
@@ -102,7 +96,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task UnknownPlayerTypeIsAValidationError()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await SendAsync(client, token, HttpMethod.Post, PlayersPath, new { displayName = "Ann", type = "boss" });
@@ -113,7 +107,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task InvalidEmailReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await SendAsync(client, token, HttpMethod.Post, PlayersPath,
@@ -125,7 +119,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task StalePlayerEditReturnsTheStaleVersionCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
         using var first = await SendAsync(client, token, HttpMethod.Put, $"{PlayersPath}/{playerId:D}",
@@ -140,7 +134,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task ActivePlayerAdvertisesEditCharacterCreationAndDeactivation()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -152,7 +146,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task InactivePlayerAdvertisesActivationAndArchiving()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -164,7 +158,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task ArchivingAnActivePlayerReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -176,7 +170,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task SearchQueryFiltersThePlayers()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreatePlayerAsync(client, token, "Ann");
         await CreatePlayerAsync(client, token, "Bob");
@@ -189,7 +183,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task SinglePageHasNoPreviousOrNextLink()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreatePlayerAsync(client, token, "Ann");
 
@@ -209,7 +203,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task LaterPageLinksBackKeepingTheSearchAndFilter()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreatePlayerAsync(client, token, "Ann");
 
@@ -222,7 +216,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task PageZeroIsAValidationError()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
 
         using var response = await GetAsync(client, token, $"{PlayersPath}?page=0");
@@ -233,7 +227,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorCreatesACharacterForAPlayer()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -256,7 +250,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task CharacterCreationCannotSetAStatus()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -271,7 +265,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [InlineData("{\"version\":1,\"name\":\"Kira\",\"experiencePoints\":40}")]
     public async Task CharacterEditWithoutStatusOrExperiencePointsIsAValidationError(string body)
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var characterId = await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
 
@@ -284,7 +278,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task PlayerEditWithoutTypeIsAValidationError()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
 
@@ -297,7 +291,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task ActiveCharacterAdvertisesEditAndNewQrButNotArchiving()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var characterId = await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
 
@@ -309,7 +303,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task DeadCharacterAdvertisesArchiving()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var characterId = await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
 
@@ -322,7 +316,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task DisabledNetworkReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
         using var network = await SendAsync(client, token, HttpMethod.Post, "/local/api/v1/networks", new { code = "rim", name = "Rim", theme = "blue" });
@@ -338,7 +332,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task CharacterSearchListsMatchesAcrossPlayers()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
         await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Bob"), "Kiran");
@@ -351,7 +345,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task QrLookupFindsTheCharacter()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var characterId = await CreateCharacterAsync(client, token, await CreatePlayerAsync(client, token, "Ann"), "Kira");
         using var character = await GetAsync(client, token, $"{CharactersPath}/{characterId:D}");
@@ -365,7 +359,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task MalformedQrIdentifierReturnsItsStableCode()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await GetAsync(client, token, $"{CharactersPath}/by-qr?identifier=nope");
@@ -376,7 +370,7 @@ public sealed class PlayerApiTests : IAsyncLifetime
     [Fact]
     public async Task AdministratorSeesStatRenameAndArchiveActions()
     {
-        using var client = _factory.CreateClient();
+        using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var playerId = await CreatePlayerAsync(client, token, "Ann");
         using var created = await SendAsync(client, token, HttpMethod.Post, $"{PlayersPath}/{playerId:D}/characters",
@@ -391,13 +385,13 @@ public sealed class PlayerApiTests : IAsyncLifetime
 
     private async Task<string> AdministratorTokenAsync(HttpClient client)
     {
-        await _factory.BootstrapAdministratorAsync();
+        await factory.BootstrapAdministratorAsync();
         return await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
     }
 
     private async Task<string> ReaderTokenAsync(HttpClient client)
     {
-        await _factory.CreateReaderAccountAsync(client);
+        await factory.CreateReaderAccountAsync(client);
         return await AdministratorAuthenticationFactory.SignInReaderAsync(client);
     }
 

@@ -10,10 +10,8 @@ using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 
 [Collection("Backend database integration")]
-public sealed class CharacterServiceTests : IAsyncLifetime
+public sealed class CharacterServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    private readonly AdministratorAuthenticationFactory _factory = new();
-
     public static TheoryData<CharacterDefinition, RosterOutcome> InvalidDefinitions => new()
     {
         { CharacterDefinitions.Named(" "), RosterOutcome.InvalidName },
@@ -30,19 +28,15 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         { CharacterDefinitions.Named("Kira") with { NewStats = [new NewCharacterStat("Rank", CharacterStatType.Text, null, new string('x', 65))] }, RosterOutcome.InvalidStatValue }
     };
 
-    private IPlayerService Players => _factory.Services.GetRequiredService<IPlayerService>();
+    private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
-    private ICharacterService Characters => _factory.Services.GetRequiredService<ICharacterService>();
+    private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
 
-    private INetworkService Networks => _factory.Services.GetRequiredService<INetworkService>();
+    private INetworkService Networks => factory.Services.GetRequiredService<INetworkService>();
 
-    public async ValueTask InitializeAsync()
-    {
-        await _factory.InitializeAsync();
-        await _factory.Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
-    }
+    public async ValueTask InitializeAsync() => await factory.ResetAsync();
 
-    public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreatedCharacterKeepsEveryField()
@@ -444,7 +438,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
     {
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Vel", newStats: [new NewCharacterStat("Dark Side", CharacterStatType.Number, 5, null)]);
-        var stats = _factory.Services.GetRequiredService<ICharacterStatService>();
+        var stats = factory.Services.GetRequiredService<ICharacterStatService>();
         var darkSide = (await stats.GetStatsAsync(includeArchived: false, TestContext.Current.CancellationToken)).Single();
         await stats.ArchiveStatAsync(darkSide.StatId, TestContext.Current.CancellationToken);
 
@@ -518,7 +512,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         var kira = await CreateCharacterAsync(player, "Kira");
         var vel = await CreateCharacterAsync(player, "Vel");
         using var overlap = new Barrier(2);
-        _factory.Clock.ReadBarrier = overlap;
+        factory.Clock.ReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Characters.UpdateCharacterAsync(kira.CharacterId, kira.Version,
@@ -527,7 +521,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
             Task.Run(() => Characters.UpdateCharacterAsync(vel.CharacterId, vel.Version,
                 CharacterDefinitions.From(vel) with { NewStats = [new NewCharacterStat("RANK", CharacterStatType.Number, 2, null)] },
                 TestContext.Current.CancellationToken)));
-        _factory.Clock.ReadBarrier = null;
+        factory.Clock.ReadBarrier = null;
 
         Assert.Equal([RosterOutcome.Succeeded, RosterOutcome.NameAlreadyUsed], results.Select(result => result.Outcome).Order());
     }
@@ -538,7 +532,7 @@ public sealed class CharacterServiceTests : IAsyncLifetime
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         using var overlap = new Barrier(2);
-        _factory.Clock.FirstReadBarrier = overlap;
+        factory.Clock.FirstReadBarrier = overlap;
 
         var results = await Task.WhenAll(
             Task.Run(() => Characters.CreateCharacterAsync(player.PlayerId, CharacterDefinitions.Named("Vel"),
