@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # 1. .NET / NuGet dependencies (Backend, Management, Shared, Tests, & dotnet-tools.json)
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+    groups:
+      dotnet-dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  # 2. React / Vite Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/Frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  # 3. Docker Compose images (e.g., PostgreSQL 18 in compose.yaml)
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+
+  # 4. GitHub Actions workflows (.github/workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/London"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
