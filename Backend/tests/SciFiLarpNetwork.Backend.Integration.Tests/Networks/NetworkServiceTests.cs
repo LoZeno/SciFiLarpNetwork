@@ -33,32 +33,13 @@ public sealed class NetworkServiceTests(AdministratorAuthenticationFactory facto
             result.Value);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("-rim")]
-    [InlineData("outer rim")]
-    public async Task MalformedCodeIsRejected(string code)
-    {
-        var result = await Networks.CreateNetworkAsync(code, Definition("Outer Rim"), TestContext.Current.CancellationToken);
-
-        Assert.Equal(NetworkOutcome.InvalidCode, result.Outcome);
-    }
-
     [Fact]
-    public async Task BlankNameIsRejected()
+    public async Task InvalidNewNetworkIsRejectedAndNotStored()
     {
-        var result = await Networks.CreateNetworkAsync("rim", Definition(" "), TestContext.Current.CancellationToken);
+        var result = await Networks.CreateNetworkAsync("outer rim", Definition("Outer Rim"), TestContext.Current.CancellationToken);
 
-        Assert.Equal(NetworkOutcome.InvalidName, result.Outcome);
-    }
-
-    [Fact]
-    public async Task UndefinedThemeIsRejected()
-    {
-        var result = await Networks.CreateNetworkAsync(
-            "rim", new NetworkDefinition("Outer Rim", null, (NetworkTheme)99), TestContext.Current.CancellationToken);
-
-        Assert.Equal(NetworkOutcome.InvalidTheme, result.Outcome);
+        var stored = await Networks.GetNetworksAsync(includeDisabled: true, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = NetworkOutcome.InvalidCode, StoredCount = 0 }, new { result.Outcome, StoredCount = stored.Count });
     }
 
     [Fact]
@@ -92,6 +73,17 @@ public sealed class NetworkServiceTests(AdministratorAuthenticationFactory facto
         Assert.Equal(
             network with { Name = "Far Rim", Description = "Remote", Theme = NetworkTheme.Purple, Version = 2 },
             result.Value);
+    }
+
+    [Fact]
+    public async Task InvalidEditIsRejectedAndChangesNothing()
+    {
+        var network = await CreateAsync("rim", "Outer Rim");
+
+        var result = await Networks.UpdateNetworkAsync(network.NetworkId, network.Version, Definition(" "), TestContext.Current.CancellationToken);
+
+        var stored = await Networks.GetNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = NetworkOutcome.InvalidName, Stored = (NetworkSummary?)network }, new { result.Outcome, Stored = stored });
     }
 
     [Fact]

@@ -57,7 +57,7 @@ internal sealed class PlayerService(AttributedSessionFactory sessions, TimeProvi
     private async Task<RosterResult<PlayerSummary>> CreatePlayerOnceAsync(PlayerDefinition definition,
         CancellationToken cancellationToken)
     {
-        if (Validate(definition) is { } invalid)
+        if (PlayerDefinitionValidator.Validate(definition) is { } invalid)
         {
             return RosterResult<PlayerSummary>.Failure(invalid);
         }
@@ -88,7 +88,7 @@ internal sealed class PlayerService(AttributedSessionFactory sessions, TimeProvi
         PlayerDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (Validate(definition) is { } invalid)
+        if (PlayerDefinitionValidator.Validate(definition) is { } invalid)
         {
             return RosterResult<PlayerSummary>.Failure(invalid);
         }
@@ -201,14 +201,6 @@ internal sealed class PlayerService(AttributedSessionFactory sessions, TimeProvi
         stream.AppendOne(new PlayerUnarchived(playerId, timeProvider.GetUtcNow()));
         return await SaveAsync(session, playerId, editedVersion: null, cancellationToken);
     }
-
-    private static RosterOutcome? Validate(PlayerDefinition definition) =>
-        !CatalogNames.IsValid(definition.DisplayName) ? RosterOutcome.InvalidName
-        : !PlayerContacts.IsValidEmail(definition.Email) ? RosterOutcome.InvalidEmail
-        : !PlayerContacts.IsValidPhone(definition.Phone) ? RosterOutcome.InvalidPhone
-        : !PlayerContacts.IsValidNotes(definition.Notes) ? RosterOutcome.InvalidNotes
-        : !Enum.IsDefined(definition.Type) ? RosterOutcome.InvalidPlayerType
-        : null;
 
     /// <summary>
     /// Takes every Active character of the player for writing, to retire them. A character that becomes Active or is

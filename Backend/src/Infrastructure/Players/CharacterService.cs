@@ -103,14 +103,9 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         CharacterDefinition definition,
         CancellationToken cancellationToken)
     {
-        if (Validate(definition) is { } invalid)
+        if (CharacterDefinitionValidator.ValidateCreation(definition) is { } invalid)
         {
             return RosterResult<CharacterSummary>.Failure(invalid);
-        }
-
-        if (definition.Status != CharacterStatus.Active)
-        {
-            return RosterResult<CharacterSummary>.Failure(RosterOutcome.InvalidCharacterStatus);
         }
 
         await using var session = sessions.OpenSession();
@@ -167,7 +162,7 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         CharacterDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (Validate(definition) is { } invalid)
+        if (CharacterDefinitionValidator.Validate(definition) is { } invalid)
         {
             return RosterResult<CharacterSummary>.Failure(invalid);
         }
@@ -265,15 +260,6 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         return await SaveAsync(session, characterId, editedVersion: null, definition: null, cancellationToken);
     }
 
-    private static RosterOutcome? Validate(CharacterDefinition definition) =>
-        !CatalogNames.IsValid(definition.Name) ? RosterOutcome.InvalidName
-        : !new[] { definition.Title, definition.Species, definition.Gender, definition.Type }.All(CharacterTexts.IsValidOptional)
-            ? RosterOutcome.InvalidCharacterText
-        : definition.ExperiencePoints < 0 ? RosterOutcome.InvalidExperiencePoints
-        : !Enum.IsDefined(definition.Status) ? RosterOutcome.InvalidCharacterStatus
-        : definition is { Status: CharacterStatus.Dead, DeathDate: null } ? RosterOutcome.DeathDateRequired
-        : null;
-
     /// <summary>
     /// Checks that an archived character is not made Active and that its player is Active, and takes the player's
     /// stream for writing: the activation is recorded there, so a concurrent deactivation of the player conflicts
@@ -341,7 +327,7 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             return (RosterOutcome.InvalidStatValue, []);
         }
 
-        if (ValidateNewStats(definition.NewStats) is { } invalid)
+        if (CharacterDefinitionValidator.ValidateNewStats(definition.NewStats) is { } invalid)
         {
             return (invalid, []);
         }
@@ -382,12 +368,6 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
 
         return (RosterOutcome.Succeeded, resolved.DistinctBy(value => value.Value.StatId).ToArray());
     }
-
-    private static RosterOutcome? ValidateNewStats(IReadOnlyList<NewCharacterStat> newStats) =>
-        newStats.Any(stat => !CatalogNames.IsValid(stat.Name)) ? RosterOutcome.InvalidStatName
-        : newStats.Any(stat => !Enum.IsDefined(stat.Type)) ? RosterOutcome.InvalidStatType
-        : newStats.Any(stat => !CharacterStatValues.IsValid(stat.Type, stat.Number, stat.Text)) ? RosterOutcome.InvalidStatValue
-        : null;
 
     private static void AppendChanges(
         IEventStream<CharacterDocument> stream,

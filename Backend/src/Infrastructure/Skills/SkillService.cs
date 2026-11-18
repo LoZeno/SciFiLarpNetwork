@@ -19,8 +19,6 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.Skills;
 /// </summary>
 internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvider timeProvider) : ISkillService
 {
-    private const int MaximumCost = 999;
-
     public async Task<IReadOnlyList<SkillSummary>> GetSkillsAsync(
         Guid? talentId,
         bool includeArchived,
@@ -53,7 +51,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
     public async Task<CatalogResult<SkillSummary>> CreateSkillAsync(SkillDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
+        if (SkillDefinitionValidator.ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(detailsOutcome);
         }
@@ -117,7 +115,7 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         SkillDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
+        if (SkillDefinitionValidator.ValidateDetails(definition) is var detailsOutcome and not CatalogOutcome.Succeeded)
         {
             return CatalogResult<SkillSummary>.Failure(detailsOutcome);
         }
@@ -233,16 +231,6 @@ internal sealed class SkillService(AttributedSessionFactory sessions, TimeProvid
         var now = timeProvider.GetUtcNow();
         stream.AppendOne(archived ? new SkillArchived(skillId, now) : new SkillUnarchived(skillId, now));
         return await SaveAsync(session, skillId, editedVersion: null, cancellationToken);
-    }
-
-    private static CatalogOutcome ValidateDetails(SkillDefinition definition)
-    {
-        if (!CatalogNames.IsValid(definition.Name))
-        {
-            return CatalogOutcome.InvalidName;
-        }
-
-        return definition.Cost is < 0 or > MaximumCost ? CatalogOutcome.InvalidCost : CatalogOutcome.Succeeded;
     }
 
     private static CatalogOutcome ToOutcome(PrerequisiteProblem problem) =>

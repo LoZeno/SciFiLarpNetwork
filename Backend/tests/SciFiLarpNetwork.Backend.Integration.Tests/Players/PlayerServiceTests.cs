@@ -10,16 +10,6 @@ namespace SciFiLarpNetwork.Backend.Tests.Integration.Players;
 [Collection("Backend database integration")]
 public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factory) : IAsyncLifetime
 {
-    public static TheoryData<PlayerDefinition, RosterOutcome> InvalidDefinitions => new()
-    {
-        { Definition(" "), RosterOutcome.InvalidName },
-        { Definition(new string('a', 65)), RosterOutcome.InvalidName },
-        { Definition("Ann") with { Email = "not an email" }, RosterOutcome.InvalidEmail },
-        { Definition("Ann") with { Phone = new string('1', 33) }, RosterOutcome.InvalidPhone },
-        { Definition("Ann") with { Notes = new string('n', 2001) }, RosterOutcome.InvalidNotes },
-        { Definition("Ann") with { Type = (PlayerType)99 }, RosterOutcome.InvalidPlayerType }
-    };
-
     private IPlayerService Players => factory.Services.GetRequiredService<IPlayerService>();
 
     private ICharacterService Characters => factory.Services.GetRequiredService<ICharacterService>();
@@ -53,13 +43,13 @@ public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factor
         Assert.Equal([1, 2, 3], created);
     }
 
-    [Theory]
-    [MemberData(nameof(InvalidDefinitions))]
-    public async Task InvalidDetailsAreRejected(PlayerDefinition definition, RosterOutcome expected)
+    [Fact]
+    public async Task InvalidNewPlayerIsRejectedAndNotStored()
     {
-        var result = await Players.CreatePlayerAsync(definition, TestContext.Current.CancellationToken);
+        var result = await Players.CreatePlayerAsync(Definition(" "), TestContext.Current.CancellationToken);
 
-        Assert.Equal(expected, result.Outcome);
+        var stored = await Players.GetPlayersAsync(new RosterQuery(null, true, 1), TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidName, StoredCount = 0L }, new { result.Outcome, StoredCount = stored.TotalCount });
     }
 
     [Fact]
@@ -83,6 +73,18 @@ public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factor
         Assert.Equal(
             player with { DisplayName = "Ann B", Email = "ann@example.org", Notes = "Notes", Type = PlayerType.Senior, Version = 2 },
             result.Value);
+    }
+
+    [Fact]
+    public async Task InvalidEditIsRejectedAndChangesNothing()
+    {
+        var player = await CreatePlayerAsync("Ann");
+
+        var result = await Players.UpdatePlayerAsync(player.PlayerId, player.Version,
+            Definition("Ann B") with { Email = "not an email" }, TestContext.Current.CancellationToken);
+
+        var stored = await Players.GetPlayerAsync(player.PlayerId, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = RosterOutcome.InvalidEmail, Stored = (PlayerSummary?)player }, new { result.Outcome, Stored = stored });
     }
 
     [Fact]

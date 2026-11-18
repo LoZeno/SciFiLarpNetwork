@@ -44,22 +44,25 @@ public sealed class SkillServiceTests(AdministratorAuthenticationFactory factory
             Snapshot(result.Value!));
     }
 
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(1000)]
-    public async Task CostOutsideZeroTo999IsRejected(int cost)
-    {
-        var result = await Skills.CreateSkillAsync(Definition("Hacking I", cost: cost), TestContext.Current.CancellationToken);
-
-        Assert.Equal(CatalogOutcome.InvalidCost, result.Outcome);
-    }
-
     [Fact]
-    public async Task BlankSkillNameIsRejected()
+    public async Task InvalidNewSkillIsRejectedAndNotStored()
     {
         var result = await Skills.CreateSkillAsync(Definition(" "), TestContext.Current.CancellationToken);
 
-        Assert.Equal(CatalogOutcome.InvalidName, result.Outcome);
+        var stored = await Skills.GetSkillsAsync(null, includeArchived: true, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = CatalogOutcome.InvalidName, StoredCount = 0 }, new { result.Outcome, StoredCount = stored.Count });
+    }
+
+    [Fact]
+    public async Task InvalidEditIsRejectedAndChangesNothing()
+    {
+        var skill = await CreateSkillAsync(Definition("Hacking I"));
+
+        var result = await Skills.UpdateSkillAsync(skill.SkillId, skill.Version, Definition("Hacking I", cost: 1000),
+            TestContext.Current.CancellationToken);
+
+        var stored = await Skills.GetSkillAsync(skill.SkillId, TestContext.Current.CancellationToken);
+        Assert.Equal(new { Outcome = CatalogOutcome.InvalidCost, Stored = Snapshot(skill) }, new { result.Outcome, Stored = Snapshot(stored!) });
     }
 
     [Fact]
