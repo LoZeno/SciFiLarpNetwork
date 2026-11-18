@@ -15,6 +15,7 @@ public partial class CharacterProjection : SingleStreamProjection<CharacterDocum
         IncludeType<CharacterNetworkChanged>();
         IncludeType<CharacterStatusChanged>();
         IncludeType<CharacterStatValuesChanged>();
+        IncludeType<CharacterSkillsChanged>();
         IncludeType<CharacterQrIdentifierRegenerated>();
         IncludeType<CharacterArchived>();
         IncludeType<CharacterUnarchived>();
@@ -59,6 +60,11 @@ public partial class CharacterProjection : SingleStreamProjection<CharacterDocum
             CharacterStatValuesChanged values when snapshot is not null => snapshot with
             {
                 StatValues = Merge(snapshot.StatValues, values.Values)
+            },
+            CharacterSkillsChanged skills when snapshot is not null => snapshot with
+            {
+                TalentIds = [.. skills.TalentIds],
+                SkillPurchases = [.. skills.Purchases]
             },
             CharacterQrIdentifierRegenerated qr when snapshot is not null => snapshot with { QrIdentifier = qr.QrIdentifier },
             CharacterArchived when snapshot is not null => snapshot with { IsArchived = true },

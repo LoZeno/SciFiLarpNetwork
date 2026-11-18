@@ -30,6 +30,23 @@ public static class RosterErrors
     public const string InvalidStatType = "errors.invalidStatType";
     public const string InvalidQrIdentifier = "errors.invalidQrIdentifier";
     public const string StatArchived = "errors.statArchived";
+    public const string TooManyTalents = "errors.tooManyTalents";
+    public const string DuplicateTalent = "errors.duplicateTalent";
+    public const string DuplicateSkillPurchase = "errors.duplicateSkillPurchase";
+    public const string InvalidPurchaseCount = "errors.invalidPurchaseCount";
+    public const string InvalidSpecifics = "errors.invalidSpecifics";
+    public const string ArchivedTalentNotSelectable = "errors.archivedTalentNotSelectable";
+    public const string UnknownSkill = "errors.unknownSkill";
+    public const string TalentNotOwned = "errors.talentNotOwned";
+    public const string SkillNotInTalent = "errors.skillNotInTalent";
+    public const string SkillArchived = "errors.skillArchived";
+    public const string NotMultiPurchase = "errors.notMultiPurchase";
+    public const string PrerequisitesNotMet = "errors.prerequisitesNotMet";
+    public const string RequiredByOtherSkills = "errors.requiredByOtherSkills";
+    public const string InsufficientFreePoints = "errors.insufficientFreePoints";
+
+    /// <summary>The error detail listing the names of the skills a character skill error is about.</summary>
+    public const string SkillsErrorKey = "skills";
 
     public static ApiException ToApiException(RosterOutcome outcome) =>
         outcome switch
@@ -60,6 +77,21 @@ public static class RosterErrors
             RosterOutcome.InvalidStatName => Create(StatusCodes.Status400BadRequest, InvalidStatName),
             RosterOutcome.InvalidStatType => Create(StatusCodes.Status400BadRequest, InvalidStatType),
             RosterOutcome.InvalidQrIdentifier => Create(StatusCodes.Status400BadRequest, InvalidQrIdentifier),
+            RosterOutcome.TooManyTalents => Create(StatusCodes.Status400BadRequest, TooManyTalents),
+            RosterOutcome.DuplicateTalent => Create(StatusCodes.Status400BadRequest, DuplicateTalent),
+            RosterOutcome.DuplicateSkillPurchase => Create(StatusCodes.Status400BadRequest, DuplicateSkillPurchase),
+            RosterOutcome.InvalidPurchaseCount => Create(StatusCodes.Status400BadRequest, InvalidPurchaseCount),
+            RosterOutcome.InvalidSpecifics => Create(StatusCodes.Status400BadRequest, InvalidSpecifics),
+            RosterOutcome.UnknownTalent => Create(StatusCodes.Status400BadRequest, CatalogErrors.UnknownTalent),
+            RosterOutcome.UnknownSkill => Create(StatusCodes.Status400BadRequest, UnknownSkill),
+            RosterOutcome.TalentNotOwned => Create(StatusCodes.Status400BadRequest, TalentNotOwned),
+            RosterOutcome.TalentArchived => Create(StatusCodes.Status409Conflict, ArchivedTalentNotSelectable),
+            RosterOutcome.SkillNotInTalent => Create(StatusCodes.Status409Conflict, SkillNotInTalent),
+            RosterOutcome.SkillArchived => Create(StatusCodes.Status409Conflict, SkillArchived),
+            RosterOutcome.NotMultiPurchase => Create(StatusCodes.Status409Conflict, NotMultiPurchase),
+            RosterOutcome.PrerequisitesNotMet => Create(StatusCodes.Status409Conflict, PrerequisitesNotMet),
+            RosterOutcome.RequiredByOtherSkills => Create(StatusCodes.Status409Conflict, RequiredByOtherSkills),
+            RosterOutcome.InsufficientFreePoints => Create(StatusCodes.Status409Conflict, InsufficientFreePoints),
             _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "A successful outcome is not an error.")
         };
 
@@ -68,6 +100,24 @@ public static class RosterErrors
         result.Outcome == RosterOutcome.Succeeded && result.Value is { } value
             ? value
             : throw ToApiException(result.Outcome);
+
+    /// <summary>
+    /// Returns the saved talents and skills, or throws the error; an error about particular skills lists their names
+    /// under <see cref="SkillsErrorKey"/>.
+    /// </summary>
+    public static CharacterSkillsSummary Unwrap(CharacterSkillsResult result)
+    {
+        if (result.Outcome == RosterOutcome.Succeeded && result.Value is { } value)
+        {
+            return value;
+        }
+
+        var error = ToApiException(result.Outcome);
+        throw result.SkillNames.Count == 0
+            ? error
+            : new ApiException(error.StatusCode, error.Code, error.MessageKey,
+                new Dictionary<string, IReadOnlyList<string>> { [SkillsErrorKey] = result.SkillNames });
+    }
 
     private static ApiException Create(int statusCode, string code) => new(statusCode, code, code);
 }

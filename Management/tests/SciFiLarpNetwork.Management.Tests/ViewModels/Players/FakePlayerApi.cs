@@ -16,11 +16,15 @@ internal sealed class FakePlayerApi : IManagementApiClient
     private const string CharactersHref = "/api/v1/characters";
     private const string StatsHref = "/api/v1/character-stats";
     private const string NetworksHref = "/api/v1/networks";
+    private const string TalentsHref = "/api/v1/talents";
+    private const string SkillsHref = "/api/v1/skills";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public bool CanWrite { get; init; } = true;
 
     public int PageSize { get; init; } = 50;
+
+    public int TalentLimit { get; init; } = 5;
 
     public List<FakePlayer> Players { get; } = [];
 
@@ -29,6 +33,24 @@ internal sealed class FakePlayerApi : IManagementApiClient
     public List<FakeStat> Stats { get; } = [];
 
     public List<FakeRosterNetwork> Networks { get; } = [];
+
+    public List<FakeRosterTalent> Talents { get; } = [];
+
+    public List<FakeRosterSkill> Skills { get; } = [];
+
+    public FakeRosterTalent AddTalent(string name, bool isArchived = false)
+    {
+        var talent = new FakeRosterTalent(Guid.NewGuid(), name, isArchived);
+        Talents.Add(talent);
+        return talent;
+    }
+
+    public FakeRosterSkill AddSkill(string name, int cost, FakeRosterTalent talent, bool isMultiPurchase = false, bool isArchived = false)
+    {
+        var skill = new FakeRosterSkill(Guid.NewGuid(), name, cost, talent.Id, isMultiPurchase, isArchived);
+        Skills.Add(skill);
+        return skill;
+    }
 
     public List<Submission> Submissions { get; } = [];
 
@@ -80,6 +102,11 @@ internal sealed class FakePlayerApi : IManagementApiClient
                 ["api", "v1", "characters"] => CharacterCollection(query),
                 ["api", "v1", "characters", "by-qr"] => CharacterEntity(FindByQr(query.GetValueOrDefault("identifier"))),
                 ["api", "v1", "characters", var id] => CharacterEntity(FindCharacter(id)),
+                ["api", "v1", "characters", var id, "skills"] => CharacterSkillsEntity(FindCharacter(id)),
+                ["api", "v1", "talents"] => CatalogCollection(TalentsHref, query.ContainsKey("includeArchived"),
+                    Talents.Where(talent => query.ContainsKey("includeArchived") || !talent.IsArchived).Select(TalentProperties)),
+                ["api", "v1", "skills"] => CatalogCollection(SkillsHref, query.ContainsKey("includeArchived"),
+                    Skills.Where(skill => query.ContainsKey("includeArchived") || !skill.IsArchived).Select(SkillProperties)),
                 ["api", "v1", "character-stats"] => StatCollection(query.ContainsKey("includeArchived")),
                 ["api", "v1", "character-stats", var id] => StatEntity(FindStat(id)),
                 ["api", "v1", "networks"] => NetworkCollection(query.ContainsKey("includeDisabled")),
@@ -186,6 +213,19 @@ internal sealed class FakePlayerApi : IManagementApiClient
                 var regenerated = FindCharacter(segments[3]);
                 regenerated.QrIdentifier = Guid.NewGuid().ToString("N");
                 return CharacterEntity(regenerated);
+            case "save-character-skills":
+                var skillOwner = FindCharacter(segments[3]);
+                RequireVersion(body!.Value, skillOwner.Version);
+                skillOwner.TalentIds = body.Value.GetProperty("talentIds").EnumerateArray().Select(id => id.GetGuid()).ToList();
+                skillOwner.Purchases = body.Value.GetProperty("skills").EnumerateArray()
+                    .Select(skill => new FakePurchase(
+                        skill.GetProperty("skillId").GetGuid(),
+                        skill.GetProperty("talentId").GetGuid(),
+                        skill.GetProperty("count").GetInt32(),
+                        skill.GetProperty("specifics").GetString()))
+                    .ToList();
+                skillOwner.Version++;
+                return CharacterSkillsEntity(skillOwner);
             case "rename-character-stat":
                 var renamed = FindStat(segments[3]);
                 RequireVersion(body!.Value, renamed.Version);
@@ -374,12 +414,85 @@ internal sealed class FakePlayerApi : IManagementApiClient
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = path },
+                new SirenLink { Rel = [SirenRelations.CharacterSkills], Href = $"{path}/skills" },
                 new SirenLink { Rel = [SirenRelations.CharacterStats], Href = StatsHref },
                 new SirenLink { Rel = [SirenRelations.Networks], Href = NetworksHref }
             ],
             Actions = CanWrite ? actions : null
         };
     }
+
+    private SirenEntity CharacterSkillsEntity(FakeCharacter character)
+    {
+        var path = $"{CharactersHref}/{character.Id:D}/skills";
+        var spent = character.Purchases.Sum(purchase => Skills.Single(skill => skill.Id == purchase.SkillId).Cost * purchase.Count);
+        return new SirenEntity
+        {
+            Class = ["character-skills"],
+            Properties = Json(new
+            {
+                characterId = character.Id,
+                characterName = character.Name,
+                experiencePoints = character.ExperiencePoints,
+                freePoints = character.ExperiencePoints - spent,
+                talentLimit = TalentLimit,
+                talents = character.TalentIds.Select(id => Talents.Single(talent => talent.Id == id))
+                    .Select(talent => new { talentId = talent.Id, name = talent.Name, isArchived = talent.IsArchived }),
+                skills = character.Purchases.Select(purchase =>
+                {
+                    var skill = Skills.Single(item => item.Id == purchase.SkillId);
+                    return new
+                    {
+                        skillId = skill.Id,
+                        name = skill.Name,
+                        talentId = purchase.TalentId,
+                        count = purchase.Count,
+                        specifics = purchase.Specifics,
+                        cost = skill.Cost,
+                        isMultiPurchase = skill.IsMultiPurchase,
+                        isArchived = skill.IsArchived
+                    };
+                }),
+                version = character.Version
+            }),
+            Links =
+            [
+                new SirenLink { Rel = ["self"], Href = path },
+                new SirenLink { Rel = [SirenRelations.Talents], Href = TalentsHref },
+                new SirenLink { Rel = [SirenRelations.Skills], Href = SkillsHref }
+            ],
+            Actions = CanWrite ? [Action("save-character-skills", path, "PUT")] : null
+        };
+    }
+
+    private static SirenEntity CatalogCollection(string path, bool includeArchived, IEnumerable<JsonElement> items) =>
+        new()
+        {
+            Class = ["collection"],
+            Properties = Json(new { title = "Catalog", includesArchived = includeArchived }),
+            Entities = items.Select(properties => new SirenSubEntity { Rel = ["item"], Properties = properties }).ToArray(),
+            Links = [new SirenLink { Rel = [SirenRelations.WithArchived], Href = $"{path}?includeArchived=true" }]
+        };
+
+    private static JsonElement TalentProperties(FakeRosterTalent talent) =>
+        Json(new { talentId = talent.Id, name = talent.Name, description = (string?)null, isArchived = talent.IsArchived, version = 1 });
+
+    private static JsonElement SkillProperties(FakeRosterSkill skill) =>
+        Json(new
+        {
+            skillId = skill.Id,
+            name = skill.Name,
+            description = (string?)null,
+            cost = skill.Cost,
+            isMultiPurchase = skill.IsMultiPurchase,
+            isAdvanced = false,
+            talentIds = new[] { skill.TalentId },
+            gameFlags = Array.Empty<string>(),
+            cardFlagIds = Array.Empty<Guid>(),
+            prerequisiteGroups = Array.Empty<Guid[]>(),
+            isArchived = skill.IsArchived,
+            version = 1
+        });
 
     private SirenEntity StatCollection(bool includeArchived) =>
         new()
@@ -551,6 +664,10 @@ internal sealed class FakeCharacter(Guid id, int number, Guid playerId, string n
 
     public Dictionary<Guid, string> Texts { get; } = [];
 
+    public List<Guid> TalentIds { get; set; } = [];
+
+    public List<FakePurchase> Purchases { get; set; } = [];
+
     public bool IsArchived { get; set; }
 
     public long Version { get; set; } = 1;
@@ -574,3 +691,9 @@ internal sealed class FakeStat(Guid id, string name, string type)
 }
 
 internal sealed record FakeRosterNetwork(Guid Id, string Name, bool IsEnabled, bool IsDefault);
+
+internal sealed record FakeRosterTalent(Guid Id, string Name, bool IsArchived);
+
+internal sealed record FakeRosterSkill(Guid Id, string Name, int Cost, Guid TalentId, bool IsMultiPurchase, bool IsArchived);
+
+internal sealed record FakePurchase(Guid SkillId, Guid TalentId, int Count, string? Specifics);

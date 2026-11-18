@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddSingleton<IPlayerService, PlayerService>();
         services.AddSingleton<ICharacterService, CharacterService>();
         services.AddSingleton<ICharacterStatService, CharacterStatService>();
+        services.AddSingleton<ICharacterSkillService, CharacterSkillService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -153,6 +154,7 @@ public static class DependencyInjection
             options.Events.AddEventType<CharacterNetworkChanged>();
             options.Events.AddEventType<CharacterStatusChanged>();
             options.Events.AddEventType<CharacterStatValuesChanged>();
+            options.Events.AddEventType<CharacterSkillsChanged>();
             options.Events.AddEventType<CharacterQrIdentifierRegenerated>();
             options.Events.AddEventType<CharacterArchived>();
             options.Events.AddEventType<CharacterUnarchived>();

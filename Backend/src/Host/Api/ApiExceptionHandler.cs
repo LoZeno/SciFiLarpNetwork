@@ -37,11 +37,12 @@ public sealed class ApiExceptionHandler(
             return false;
         }
 
-        var (statusCode, code, messageKey) = exception is ApiException apiException
-            ? (apiException.StatusCode, apiException.Code, apiException.MessageKey)
+        var (statusCode, code, messageKey, errors) = exception is ApiException apiException
+            ? (apiException.StatusCode, apiException.Code, apiException.MessageKey, apiException.Errors)
             : (StatusCodes.Status500InternalServerError,
                 ApiErrorCodes.InternalServerError,
-                ApiErrorCodes.InternalServerError);
+                ApiErrorCodes.InternalServerError,
+                (IReadOnlyDictionary<string, IReadOnlyList<string>>?)null);
 
         if (exception is ApiException)
         {
@@ -54,7 +55,7 @@ public sealed class ApiExceptionHandler(
 
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = SirenMediaTypes.Json;
-        var response = responseFactory.Create(httpContext, statusCode, code, messageKey);
+        var response = responseFactory.Create(httpContext, statusCode, code, messageKey, errors);
         await SirenJson.SerializeAsync(httpContext.Response.Body, response, cancellationToken);
 
         return true;

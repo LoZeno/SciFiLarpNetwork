@@ -1,0 +1,134 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.Players.CharacterSkillsWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Players"
+    x:DataType="vm:CharacterSkillsViewModel"
+    Title="{Binding Title}"
+    Width="820"
+    Height="760"
+    MinWidth="600"
+    MinHeight="480"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel DockPanel.Dock="Top" Spacing="6">
+      <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding ExperiencePointsText}" />
+      <TextBlock AutomationProperties.LiveSetting="Polite" FontWeight="SemiBold" Text="{Binding FreePointsText}" />
+      <TextBlock
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasNegativeFreePoints}"
+          Text="{Binding NegativeFreePointsText}"
+          TextWrapping="Wrap" />
+    </StackPanel>
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="8">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          IsVisible="{Binding HasStatusMessage}"
+          Text="{Binding StatusMessage}"
+          TextWrapping="Wrap" />
+      <TextBlock IsVisible="{Binding HasAffectedSkills}" Text="{Binding AffectedSkills}" TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding SaveCommand}" Content="{Binding SaveLabel}" IsDefault="True" IsVisible="{Binding CanWrite}" />
+        <Button Command="{Binding ReloadCommand}" Content="{Binding ReloadLabel}" />
+        <Button Command="{Binding CloseCommand}" Content="{Binding CloseLabel}" IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <ScrollViewer>
+      <StackPanel Margin="0,12,12,0" Spacing="10">
+        <TextBlock FontWeight="SemiBold" Text="{Binding TalentsLabel}" />
+        <TextBlock FontSize="12" Text="{Binding TalentLimitText}" TextWrapping="Wrap" />
+        <TextBlock IsVisible="{Binding HasNoTalents}" Text="{Binding NoTalentsText}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Talents}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CharacterTalentRowViewModel">
+              <Grid Margin="0,2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding Title}" TextWrapping="Wrap" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding RemoveCommand}"
+                    Content="{Binding $parent[ItemsControl].((vm:CharacterSkillsViewModel)DataContext).RemoveLabel}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding CanWrite}">
+          <ComboBox
+              Grid.Column="0"
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding NewTalentLabel}"
+              ItemsSource="{Binding AvailableTalents}"
+              SelectedItem="{Binding SelectedNewTalent, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:TalentChoice">
+                <TextBlock Text="{Binding Title}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="1" Command="{Binding AddTalentCommand}" Content="{Binding AddTalentLabel}" />
+        </Grid>
+        <TextBlock Margin="0,12,0,0" FontWeight="SemiBold" Text="{Binding SkillsLabel}" />
+        <Grid ColumnDefinitions="3*,2*,Auto,3*,Auto" ColumnSpacing="8">
+          <TextBlock Grid.Column="1" FontSize="12" Text="{Binding BoughtThroughLabel}" />
+          <TextBlock Grid.Column="2" FontSize="12" Text="{Binding CountLabel}" />
+          <TextBlock Grid.Column="3" FontSize="12" Text="{Binding SpecificsLabel}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Skills}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CharacterSkillRowViewModel">
+              <Grid Margin="0,2" ColumnDefinitions="3*,2*,Auto,3*,Auto" ColumnSpacing="8">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                  <TextBlock FontSize="12" Text="{Binding CostText}" />
+                </StackPanel>
+                <ComboBox
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterSkillsViewModel)DataContext).BoughtThroughLabel}"
+                    ItemsSource="{Binding TalentChoices}"
+                    SelectedItem="{Binding SelectedTalent, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TalentChoice">
+                      <TextBlock Text="{Binding Title}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBox
+                    Grid.Column="2"
+                    Width="70"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterSkillsViewModel)DataContext).CountLabel}"
+                    IsEnabled="{Binding CanChangeCount}"
+                    MaxLength="3"
+                    Text="{Binding Count, Mode=TwoWay}" />
+                <TextBox
+                    Grid.Column="3"
+                    AutomationProperties.Name="{Binding $parent[ItemsControl].((vm:CharacterSkillsViewModel)DataContext).SpecificsLabel}"
+                    MaxLength="64"
+                    Text="{Binding Specifics, Mode=TwoWay}" />
+                <Button
+                    Grid.Column="4"
+                    Command="{Binding RemoveCommand}"
+                    Content="{Binding $parent[ItemsControl].((vm:CharacterSkillsViewModel)DataContext).RemoveLabel}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding CanWrite}">
+          <ComboBox
+              Grid.Column="0"
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding NewSkillLabel}"
+              ItemsSource="{Binding AvailableSkills}"
+              SelectedItem="{Binding SelectedNewSkill, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SkillOffer">
+                <TextBlock Text="{Binding Title}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Grid.Column="1" Command="{Binding AddSkillCommand}" Content="{Binding AddSkillLabel}" />
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

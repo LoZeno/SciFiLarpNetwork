@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Backend.Domain.Characters;
+using SciFiLarpNetwork.Backend.Domain.CharacterSkills;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Players.PlayerDocuments;
 
@@ -23,4 +24,9 @@ public sealed record CharacterDocument(
 {
     /// <summary>The character stream version, set by Marten for aggregate projection documents.</summary>
     public long Version { get; set; }
+
+    /// <summary>The character's talents, in the order they were picked.</summary>
+    public Guid[] TalentIds { get; init; } = [];
+
+    public SkillPurchase[] SkillPurchases { get; init; } = [];
 }

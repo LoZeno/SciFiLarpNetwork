@@ -29,6 +29,7 @@ public sealed class CharacterEditorViewModel : CatalogEditorViewModel
     private string _defaultNetwork = string.Empty;
     private string _qrIdentifier = string.Empty;
     private bool _showArchivedStats;
+    private Func<Task>? _manageSkills;
 
     internal CharacterEditorViewModel(
         IManagementLocalizer localizer,
@@ -46,7 +47,25 @@ public sealed class CharacterEditorViewModel : CatalogEditorViewModel
         _selectedStatus = statuses.Count > 0 ? statuses[0] : null;
         _submit = submit;
         AddNewStatCommand = new DelegateCommand(() => NewStats.Add(new NewCharacterStatRowViewModel(StatTypes, row => NewStats.Remove(row))));
+        ManageSkillsCommand = new AsyncCommand(
+            () => _manageSkills?.Invoke() ?? Task.CompletedTask,
+            HandleManageSkillsFailure,
+            () => _manageSkills is not null && !IsSaving);
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(IsSaving))
+            {
+                ManageSkillsCommand.NotifyCanExecuteChanged();
+            }
+        };
     }
+
+    /// <summary>Opens the character's talents and skills window; available only for a saved character.</summary>
+    public AsyncCommand ManageSkillsCommand { get; }
+
+    public bool CanManageSkills => _manageSkills is not null;
+
+    public string ManageSkillsLabel => Translate("characterSkills.manage");
 
     public IReadOnlyList<RosterChoice> Statuses { get; }
 
@@ -209,6 +228,19 @@ public sealed class CharacterEditorViewModel : CatalogEditorViewModel
             OnPropertyChanged();
             ShowStats();
         }
+    }
+
+    internal void EnableManageSkills(Func<Task> manageSkills)
+    {
+        _manageSkills = manageSkills;
+        OnPropertyChanged(nameof(CanManageSkills));
+        ManageSkillsCommand.NotifyCanExecuteChanged();
+    }
+
+    private void HandleManageSkillsFailure(Exception exception)
+    {
+        System.Diagnostics.Trace.TraceError("Unhandled talents and skills exception: {0}", exception);
+        ErrorMessage = Translate("common.error");
     }
 
     internal void SetNetworks(string defaultNetwork, IReadOnlyList<NetworkChoice> choices, Guid? selectedNetworkId)

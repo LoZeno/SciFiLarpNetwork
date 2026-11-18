@@ -118,6 +118,20 @@ public sealed class ManagementApiClientTests : IDisposable
     }
 
     [Fact]
+    public async Task ErrorDetailsFromSirenErrorAreKept()
+    {
+        var client = CreateClient(_ =>
+            SirenResponse(
+                """{"class":["error"],"properties":{"code":"errors.requiredByOtherSkills","errors":{"skills":["Aces","Stunts"],"other":3}}}""",
+                HttpStatusCode.Conflict));
+
+        var exception = await Record.ExceptionAsync(() =>
+            client.GetResourceAsync("http://localhost/api", "/api/v1/characters", "en", TestContext.Current.CancellationToken));
+
+        Assert.Equal(["Aces", "Stunts"], Assert.IsType<ManagementApiException>(exception).Errors["skills"]);
+    }
+
+    [Fact]
     public async Task GetResourceAsyncRejectsSuccessfulNonJsonResponse()
     {
         var client = CreateClient(_ =>

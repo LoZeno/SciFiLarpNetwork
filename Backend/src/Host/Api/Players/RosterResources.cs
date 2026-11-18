@@ -27,7 +27,13 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
 
     public string StatPath(Guid statId) => $"{StatsPath}/{statId:D}";
 
+    public string CharacterSkillsPath(Guid characterId) => $"{CharacterPath(characterId)}/skills";
+
     private string NetworksPath => $"{pathBase}/api/v1/networks";
+
+    private string TalentsPath => $"{pathBase}/api/v1/talents";
+
+    private string SkillsPath => $"{pathBase}/api/v1/skills";
 
     public static string EnumTitleKey<T>(string prefix, T value)
         where T : struct, Enum
@@ -126,11 +132,53 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
                 new SirenLink { Rel = ["self"], Href = CharacterPath(character.CharacterId) },
                 new SirenLink { Rel = ["collection"], Href = CharactersPath },
                 new SirenLink { Rel = [SirenRelations.Player], Href = PlayerPath(character.PlayerId) },
+                new SirenLink { Rel = [SirenRelations.CharacterSkills], Href = CharacterSkillsPath(character.CharacterId) },
                 new SirenLink { Rel = [SirenRelations.CharacterStats], Href = StatsPath },
                 new SirenLink { Rel = [SirenRelations.Networks], Href = NetworksPath }
             ],
             Actions = canWrite ? CharacterActions(character) : null
         };
+
+    /// <summary>
+    /// A character's talents and skills. The save action replaces both lists; the talent and skill catalogs it picks
+    /// from are linked.
+    /// </summary>
+    public SirenEntity<CharacterSkillsSummary> CharacterSkills(CharacterSkillsSummary skills)
+    {
+        var path = CharacterSkillsPath(skills.CharacterId);
+        return new SirenEntity<CharacterSkillsSummary>
+        {
+            Class = ["character-skills"],
+            Properties = skills,
+            Links =
+            [
+                new SirenLink { Rel = ["self"], Href = path },
+                new SirenLink { Rel = [SirenRelations.Character], Href = CharacterPath(skills.CharacterId) },
+                new SirenLink { Rel = [SirenRelations.Talents], Href = TalentsPath },
+                new SirenLink { Rel = [SirenRelations.Skills], Href = SkillsPath }
+            ],
+            Actions = canWrite
+                ?
+                [
+                    new SirenAction
+                    {
+                        Name = "save-character-skills",
+                        Href = path,
+                        Method = "PUT",
+                        Type = JsonType,
+                        Title = text.GetLocalizedText("api.saveCharacterSkills"),
+                        Fields =
+                        [
+                            VersionField(skills.Version),
+                            Field("talentIds", "hidden", "characterSkills.talents", skills.Talents.Select(talent => talent.TalentId).ToArray()),
+                            Field("skills", "hidden", "characterSkills.skills", skills.Skills.Select(skill =>
+                                new SkillPurchaseRequest(skill.SkillId, skill.TalentId, skill.Count, skill.Specifics)).ToArray())
+                        ]
+                    }
+                ]
+                : null
+        };
+    }
 
     public SirenEntity<CharacterStatCollectionProperties> StatCollection(IReadOnlyList<CharacterStatSummary> stats,
         bool includeArchived) =>
