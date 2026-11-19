@@ -74,7 +74,11 @@ public static class ApiErrorMessages
         "errors.notMultiPurchase",
         "errors.prerequisitesNotMet",
         "errors.requiredByOtherSkills",
-        "errors.insufficientFreePoints"
+        "errors.insufficientFreePoints",
+        "errors.noCharactersSelected",
+        "errors.tooManyCharacters",
+        "errors.unknownCharacters",
+        "errors.cardRenderingFailed"
     ];
 
     extension(IManagementLocalizer localizer)

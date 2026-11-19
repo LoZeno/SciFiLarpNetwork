@@ -105,6 +105,10 @@
             <Button Margin="0,0,8,8" Command="{Binding ToggleCharacterArchivedCommand}" Content="{Binding ToggleCharacterArchivedLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding RegenerateQrCommand}" Content="{Binding RegenerateQrLabel}" />
           </WrapPanel>
+          <WrapPanel>
+            <Button Margin="0,0,8,8" Command="{Binding PreviewCardsCommand}" Content="{Binding PreviewCardsLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ExportCardsCommand}" Content="{Binding ExportCardsLabel}" />
+          </WrapPanel>
         </StackPanel>
         <TextBlock
             Margin="0,8"
@@ -116,6 +120,8 @@
             Margin="0,8,0,0"
             AutomationProperties.Name="{Binding CharactersHeading}"
             ItemsSource="{Binding Characters}"
+            SelectionMode="Multiple"
+            SelectedItems="{Binding SelectedCharacters}"
             SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:CharacterListItem">

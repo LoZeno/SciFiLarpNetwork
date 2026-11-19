@@ -218,7 +218,7 @@ The work is split into three specifications, in this order (see `SPEC-22-impleme
 2. [CROSSCUT-04](../specifications/CROSSCUT-04-hacking-simulation-rules-update.md): the theatrical component and demo page, with any number of penalties and the keystroke cap.
 3. [SPEC-27](../specifications/SPEC-27-hacking-plugs.md): guarantee and boost plugs and their editor.
 
-[CROSSCUT-03](../specifications/CROSSCUT-03-server-authoritative-hacking-challenges.md) (row 70) then applies them on the server.
+[CROSSCUT-03](../specifications/CROSSCUT-03-server-authoritative-hacking-challenges.md) (row 71) then applies them on the server.
 
 ## How the numbers were produced
 

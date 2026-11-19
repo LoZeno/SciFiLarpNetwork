@@ -43,4 +43,26 @@ internal sealed class FakePlayerDialogs : IPlayerDialogService
         LastConfirmation = request;
         return Task.FromResult(ConfirmResult);
     }
+
+    /// <summary>Whether the save dialog is completed rather than cancelled.</summary>
+    public bool ExportResult { get; init; } = true;
+
+    /// <summary>Whether a viewer opens the previewed PDF.</summary>
+    public bool PreviewResult { get; init; } = true;
+
+    public byte[]? LastExportedPdf { get; private set; }
+
+    public byte[]? LastPreviewedPdf { get; private set; }
+
+    public Task<bool> ExportPdfAsync(byte[] pdf, string suggestedFileName, string fileTypeName)
+    {
+        LastExportedPdf = pdf;
+        return Task.FromResult(ExportResult);
+    }
+
+    public Task<bool> PreviewPdfAsync(byte[] pdf, string fileName)
+    {
+        LastPreviewedPdf = pdf;
+        return Task.FromResult(PreviewResult);
+    }
 }
