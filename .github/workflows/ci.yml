@@ -62,6 +62,48 @@ jobs:
             coverage/dotnet/
           if-no-files-found: error
 
+  # Card PDFs come from the Typst build bundled per runtime, so each supported RID is exercised on its own runner.
+  card-printing-platforms:
+    name: Card printing (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, rid: linux-x64 }
+          - { os: ubuntu-24.04-arm, rid: linux-arm64 }
+          - { os: windows-latest, rid: win-x64 }
+          - { os: windows-11-arm, rid: win-arm64 }
+          - { os: macos-15-intel, rid: osx-x64 }
+          - { os: macos-latest, rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    env:
+      ConnectionStrings__EventStore: Host=localhost;Port=5432;Database=scifilarnetwork_tests;Username=postgres;Password=postgres
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      # Docker service containers exist only on Linux runners; this action installs PostgreSQL on every OS.
+      - name: Start PostgreSQL
+        uses: ikalnytskyi/action-setup-postgres@325155bfd7807b2a21ac9c2c7bb9b9a6eacc44df # v9
+        with:
+          database: scifilarnetwork_tests
+          postgres-version: "18"
+      - name: Build integration tests
+        run: dotnet build Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests --configuration Release
+      - name: Check the bundled Typst
+        run: |
+          typst=Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests/bin/Release/net10.0/tools/typst/typst
+          if [ -f "$typst.exe" ]; then typst="$typst.exe"; fi
+          "$typst" --version
+      - name: Character card API tests
+        run: >-
+          dotnet Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests/bin/Release/net10.0/SciFiLarpNetwork.Backend.Integration.Tests.dll
+          -class "SciFiLarpNetwork.Backend.Tests.Integration.CharacterCards.CharacterCardsApiTests"
+
   frontend-checks:
     name: Frontend checks
     runs-on: ubuntu-latest
