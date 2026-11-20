@@ -48,6 +48,11 @@ internal sealed class CharacterCardTemplateService(
     public async Task<CardTemplateResult> UploadAsync(long expectedVersion, byte[] templateSource, CharacterCardDocument sample,
         CancellationToken cancellationToken = default)
     {
+        if (await CurrentVersionAsync(cancellationToken) != expectedVersion)
+        {
+            return CardTemplateResult.Failure(CardTemplateOutcome.StaleVersion);
+        }
+
         var check = await PreviewAsync(templateSource, sample, cancellationToken);
         if (check.Outcome != CardTemplateOutcome.Succeeded)
         {
@@ -91,6 +96,12 @@ internal sealed class CharacterCardTemplateService(
             return new CardTemplatePreview(CardTemplateOutcome.TemplateTooLarge, null, null);
         }
 
+        // Typst compiles an empty file to blank pages, so it would pass the check and print blank cards.
+        if (templateSource.Length == 0)
+        {
+            return new CardTemplatePreview(CardTemplateOutcome.EmptyTemplate, null, null);
+        }
+
         try
         {
             return new CardTemplatePreview(CardTemplateOutcome.Succeeded,
@@ -100,6 +111,16 @@ internal sealed class CharacterCardTemplateService(
         {
             return new CardTemplatePreview(CardTemplateOutcome.InvalidTemplate, null, exception.Message);
         }
+    }
+
+    /// <summary>
+    /// A cheap early check, so a stale upload is not compiled first. A change committed during the compile is still
+    /// caught by <see cref="FetchExpectedAsync"/>.
+    /// </summary>
+    private async Task<long> CurrentVersionAsync(CancellationToken cancellationToken)
+    {
+        await using var query = sessions.QuerySession();
+        return (await query.LoadAsync<CardTemplateDocument>(StreamId, cancellationToken))?.Version ?? 0;
     }
 
     /// <returns>The stream, or <see langword="null"/> when its version is not <paramref name="expectedVersion"/>.</returns>

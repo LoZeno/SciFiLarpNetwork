@@ -27,6 +27,7 @@ There is one template per card kind. This specification covers the **character c
 Approved with the user on 2026-11-20:
 
 - A template file is at most **256 KB**.
+- An empty file is refused on upload and preview with `errors.invalidCardTemplate`; the Typst error box says "The file is empty." (Italian: "Il file è vuoto."). The Management application refuses it before sending. (Approved 2026-11-20 after the PR #27 review.)
 - The **Card templates** screen in the Management application lists **Character cards** as **Default** or **Uploaded by** *name*, *date and time*, with **Download**, **Preview file…**, **Upload…**, and **Reset to default** (off while the default is used). Readers see the state and **Download** only.
 - Typst's error is shown in a read-only box, without the server's folder names.
 - Reset asks: "Use the default character-card template again? The uploaded template is removed." (Italian: "Usare di nuovo il modello predefinito dei cartellini dei personaggi? Il modello caricato viene rimosso.")

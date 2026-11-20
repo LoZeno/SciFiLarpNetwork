@@ -349,6 +349,7 @@
   "cardTemplates.resetDone": "Si usa di nuovo il modello predefinito.",
   "cardTemplates.previewFailed": "Nessun programma ha potuto aprire il PDF.",
   "cardTemplates.typstError": "Errore di Typst",
+  "cardTemplates.emptyFile": "Il file è vuoto.",
   "characters.stats": "Statistiche",
   "characters.newStats": "Nuove statistiche",
   "characters.newStatsHelp": "Una nuova statistica viene aggiunta a ogni personaggio. Il valore inserito qui diventa il valore iniziale per ogni personaggio.",

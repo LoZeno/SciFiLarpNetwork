@@ -26,7 +26,7 @@ internal sealed partial class TypstCharacterCardRenderer(
     private const string MissingCertificateFileName = "no-certificate.pem";
     private const string UnreachableProxy = "http://127.0.0.1:9";
     private static readonly string[] ProxyVariables = ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"];
-    private static readonly string[] NoProxyVariables = ["NO_PROXY", "no_proxy"];
+    private const string NoProxyVariable = "NO_PROXY";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan StopWait = TimeSpan.FromSeconds(10);
 
@@ -192,7 +192,7 @@ internal sealed partial class TypstCharacterCardRenderer(
         }
 
         foreach (var name in startInfo.Environment.Keys
-                     .Where(key => key.StartsWith("TYPST_", StringComparison.OrdinalIgnoreCase) || NoProxyVariables.Contains(key))
+                     .Where(key => key.StartsWith("TYPST_", StringComparison.OrdinalIgnoreCase) || key.Equals(NoProxyVariable, StringComparison.OrdinalIgnoreCase))
                      .ToArray())
         {
             startInfo.Environment.Remove(name);

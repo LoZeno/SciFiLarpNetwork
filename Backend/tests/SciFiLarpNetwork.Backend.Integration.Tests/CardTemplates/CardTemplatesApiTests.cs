@@ -258,6 +258,33 @@ public sealed class CardTemplatesApiTests(AdministratorAuthenticationFactory fac
             await ErrorAsync(response, detail => detail.Contains("escape the project root", StringComparison.Ordinal)));
     }
 
+    [Theory]
+    [InlineData("en", "The file is empty.")]
+    [InlineData("it", "Il file è vuoto.")]
+    public async Task UploadOfAnEmptyFileIsRejected(string language, string message)
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd(language);
+
+        using var response = await UploadAsync(client, token, 0, []);
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidCardTemplate", true),
+            await ErrorAsync(response, detail => detail == message));
+    }
+
+    [Fact]
+    public async Task PreviewOfAnEmptyFileIsRejected()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await SendPdfRequestAsync(client, token, TemplatePath + "/preview", new { content = Array.Empty<byte>() });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidCardTemplate", true),
+            await ErrorAsync(response, detail => detail == "The file is empty."));
+    }
+
     [Fact]
     public async Task ResetOnAStaleVersionIsAConflict()
     {

@@ -349,6 +349,7 @@
   "cardTemplates.resetDone": "The default template is used again.",
   "cardTemplates.previewFailed": "No program could open the PDF.",
   "cardTemplates.typstError": "Typst error",
+  "cardTemplates.emptyFile": "The file is empty.",
   "characters.stats": "Stats",
   "characters.newStats": "New stats",
   "characters.newStatsHelp": "A new stat is added to every character. The value typed here becomes its starting value for every character.",

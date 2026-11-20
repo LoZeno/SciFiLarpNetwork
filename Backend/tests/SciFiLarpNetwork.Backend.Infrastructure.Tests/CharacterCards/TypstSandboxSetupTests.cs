@@ -76,12 +76,15 @@ public sealed class TypstSandboxSetupTests : IDisposable
         Assert.Equal("http://127.0.0.1:9", run.Environment(name));
     }
 
-    [Fact]
-    public async Task NoProxyExceptionsArePassedOn()
+    [Theory]
+    [InlineData("NO_PROXY")]
+    [InlineData("no_proxy")]
+    [InlineData("No_Proxy")]
+    public async Task NoProxyExceptionsAreNotPassedOn(string name)
     {
-        var run = await RunFakeTypstAsync(("NO_PROXY", "*"));
+        var run = await RunFakeTypstAsync((name, "*"));
 
-        Assert.Null(run.Environment("NO_PROXY"));
+        Assert.Null(run.Environment(name));
     }
 
     [Fact]

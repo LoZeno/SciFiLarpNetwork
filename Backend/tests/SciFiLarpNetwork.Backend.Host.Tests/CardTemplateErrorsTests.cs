@@ -7,6 +7,7 @@ public sealed class CardTemplateErrorsTests
 {
     [Theory]
     [InlineData(CardTemplateOutcome.InvalidTemplate, 400, "errors.invalidCardTemplate")]
+    [InlineData(CardTemplateOutcome.EmptyTemplate, 400, "errors.invalidCardTemplate")]
     [InlineData(CardTemplateOutcome.TemplateTooLarge, 400, "errors.cardTemplateTooLarge")]
     [InlineData(CardTemplateOutcome.StaleVersion, 409, "errors.staleVersion")]
     [InlineData(CardTemplateOutcome.PersistenceFailed, 503, "errors.cardTemplateNotSaved")]

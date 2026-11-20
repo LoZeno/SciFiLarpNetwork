@@ -175,6 +175,48 @@ public sealed class CardTemplateServiceTests(AdministratorAuthenticationFactory 
     }
 
     [Fact]
+    public async Task EmptyTemplateIsRejected()
+    {
+        var result = await UploadAsync(0, []);
+
+        Assert.Equal(CardTemplateOutcome.EmptyTemplate, result.Outcome);
+    }
+
+    [Fact]
+    public async Task EmptyTemplateIsNotSaved()
+    {
+        await UploadAsync(0, []);
+
+        Assert.Empty(await factory.LoadStreamEventsAsync(CardTemplateDocument.CharacterStreamId));
+    }
+
+    [Fact]
+    public async Task EmptyPreviewIsRejected()
+    {
+        var preview = await Templates.PreviewAsync([], Sample, TestContext.Current.CancellationToken);
+
+        Assert.Equal(CardTemplateOutcome.EmptyTemplate, preview.Outcome);
+    }
+
+    [Fact]
+    public async Task OneByteTemplateIsChecked()
+    {
+        var result = await UploadAsync(0, " "u8.ToArray());
+
+        Assert.Equal(CardTemplateOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task StaleUploadIsRejectedBeforeTypstChecksIt()
+    {
+        await UploadAsync(0, ValidTemplate);
+
+        var result = await UploadAsync(0, Encoding.UTF8.GetBytes("#let broken ="));
+
+        Assert.Equal(CardTemplateOutcome.StaleVersion, result.Outcome);
+    }
+
+    [Fact]
     public async Task ResetOnAStaleVersionIsRejected()
     {
         await UploadAsync(0, ValidTemplate);

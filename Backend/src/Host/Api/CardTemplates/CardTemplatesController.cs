@@ -51,7 +51,7 @@ public sealed class CardTemplatesController(ICharacterCardTemplateService templa
         try
         {
             return Ok(Resources.Character(CardTemplateErrors.Unwrap(
-                await templates.UploadAsync(request.Version, request.Content, Sample(), cancellationToken))));
+                await templates.UploadAsync(request.Version, request.Content, Sample(), cancellationToken), text)));
         }
         catch (CardRenderingException)
         {
@@ -69,7 +69,7 @@ public sealed class CardTemplatesController(ICharacterCardTemplateService templa
     {
         try
         {
-            return File(CardTemplateErrors.Unwrap(await templates.PreviewAsync(request.Content, Sample(), cancellationToken)),
+            return File(CardTemplateErrors.Unwrap(await templates.PreviewAsync(request.Content, Sample(), cancellationToken), text),
                 CharacterCardsController.PdfMediaType, PreviewFileName);
         }
         catch (CardRenderingException)
@@ -83,7 +83,7 @@ public sealed class CardTemplatesController(ICharacterCardTemplateService templa
     public async Task<ActionResult<SirenEntity<CardTemplateProperties>>> ResetCharacterCardTemplate(
         [FromBody] CardTemplateVersionRequest request,
         CancellationToken cancellationToken) =>
-        Ok(Resources.Character(CardTemplateErrors.Unwrap(await templates.ResetAsync(request.Version, cancellationToken))));
+        Ok(Resources.Character(CardTemplateErrors.Unwrap(await templates.ResetAsync(request.Version, cancellationToken), text)));
 
     private CharacterCardDocument Sample() =>
         new(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, CharacterCardLabels.Localize(text), SampleCharacterCards.Cards);

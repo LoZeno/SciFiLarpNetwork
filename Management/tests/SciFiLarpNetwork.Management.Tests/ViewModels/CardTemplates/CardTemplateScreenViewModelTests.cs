@@ -199,6 +199,41 @@ public sealed class CardTemplateScreenViewModelTests
         Assert.Equal("The template must be 256 KB or smaller.", screen.StatusMessage);
     }
 
+    [Theory]
+    [InlineData("upload")]
+    [InlineData("preview")]
+    public async Task EmptyFileIsNotSent(string command)
+    {
+        var api = new FakeCardTemplateApi();
+        var screen = await OpenAsync(api, new FakeCardTemplateDialogs { PickedTemplate = [] });
+
+        await (command == "upload" ? screen.UploadCommand : screen.PreviewFileCommand).ExecuteAsync();
+
+        Assert.Empty(api.Submissions);
+    }
+
+    [Theory]
+    [InlineData("en", "The file is empty.")]
+    [InlineData("it", "Il file è vuoto.")]
+    public async Task EmptyFileShowsTheEmptyFileMessage(string locale, string message)
+    {
+        var screen = await OpenAsync(new FakeCardTemplateApi(), new FakeCardTemplateDialogs { PickedTemplate = [] }, locale);
+
+        await screen.UploadCommand.ExecuteAsync();
+
+        Assert.Equal(message, screen.TemplateError);
+    }
+
+    [Fact]
+    public async Task EmptyFileShowsTheInvalidTemplateError()
+    {
+        var screen = await OpenAsync(new FakeCardTemplateApi(), new FakeCardTemplateDialogs { PickedTemplate = [] });
+
+        await screen.UploadCommand.ExecuteAsync();
+
+        Assert.StartsWith("Typst could not print the sample cards", screen.StatusMessage, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task FileAtTheLimitIsSent()
     {

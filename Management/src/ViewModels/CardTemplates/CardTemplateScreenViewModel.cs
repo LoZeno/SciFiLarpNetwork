@@ -203,7 +203,7 @@ public sealed class CardTemplateScreenViewModel : ScreenViewModel
         StatusMessage = Translate("cardTemplates.resetDone");
     }
 
-    /// <returns>The chosen file, or <see langword="null"/> when the user cancels or the file is too large.</returns>
+    /// <returns>The chosen file, or <see langword="null"/> when the user cancels or the file is too large or empty.</returns>
     private async Task<byte[]?> PickCheckedTemplateAsync()
     {
         TemplateError = null;
@@ -211,6 +211,13 @@ public sealed class CardTemplateScreenViewModel : ScreenViewModel
         if (content is { Length: > MaximumTemplateByteCount })
         {
             StatusMessage = Localizer.TranslateApiError("errors.cardTemplateTooLarge", Locale);
+            return null;
+        }
+
+        if (content is { Length: 0 })
+        {
+            StatusMessage = Localizer.TranslateApiError("errors.invalidCardTemplate", Locale);
+            TemplateError = Translate("cardTemplates.emptyFile");
             return null;
         }
 

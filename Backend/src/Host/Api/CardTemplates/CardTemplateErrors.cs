@@ -1,5 +1,6 @@
 using SciFiLarpNetwork.Backend.Api.Skills;
 using SciFiLarpNetwork.Backend.Application.CardTemplates;
+using SciFiLarpNetwork.Backend.Localization.Text;
 
 namespace SciFiLarpNetwork.Backend.Api.CardTemplates;
 
@@ -13,10 +14,17 @@ public static class CardTemplateErrors
     /// <summary>The error detail holding Typst's error for an invalid template.</summary>
     public const string TemplateErrorKey = "template";
 
+    /// <summary>The localization key of the <see cref="TemplateErrorKey"/> text for an empty file.</summary>
+    public const string EmptyFileKey = "cardTemplates.emptyFile";
+
+    /// <param name="templateError">
+    /// The text for the <see cref="TemplateErrorKey"/> detail: Typst's error for an invalid template, or the
+    /// localized empty-file message for an empty one.
+    /// </param>
     public static ApiException ToApiException(CardTemplateOutcome outcome, string? templateError = null) =>
         outcome switch
         {
-            CardTemplateOutcome.InvalidTemplate => new ApiException(
+            CardTemplateOutcome.InvalidTemplate or CardTemplateOutcome.EmptyTemplate => new ApiException(
                 StatusCodes.Status400BadRequest,
                 InvalidCardTemplate,
                 InvalidCardTemplate,
@@ -27,15 +35,18 @@ public static class CardTemplateErrors
             _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "A successful outcome is not an error.")
         };
 
-    public static CardTemplateSummary Unwrap(CardTemplateResult result) =>
+    public static CardTemplateSummary Unwrap(CardTemplateResult result, IApplicationText text) =>
         result.Outcome == CardTemplateOutcome.Succeeded && result.Value is { } value
             ? value
-            : throw ToApiException(result.Outcome, result.TemplateError);
+            : throw ToApiException(result.Outcome, TemplateError(result.Outcome, result.TemplateError, text));
 
-    public static byte[] Unwrap(CardTemplatePreview preview) =>
+    public static byte[] Unwrap(CardTemplatePreview preview, IApplicationText text) =>
         preview.Outcome == CardTemplateOutcome.Succeeded && preview.Pdf is { } pdf
             ? pdf
-            : throw ToApiException(preview.Outcome, preview.TemplateError);
+            : throw ToApiException(preview.Outcome, TemplateError(preview.Outcome, preview.TemplateError, text));
+
+    private static string? TemplateError(CardTemplateOutcome outcome, string? typstError, IApplicationText text) =>
+        outcome == CardTemplateOutcome.EmptyTemplate ? text.GetLocalizedText(EmptyFileKey) : typstError;
 
     private static ApiException Create(int statusCode, string code) => new(statusCode, code, code);
 }

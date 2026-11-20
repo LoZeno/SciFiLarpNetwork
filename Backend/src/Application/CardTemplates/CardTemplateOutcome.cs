@@ -5,6 +5,7 @@ public enum CardTemplateOutcome
     Succeeded,
     TemplateTooLarge,
     InvalidTemplate,
+    EmptyTemplate,
     StaleVersion,
     PersistenceFailed
 }

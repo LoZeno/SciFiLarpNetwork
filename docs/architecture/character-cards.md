@@ -32,7 +32,7 @@ Templates cannot use Typst packages. Three blocks stop them, each on its own:
 
 [SPEC-29](../specifications/SPEC-29-card-templates.md) lets administrators replace the default template. One template per card kind is kept on the `card-templates` stream of that kind (`CardTemplateUploaded`, `CardTemplateReset`); the uploaded source is stored as its own document, never in the event, and old uploads are kept. The uploader is the event's user name metadata, and the time is in the event.
 
-- An upload is at most 256 KB. It is checked by printing four made-up sample cards (`SampleCharacterCards`: an archived character, one with an advanced skill, one with very long text, and one with a talent but no skills) with the labels of the request language; it is saved only if Typst makes the PDF. Typst's error is returned with the server's folder names removed.
+- An upload is at most 256 KB and not empty (an empty file would compile to blank cards). A stale version is rejected before the check, so it does not wait for Typst. It is checked by printing four made-up sample cards (`SampleCharacterCards`: an archived character, one with an advanced skill, one with very long text, and one with a talent but no skills) with the labels of the request language; it is saved only if Typst makes the PDF. Typst's error is returned with the server's folder names removed.
 - **Preview** prints the same sample cards with a file and saves nothing.
 - **Reset** returns to the default template; resetting the default changes nothing.
 - Upload and reset carry the template version they are based on; a stale version is rejected (`errors.staleVersion`). A database failure while saving gives `errors.cardTemplateNotSaved`.
