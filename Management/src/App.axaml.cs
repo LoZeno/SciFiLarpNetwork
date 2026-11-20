@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
+using SciFiLarpNetwork.Management.Views.CardTemplates;
 using SciFiLarpNetwork.Management.Views.Networks;
 using SciFiLarpNetwork.Management.Views.Players;
 using SciFiLarpNetwork.Management.Views.Skills;
@@ -65,9 +66,11 @@ public partial class App : Avalonia.Application
         var catalogDialogs = new WindowCatalogDialogService(() => window!);
         var networkDialogs = new WindowNetworkDialogService(() => window!);
         var playerDialogs = new WindowPlayerDialogService(() => window!);
+        var cardTemplateDialogs = new WindowCardTemplateDialogService(() => window!);
         window = new MainWindow(
             new MainWindowViewModel(
-                apiClient, settingsStore, localizer, catalogDialogs, networkDialogs, playerDialogs, settings, startupErrorKey));
+                apiClient, settingsStore, localizer, catalogDialogs, networkDialogs, playerDialogs, cardTemplateDialogs, settings,
+                startupErrorKey));
         return window;
     }
 }

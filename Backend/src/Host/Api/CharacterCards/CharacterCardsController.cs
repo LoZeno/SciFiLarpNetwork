@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SciFiLarpNetwork.Backend.Application.CardTemplates;
 using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Localization.Text;
 
@@ -12,6 +13,7 @@ namespace SciFiLarpNetwork.Backend.Api.CharacterCards;
 public sealed class CharacterCardsController(
     ICharacterCardService cardService,
     ICharacterCardRenderer renderer,
+    ICharacterCardTemplateService templates,
     IApplicationText text) : ControllerBase
 {
     public const string PdfMediaType = "application/pdf";
@@ -31,7 +33,8 @@ public sealed class CharacterCardsController(
             cards);
         try
         {
-            return File(await renderer.RenderAsync(document, cancellationToken), PdfMediaType, FileName);
+            var template = await templates.GetSourceAsync(cancellationToken);
+            return File(await renderer.RenderAsync(document, template, cancellationToken), PdfMediaType, FileName);
         }
         catch (CardRenderingException)
         {

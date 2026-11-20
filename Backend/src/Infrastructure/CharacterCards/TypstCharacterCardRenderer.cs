@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QRCoder;
@@ -10,30 +11,38 @@ using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards.TemplateData;
 namespace SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 
 /// <summary>
-/// Renders cards with the Typst command-line compiler: the template and <c>cards.json</c> are written to a fresh
-/// folder that is also the Typst root, so a template can read nothing else, and system fonts are ignored so output
-/// does not depend on the host.
+/// Renders cards with the Typst command-line compiler in a sandbox: the template is passed on standard input and
+/// the Typst root is a fresh folder holding only <c>cards.json</c>, so a template can read nothing else. Packages
+/// cannot be loaded and never trigger a download (see <see cref="CompileStartInfo"/>), and system fonts are ignored
+/// so output does not depend on the host.
 /// </summary>
 internal sealed partial class TypstCharacterCardRenderer(
     IOptions<CardPrintingOptions> options,
     ILogger<TypstCharacterCardRenderer> logger) : ICharacterCardRenderer
 {
-    private const string TemplateFileName = "character-cards.typ";
+    private const string DataFolderName = "data";
     private const string DataFileName = "cards.json";
     private const string OutputFileName = "cards.pdf";
-    private const string DefaultTemplateResource = "SciFiLarpNetwork.Backend.Infrastructure.CharacterCards.character-cards.typ";
+    private const string MissingCertificateFileName = "no-certificate.pem";
+    private const string UnreachableProxy = "http://127.0.0.1:9";
+    private static readonly string[] ProxyVariables = ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"];
+    private static readonly string[] NoProxyVariables = ["NO_PROXY", "no_proxy"];
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan StopWait = TimeSpan.FromSeconds(10);
 
-    public async Task<byte[]> RenderAsync(CharacterCardDocument document, CancellationToken cancellationToken = default)
+    public async Task<byte[]> RenderAsync(CharacterCardDocument document, byte[] templateSource,
+        CancellationToken cancellationToken = default)
     {
         var folder = Directory.CreateTempSubdirectory("scifilarp-cards-");
         try
         {
-            await WriteTemplateAsync(folder.FullName, cancellationToken);
-            await WriteDataAsync(folder.FullName, document, cancellationToken);
-            await CompileAsync(folder.FullName, cancellationToken);
-            return await File.ReadAllBytesAsync(Path.Combine(folder.FullName, OutputFileName), cancellationToken);
+            var work = new TypstWorkFolder(folder.FullName);
+            Directory.CreateDirectory(work.Data);
+            Directory.CreateDirectory(work.Packages);
+            Directory.CreateDirectory(work.PackageCache);
+            await WriteDataAsync(work.Data, document, cancellationToken);
+            await CompileAsync(work, templateSource, cancellationToken);
+            return await File.ReadAllBytesAsync(work.Output, cancellationToken);
         }
         finally
         {
@@ -55,14 +64,6 @@ internal sealed partial class TypstCharacterCardRenderer(
         }
     }
 
-    private static async Task WriteTemplateAsync(string folder, CancellationToken cancellationToken)
-    {
-        await using var template = typeof(TypstCharacterCardRenderer).Assembly.GetManifestResourceStream(DefaultTemplateResource)
-            ?? throw new InvalidOperationException($"The embedded resource '{DefaultTemplateResource}' is missing.");
-        await using var file = File.Create(Path.Combine(folder, TemplateFileName));
-        await template.CopyToAsync(file, cancellationToken);
-    }
-
     private static async Task WriteDataAsync(string folder, CharacterCardDocument document, CancellationToken cancellationToken)
     {
         var data = new TemplateDocument(
@@ -81,9 +82,9 @@ internal sealed partial class TypstCharacterCardRenderer(
         return svg.GetGraphic(4);
     }
 
-    private async Task CompileAsync(string folder, CancellationToken cancellationToken)
+    private async Task CompileAsync(TypstWorkFolder work, byte[] templateSource, CancellationToken cancellationToken)
     {
-        using var process = new Process { StartInfo = CompileStartInfo(folder) };
+        using var process = new Process { StartInfo = CompileStartInfo(work) };
         try
         {
             process.Start();
@@ -93,6 +94,7 @@ internal sealed partial class TypstCharacterCardRenderer(
             throw new CardRenderingException($"Typst could not be started from '{process.StartInfo.FileName}'.", exception);
         }
 
+        var input = WriteTemplateAsync(process, templateSource);
         var errors = process.StandardError.ReadToEndAsync(cancellationToken);
         var output = process.StandardOutput.ReadToEndAsync(cancellationToken);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -104,16 +106,32 @@ internal sealed partial class TypstCharacterCardRenderer(
         catch (OperationCanceledException)
         {
             await StopAsync(process);
+            await input;
             cancellationToken.ThrowIfCancellationRequested();
-            throw new CardRenderingException($"Typst did not finish within {options.Value.Timeout}.");
+            throw new CardTemplateException($"Typst did not finish within {options.Value.Timeout}.");
         }
 
+        await input;
         await output;
         if (process.ExitCode != 0)
         {
-            var message = await errors;
+            var message = TypstWorkFolder.Hide(await errors);
             LogCompileFailed(process.ExitCode, message);
-            throw new CardRenderingException($"Typst failed with exit code {process.ExitCode}: {message}");
+            throw new CardTemplateException(message.Trim());
+        }
+    }
+
+    // A Typst that stops early (a failed start, a kill after the timeout) closes its input; that is not an error
+    // of its own, the exit code and the timeout report it.
+    private static async Task WriteTemplateAsync(Process process, byte[] template)
+    {
+        try
+        {
+            await process.StandardInput.BaseStream.WriteAsync(template);
+            process.StandardInput.Close();
+        }
+        catch (IOException)
+        {
         }
     }
 
@@ -141,24 +159,48 @@ internal sealed partial class TypstCharacterCardRenderer(
         }
     }
 
-    private ProcessStartInfo CompileStartInfo(string folder)
+    /// <remarks>
+    /// Packages are blocked in three independent ways, so that no single one is relied on: the package folders
+    /// are new and empty, so no package is found locally; <c>--cert</c> names a file that does not exist, so Typst
+    /// fails before it starts a package download; and every proxy variable points at a closed local port, so a
+    /// download that did start could not leave the computer.
+    /// </remarks>
+    private ProcessStartInfo CompileStartInfo(TypstWorkFolder work)
     {
         var startInfo = new ProcessStartInfo(TypstPath())
         {
-            WorkingDirectory = folder,
+            WorkingDirectory = work.Data,
+            RedirectStandardInput = true,
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
-        foreach (var argument in (string[])["compile", "--root", folder, "--ignore-system-fonts", TemplateFileName, OutputFileName])
+        string[] arguments =
+        [
+            "--cert", work.MissingCertificate,
+            "compile",
+            "--root", work.Data,
+            "--package-path", work.Packages,
+            "--package-cache-path", work.PackageCache,
+            "--ignore-system-fonts",
+            "-", work.Output
+        ];
+        foreach (var argument in arguments)
         {
             startInfo.ArgumentList.Add(argument);
         }
 
-        foreach (var name in startInfo.Environment.Keys.Where(key => key.StartsWith("TYPST_", StringComparison.OrdinalIgnoreCase)).ToArray())
+        foreach (var name in startInfo.Environment.Keys
+                     .Where(key => key.StartsWith("TYPST_", StringComparison.OrdinalIgnoreCase) || NoProxyVariables.Contains(key))
+                     .ToArray())
         {
             startInfo.Environment.Remove(name);
+        }
+
+        foreach (var name in ProxyVariables)
+        {
+            startInfo.Environment[name] = UnreachableProxy;
         }
 
         return startInfo;
@@ -169,7 +211,30 @@ internal sealed partial class TypstCharacterCardRenderer(
             ? Path.Combine(AppContext.BaseDirectory, "tools", "typst", OperatingSystem.IsWindows() ? "typst.exe" : "typst")
             : options.Value.TypstPath;
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Typst failed with exit code {ExitCode}: {Errors}")]
+    private sealed record TypstWorkFolder(string Root)
+    {
+        public string Data => Path.Combine(Root, DataFolderName);
+
+        public string Packages => Path.Combine(Root, "packages");
+
+        public string PackageCache => Path.Combine(Root, "package-cache");
+
+        public string MissingCertificate => Path.Combine(Root, MissingCertificateFileName);
+
+        public string Output => Path.Combine(Root, OutputFileName);
+
+        /// <summary>
+        /// Removes the server's folder names from Typst's messages, which an administrator reads. Typst prints the
+        /// folder in its canonical form (long names, symbolic links resolved), which can differ from
+        /// <see cref="Root"/>, so the folder is found by its name prefix.
+        /// </summary>
+        public static string Hide(string message) => WorkFolderPath().Replace(message, string.Empty);
+    }
+
+    [GeneratedRegex(@"(?:\\\\\?\\)?(?:[A-Za-z]:[\\/]|/)[^\r\n<>""|?*]*?scifilarp-cards-[^\\/\r\n]+[\\/](?:data[\\/])?")]
+    private static partial Regex WorkFolderPath();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Typst failed with exit code {ExitCode}: {Errors}")]
     private partial void LogCompileFailed(int exitCode, string errors);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Typst was killed but had not exited after {Wait}")]

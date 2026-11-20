@@ -42,6 +42,17 @@ public interface IManagementApiClient
         string locale,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Downloads a file of <paramref name="mediaType"/>, such as a template, from an advertised link within the
+    /// configured API origin and path.
+    /// </summary>
+    Task<byte[]> GetFileAsync(
+        string apiBaseUrl,
+        string href,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default);
+
     Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,
         SirenAction action,

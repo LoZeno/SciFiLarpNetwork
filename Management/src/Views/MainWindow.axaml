@@ -6,6 +6,7 @@
     xmlns:skills="using:SciFiLarpNetwork.Management.Views.Skills"
     xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
     xmlns:players="using:SciFiLarpNetwork.Management.Views.Players"
+    xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -111,6 +112,9 @@
         </Panel>
         <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
           <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
+        </Panel>
+        <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
+          <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
         </Panel>
       </Grid>
     </Grid>

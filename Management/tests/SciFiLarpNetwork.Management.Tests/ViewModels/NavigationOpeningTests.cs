@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Common.Siren;
@@ -77,6 +78,7 @@ public sealed class NavigationOpeningTests
             new FakeCatalogDialogs(),
             new FakeNetworkDialogs(),
             new FakePlayerDialogs(),
+            new FakeCardTemplateDialogs(),
             new ManagementSettings());
         viewModel.NavigationItems.Add(News);
         viewModel.NavigationItems.Add(Messages);
@@ -152,6 +154,10 @@ public sealed class NavigationOpeningTests
             string locale,
             CancellationToken cancellationToken = default) =>
             Task.FromException<byte[]>(new NotSupportedException("This fake prints no files."));
+
+        public Task<byte[]> GetFileAsync(string apiBaseUrl, string href, string mediaType, string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<byte[]>(new NotSupportedException("This fake serves no files."));
 
         public Task<byte[]> GetImageAsync(
             string apiBaseUrl,

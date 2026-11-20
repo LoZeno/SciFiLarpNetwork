@@ -182,6 +182,34 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
+    public async Task<byte[]> GetFileAsync(
+        string apiBaseUrl,
+        string href,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, href, out var target))
+        {
+            throw new InvalidOperationException("The file target is outside the configured API origin or path.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, target);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
+        request.Headers.Accept.Add(SirenMediaType);
+        request.Headers.AcceptLanguage.ParseAdd(locale);
+        AddSessionAuthorization(request);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        if (!string.Equals(response.Content.Headers.ContentType?.MediaType, mediaType, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"The API response was not {mediaType}.");
+        }
+
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
     public async Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,
         SirenAction action,

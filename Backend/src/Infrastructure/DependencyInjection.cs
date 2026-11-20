@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SciFiLarpNetwork.Backend.Application.Administration;
+using SciFiLarpNetwork.Backend.Application.CardTemplates;
 using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Application.Networks;
@@ -15,6 +16,7 @@ using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Application.Skills;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CardFlagEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.CardTemplateEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
@@ -24,6 +26,7 @@ using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.CardTemplates;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
@@ -59,6 +62,7 @@ public static class DependencyInjection
         services.AddSingleton<ICharacterStatService, CharacterStatService>();
         services.AddSingleton<ICharacterSkillService, CharacterSkillService>();
         services.AddSingleton<ICharacterCardService, CharacterCardService>();
+        services.AddSingleton<ICharacterCardTemplateService, CharacterCardTemplateService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -180,6 +184,12 @@ public static class DependencyInjection
                 .UniqueIndex(UniqueIndexType.Computed, character => character.QrIdentifier);
             options.Schema.For<CharacterStatDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, stat => stat.NormalizedName);
+
+            options.Events.AddEventType<CardTemplateUploaded>();
+            options.Events.AddEventType<CardTemplateReset>();
+
+            // Template commands decide on the current template, and printing reads it right after a change.
+            options.Projections.Add<CardTemplateProjection>(ProjectionLifecycle.Inline);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();

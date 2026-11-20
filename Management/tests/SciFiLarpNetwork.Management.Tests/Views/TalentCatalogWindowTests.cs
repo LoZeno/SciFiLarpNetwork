@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
@@ -97,6 +98,7 @@ public sealed class TalentCatalogWindowTests
             new FakeCatalogDialogs(),
             new FakeNetworkDialogs(),
             new FakePlayerDialogs(),
+            new FakeCardTemplateDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

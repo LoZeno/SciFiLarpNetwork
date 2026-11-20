@@ -87,6 +87,12 @@ public sealed class ApiRootController(IApplicationText text) : ControllerBase
                 Href = ApiPath("/api/v1/networks"),
                 Title = text.GetLocalizedText("api.networks")
             });
+            links.Add(new SirenLink
+            {
+                Rel = [SirenRelations.Navigation, SirenRelations.CardTemplates],
+                Href = ApiPath("/api/v1/card-templates"),
+                Title = text.GetLocalizedText("api.cardTemplates")
+            });
         }
 
         return Ok(new SirenEntity<ApiVersionProperties>

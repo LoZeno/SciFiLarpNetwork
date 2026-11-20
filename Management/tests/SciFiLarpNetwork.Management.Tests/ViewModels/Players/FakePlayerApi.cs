@@ -119,6 +119,10 @@ internal sealed class FakePlayerApi : IManagementApiClient
         }
     }
 
+    public Task<byte[]> GetFileAsync(string apiBaseUrl, string href, string mediaType, string locale,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<byte[]>(new NotSupportedException("This fake serves no files."));
+
     public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default) =>
         Task.FromException<byte[]>(NotFound());
 

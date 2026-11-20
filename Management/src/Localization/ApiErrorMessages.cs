@@ -78,7 +78,10 @@ public static class ApiErrorMessages
         "errors.noCharactersSelected",
         "errors.tooManyCharacters",
         "errors.unknownCharacters",
-        "errors.cardRenderingFailed"
+        "errors.cardRenderingFailed",
+        "errors.invalidCardTemplate",
+        "errors.cardTemplateTooLarge",
+        "errors.cardTemplateNotSaved"
     ];
 
     extension(IManagementLocalizer localizer)
