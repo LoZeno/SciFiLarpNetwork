@@ -45,7 +45,7 @@ public sealed class WindowPlayerDialogService(Func<Window> owner) : IPlayerDialo
     /// <remarks>The file stays in the temporary folder, because the viewer may read it after this returns.</remarks>
     public async Task<bool> PreviewPdfAsync(byte[] pdf, string fileName)
     {
-        var path = Path.Combine(Directory.CreateTempSubdirectory("scifilarp-cards-").FullName, fileName);
+        var path = Path.Combine(new PdfPreviewFolders(Path.GetTempPath()).Create().FullName, fileName);
         await File.WriteAllBytesAsync(path, pdf);
         return await owner().Launcher.LaunchFileInfoAsync(new FileInfo(path));
     }

@@ -126,6 +126,57 @@ public sealed class CharacterCardPrintingTests
         Assert.Empty(roster.SelectedCharacters);
     }
 
+    [Fact]
+    public async Task ReloadingTheListSelectsTheCurrentCharacterForPrinting()
+    {
+        var roster = await RosterWithCharactersAsync(new FakePlayerApi(), new FakePlayerDialogs());
+        roster.SelectedCharacter = roster.Characters[0];
+
+        roster.ShowArchivedCharacters = true;
+
+        Assert.Equal([roster.Characters[0]], roster.SelectedCharacters);
+    }
+
+    [Fact]
+    public async Task ReloadingTheListKeepsOnlyTheCurrentCharacterSelected()
+    {
+        var roster = await RosterWithCharactersAsync(new FakePlayerApi(), new FakePlayerDialogs());
+        roster.SelectedCharacter = roster.Characters[1];
+        roster.SelectedCharacters.Add(roster.Characters[0]);
+        roster.SelectedCharacters.Add(roster.Characters[1]);
+
+        roster.ShowArchivedCharacters = true;
+
+        Assert.Equal([roster.Characters[1]], roster.SelectedCharacters);
+    }
+
+    [Fact]
+    public async Task SingleCharacterCommandsAreOffWhileSeveralAreSelected()
+    {
+        var roster = await RosterWithCharactersAsync(new FakePlayerApi(), new FakePlayerDialogs());
+        roster.SelectedCharacter = roster.Characters[0];
+        roster.SelectedCharacters.Add(roster.Characters[0]);
+        roster.SelectedCharacters.Add(roster.Characters[1]);
+
+        Assert.Equal(
+            [false, false, false],
+            [
+                roster.EditCharacterCommand.CanExecute(null),
+                roster.ToggleCharacterArchivedCommand.CanExecute(null),
+                roster.RegenerateQrCommand.CanExecute(null)
+            ]);
+    }
+
+    [Fact]
+    public async Task SingleCharacterCommandsWorkWithOneSelected()
+    {
+        var roster = await RosterWithCharactersAsync(new FakePlayerApi(), new FakePlayerDialogs());
+        roster.SelectedCharacter = roster.Characters[0];
+        roster.SelectedCharacters.Add(roster.Characters[0]);
+
+        Assert.True(roster.EditCharacterCommand.CanExecute(null));
+    }
+
     private static async Task<PlayerRosterViewModel> RosterWithCharactersAsync(FakePlayerApi api, FakePlayerDialogs dialogs)
     {
         var ann = api.AddPlayer("Ann");

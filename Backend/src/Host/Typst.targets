@@ -7,7 +7,7 @@
   <PropertyGroup>
     <TypstVersion>0.15.1</TypstVersion>
     <TypstRuntimeIdentifier>$(RuntimeIdentifier)</TypstRuntimeIdentifier>
-    <TypstRuntimeIdentifier Condition="'$(TypstRuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</TypstRuntimeIdentifier>
+    <TypstRuntimeIdentifier Condition="'$(TypstRuntimeIdentifier)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</TypstRuntimeIdentifier>
   </PropertyGroup>
 
   <Choose>
@@ -70,7 +70,9 @@
 
     <DownloadFile Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)')"
                   SourceUrl="https://github.com/typst/typst/releases/download/v$(TypstVersion)/$(TypstArchiveName)"
-                  DestinationFolder="$(TypstCacheDirectory)" />
+                  DestinationFolder="$(TypstCacheDirectory)"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000" />
     <GetFileHash Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)')"
                  Files="$(TypstArchivePath)" Algorithm="SHA256">
       <Output TaskParameter="Hash" PropertyName="TypstDownloadedSha256" />

@@ -19,9 +19,48 @@ public sealed class CardPrintingTests
             TestContext.Current.CancellationToken));
     }
 
-    private static ServiceProvider CreateProvider(string typstPath)
+    [Fact]
+    public async Task TypstThatRunsTooLongIsARenderingFailure()
+    {
+        var folder = Directory.CreateTempSubdirectory("scifilarp-slow-typst-");
+        try
+        {
+            using var provider = CreateProvider(SlowTypst(folder.FullName), timeout: "00:00:01");
+            var renderer = provider.GetRequiredService<ICharacterCardRenderer>();
+
+            await Assert.ThrowsAsync<CardRenderingException>(() => renderer.RenderAsync(
+                new CharacterCardDocument("en", new Dictionary<string, string>(), []),
+                TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            folder.Delete(recursive: true);
+        }
+    }
+
+    private static string SlowTypst(string folder)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var batch = Path.Combine(folder, "typst.cmd");
+            File.WriteAllText(batch, "@ping -n 60 127.0.0.1 >nul\r\n");
+            return batch;
+        }
+
+        var script = Path.Combine(folder, "typst");
+        File.WriteAllText(script, "#!/bin/sh\nsleep 60\n");
+        File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        return script;
+    }
+
+    private static ServiceProvider CreateProvider(string typstPath, string? timeout = null)
     {
         var configuration = new ConfigurationManager { ["CardPrinting:TypstPath"] = typstPath };
+        if (timeout is not null)
+        {
+            configuration["CardPrinting:Timeout"] = timeout;
+        }
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddCardPrinting(configuration);

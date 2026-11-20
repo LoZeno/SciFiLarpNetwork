@@ -479,12 +479,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
     {
         var selectedId = SelectedCharacter?.CharacterId;
         ReplaceAll(Characters, entities.Select(entity => ToCharacterItem(entity, showPlayer)));
-        foreach (var stale in SelectedCharacters.Except(Characters).ToArray())
-        {
-            SelectedCharacters.Remove(stale);
-        }
-
         SelectedCharacter = Characters.FirstOrDefault(character => character.CharacterId == selectedId);
+        KeepOnlySelectedCharacterForPrinting();
         OnPropertyChanged(nameof(CharactersPlaceholder));
         OnPropertyChanged(nameof(HasCharactersPlaceholder));
         NotifyCommandsChanged();
@@ -832,7 +828,22 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     private bool CanChangePlayer() => CanWrite && !IsBusy && SelectedPlayer is not null;
 
-    private bool CanChangeCharacter() => CanWrite && !IsBusy && SelectedCharacter is not null;
+    // Clearing the list resets the ListBox selection, so after a reload only the restored row stays selected.
+    private void KeepOnlySelectedCharacterForPrinting()
+    {
+        foreach (var other in SelectedCharacters.Where(character => character != SelectedCharacter).ToArray())
+        {
+            SelectedCharacters.Remove(other);
+        }
+
+        if (SelectedCharacter is { } selected && !SelectedCharacters.Contains(selected))
+        {
+            SelectedCharacters.Add(selected);
+        }
+    }
+
+    // Edit, archive and new QR act on one character, so they are off while several are selected.
+    private bool CanChangeCharacter() => CanWrite && !IsBusy && SelectedCharacter is not null && SelectedCharacters.Count <= 1;
 
     private void SetText(ref string field, string value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {

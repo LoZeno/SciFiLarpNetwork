@@ -36,7 +36,21 @@ internal sealed partial class TypstCharacterCardRenderer(
         }
         finally
         {
+            DeleteFolder(folder);
+        }
+    }
+
+    // Cleanup never changes the outcome: a file still held (for example by a virus scanner) must not turn a
+    // finished PDF or a rendering error into an unrelated failure.
+    private void DeleteFolder(DirectoryInfo folder)
+    {
+        try
+        {
             folder.Delete(recursive: true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            LogCleanupFailed(folder.FullName, exception);
         }
     }
 
@@ -88,7 +102,7 @@ internal sealed partial class TypstCharacterCardRenderer(
         }
         catch (OperationCanceledException)
         {
-            process.Kill(entireProcessTree: true);
+            await StopAsync(process);
             cancellationToken.ThrowIfCancellationRequested();
             throw new CardRenderingException($"Typst did not finish within {options.Value.Timeout}.");
         }
@@ -100,6 +114,21 @@ internal sealed partial class TypstCharacterCardRenderer(
             LogCompileFailed(process.ExitCode, message);
             throw new CardRenderingException($"Typst failed with exit code {process.ExitCode}: {message}");
         }
+    }
+
+    // Kill only requests termination; waiting lets the process release its files before the folder is deleted.
+    private static async Task StopAsync(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            return;
+        }
+
+        await process.WaitForExitAsync(CancellationToken.None);
     }
 
     private ProcessStartInfo CompileStartInfo(string folder)
@@ -132,4 +161,7 @@ internal sealed partial class TypstCharacterCardRenderer(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Typst failed with exit code {ExitCode}: {Errors}")]
     private partial void LogCompileFailed(int exitCode, string errors);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not delete the card rendering folder {Folder}")]
+    private partial void LogCleanupFailed(string folder, Exception exception);
 }

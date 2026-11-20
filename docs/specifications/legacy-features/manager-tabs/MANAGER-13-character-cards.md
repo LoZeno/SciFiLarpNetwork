@@ -47,7 +47,11 @@ These rules replace the legacy fixed “hit points”, “Toughness”, and “M
 ### Management client
 
 - In the roster, an administrator or reader selects one or more characters and chooses **Preview cards** or **Export cards**.
-- **Preview cards** saves the PDF to a temporary file and opens it in the computer's default PDF viewer. **Export cards** asks where to save the PDF.
+- **Preview cards** saves the PDF to a temporary file and opens it in the computer's default PDF viewer. **Export cards** asks where to save the PDF. The file is left for the viewer; each preview deletes preview files more than a day old.
+- While several characters are selected, **Edit**, **Archive**/**Unarchive**, and **New QR identifier** are off, because they act on one character.
+- Reloading the character list keeps only the current character selected.
+- Known limit: the selection covers one page of the list, so one PDF holds at most 50 cards from the app, although the API accepts 200. Printing every matching character may come later (for example with MANAGER-10).
+- Known limit: the backend loads each card's character, player, and skills one after another, so 200 cards take up to 600 queries. Loading them in batches is the fix if printing gets slow.
 
 
 ## Runtime dependencies
