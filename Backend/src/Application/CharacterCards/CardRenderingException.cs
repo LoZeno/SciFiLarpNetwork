@@ -1,6 +1,6 @@
 namespace SciFiLarpNetwork.Backend.Application.CharacterCards;
 
-public sealed class CardRenderingException : Exception
+public class CardRenderingException : Exception
 {
     public CardRenderingException()
     {

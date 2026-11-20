@@ -6,6 +6,7 @@
     xmlns:skills="using:SciFiLarpNetwork.Management.Views.Skills"
     xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
     xmlns:players="using:SciFiLarpNetwork.Management.Views.Players"
+    xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -23,63 +24,67 @@
     </Border>
     <Grid Grid.Row="1" ColumnDefinitions="300,*">
       <Border Grid.Column="0" Padding="20" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,0">
-        <StackPanel Spacing="12">
-          <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding ConnectionHeading}" />
-          <TextBlock Text="{Binding ApiAddressLabel}" />
-          <TextBox
-              AutomationProperties.Name="{Binding ApiAddressLabel}"
-              Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
-          <TextBlock Text="{Binding UserNameLabel}" />
-          <TextBox
-              AutomationProperties.Name="{Binding UserNameLabel}"
-              Text="{Binding UserName, Mode=TwoWay}" />
-          <TextBlock Text="{Binding PasswordLabel}" />
-          <TextBox
-              AutomationProperties.Name="{Binding PasswordLabel}"
-              PasswordChar="●"
-              Text="{Binding Password, Mode=TwoWay}" />
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="12">
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding ConnectionHeading}" />
+            <TextBlock Text="{Binding ApiAddressLabel}" />
+            <TextBox
+                AutomationProperties.Name="{Binding ApiAddressLabel}"
+                Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
+            <TextBlock Text="{Binding UserNameLabel}" />
+            <TextBox
+                AutomationProperties.Name="{Binding UserNameLabel}"
+                Text="{Binding UserName, Mode=TwoWay}" />
+            <TextBlock Text="{Binding PasswordLabel}" />
+            <TextBox
+                AutomationProperties.Name="{Binding PasswordLabel}"
+                PasswordChar="●"
+                Text="{Binding Password, Mode=TwoWay}" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <Button
+                  Grid.Column="0"
+                  HorizontalAlignment="Stretch"
+                  Command="{Binding SignInCommand}"
+                  Content="{Binding SignInLabel}" />
+              <ComboBox
+                  Grid.Column="1"
+                  AutomationProperties.Name="{Binding LanguageLabel}"
+                  SelectedIndex="{Binding LocaleIndex, Mode=TwoWay}">
+                <ComboBoxItem Content="English" Tag="en" />
+                <ComboBoxItem Content="Italiano" Tag="it" />
+              </ComboBox>
+            </Grid>
             <Button
-                Grid.Column="0"
                 HorizontalAlignment="Stretch"
-                Command="{Binding SignInCommand}"
-                Content="{Binding SignInLabel}" />
-            <ComboBox
-                Grid.Column="1"
-                AutomationProperties.Name="{Binding LanguageLabel}"
-                SelectedIndex="{Binding LocaleIndex, Mode=TwoWay}">
-              <ComboBoxItem Content="English" Tag="en" />
-              <ComboBoxItem Content="Italiano" Tag="it" />
-            </ComboBox>
-          </Grid>
-          <Button
-              HorizontalAlignment="Stretch"
-              Command="{Binding SignOutCommand}"
-              Content="{Binding SignOutLabel}" />
-          <Button
-              HorizontalAlignment="Stretch"
-              Command="{Binding ConnectCommand}"
-              Content="{Binding ConnectLabel}" />
-          <TextBlock
-              AutomationProperties.LiveSetting="Polite"
-              Text="{Binding StatusMessage}"
-              TextWrapping="Wrap" />
-          <TextBlock
-              Margin="0,14,0,0"
-              FontSize="18"
-              FontWeight="SemiBold"
-              Text="{Binding NavigationHeading}" />
-          <ListBox
-              AutomationProperties.Name="{Binding NavigationHeading}"
-              ItemsSource="{Binding NavigationItems}"
-              SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}">
-            <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="models:NavigationItem">
-                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </StackPanel>
+                Command="{Binding SignOutCommand}"
+                Content="{Binding SignOutLabel}" />
+            <Button
+                HorizontalAlignment="Stretch"
+                Command="{Binding ConnectCommand}"
+                Content="{Binding ConnectLabel}" />
+            <TextBlock
+                AutomationProperties.LiveSetting="Polite"
+                Text="{Binding StatusMessage}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,14,0,0"
+                FontSize="18"
+                FontWeight="SemiBold"
+                Text="{Binding NavigationHeading}" />
+            <ListBox
+                AutomationProperties.Name="{Binding NavigationHeading}"
+                ItemsSource="{Binding NavigationItems}"
+                SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="models:NavigationItem">
+                  <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+        </ScrollViewer>
       </Border>
       <Grid Grid.Column="1">
         <ScrollViewer IsVisible="{Binding IsResourceSummaryVisible}">
@@ -111,6 +116,9 @@
         </Panel>
         <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
           <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
+        </Panel>
+        <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
+          <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
         </Panel>
       </Grid>
     </Grid>

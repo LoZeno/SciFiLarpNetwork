@@ -1,0 +1,53 @@
+<!--
+  Every scroll bar in the app: a thin bar with a rounded thumb, no arrow buttons, a plain track, and a 4 px gap,
+  always beside the content and never over it. Selectors name parts of the Fluent 12.1.5 ScrollBar template
+  (Grid#Root, Rectangle#TrackRect, RepeatButton#PART_LineUpButton and #PART_LineDownButton, the Track's Thumb).
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- The Fluent ScrollViewer lays its content over the bar only while AllowAutoHide is true. ListBox and TextBox
+       pass their own ScrollViewer.AllowAutoHide to the ScrollViewer in their template, so it is set on every
+       templated control, not only on ScrollViewer. -->
+  <Style Selector=":is(TemplatedControl)">
+    <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
+  </Style>
+
+  <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ScrollBar:vertical">
+    <Setter Property="Margin" Value="4,0,0,0" />
+    <Setter Property="Width" Value="6" />
+    <Setter Property="MinWidth" Value="6" />
+  </Style>
+  <Style Selector="ScrollBar:horizontal">
+    <Setter Property="Margin" Value="0,4,0,0" />
+    <Setter Property="Height" Value="6" />
+    <Setter Property="MinHeight" Value="6" />
+  </Style>
+  <Style Selector="ScrollBar /template/ Grid#Root">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ScrollBar /template/ Rectangle#TrackRect">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+  <Style Selector="ScrollBar /template/ RepeatButton#PART_LineUpButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="ScrollBar /template/ RepeatButton#PART_LineDownButton">
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+  <Style Selector="ScrollBar /template/ Thumb">
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackgroundColor}" />
+  </Style>
+  <Style Selector="ScrollBar:vertical /template/ Thumb">
+    <Setter Property="Width" Value="6" />
+    <Setter Property="MinHeight" Value="24" />
+  </Style>
+  <Style Selector="ScrollBar:horizontal /template/ Thumb">
+    <Setter Property="Height" Value="6" />
+    <Setter Property="MinWidth" Value="24" />
+  </Style>
+</Styles>

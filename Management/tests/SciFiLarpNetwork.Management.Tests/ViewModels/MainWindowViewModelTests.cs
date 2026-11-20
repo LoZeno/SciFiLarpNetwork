@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
@@ -566,7 +567,8 @@ public sealed class MainWindowViewModelTests
         StubApiClient apiClient,
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
-        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), settings ?? new ManagementSettings());
+        new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
+            new FakeCardTemplateDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()
@@ -683,6 +685,10 @@ public sealed class MainWindowViewModelTests
             string locale,
             CancellationToken cancellationToken = default) =>
             Task.FromException<byte[]>(new NotSupportedException("This fake prints no files."));
+
+        public Task<byte[]> GetFileAsync(string apiBaseUrl, string href, string mediaType, string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<byte[]>(new NotSupportedException("This fake serves no files."));
 
         public Task<byte[]> GetImageAsync(
             string apiBaseUrl,

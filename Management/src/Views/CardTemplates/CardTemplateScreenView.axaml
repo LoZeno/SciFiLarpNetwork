@@ -1,0 +1,47 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.CardTemplates.CardTemplateScreenView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.CardTemplates"
+    x:DataType="vm:CardTemplateScreenViewModel">
+  <StackPanel Spacing="8">
+    <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Heading}" />
+    <TextBlock
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+      <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="{Binding CharacterTemplateTitle}" />
+      <TextBlock Grid.Column="1" Text="{Binding CharacterTemplateState}" TextWrapping="Wrap" />
+    </Grid>
+    <WrapPanel>
+      <Button Margin="0,0,8,8" Command="{Binding DownloadCommand}" Content="{Binding DownloadLabel}" />
+      <Button
+          Margin="0,0,8,8"
+          Command="{Binding PreviewFileCommand}"
+          Content="{Binding PreviewFileLabel}"
+          IsVisible="{Binding CanWrite}" />
+      <Button
+          Margin="0,0,8,8"
+          Command="{Binding UploadCommand}"
+          Content="{Binding UploadLabel}"
+          IsVisible="{Binding CanWrite}" />
+      <Button
+          Margin="0,0,8,8"
+          Command="{Binding ResetCommand}"
+          Content="{Binding ResetLabel}"
+          IsVisible="{Binding CanWrite}" />
+    </WrapPanel>
+    <StackPanel IsVisible="{Binding HasTemplateError}" Spacing="4">
+      <TextBlock FontWeight="SemiBold" Text="{Binding TemplateErrorLabel}" />
+      <TextBox
+          AutomationProperties.Name="{Binding TemplateErrorLabel}"
+          FontFamily="monospace"
+          IsReadOnly="True"
+          MaxHeight="300"
+          Text="{Binding TemplateError}"
+          TextWrapping="Wrap" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>

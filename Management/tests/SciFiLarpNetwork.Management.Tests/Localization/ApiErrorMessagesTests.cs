@@ -30,7 +30,10 @@ public sealed class ApiErrorMessagesTests
         "errors.noCharactersSelected",
         "errors.tooManyCharacters",
         "errors.unknownCharacters",
-        "errors.cardRenderingFailed"
+        "errors.cardRenderingFailed",
+        "errors.invalidCardTemplate",
+        "errors.cardTemplateTooLarge",
+        "errors.cardTemplateNotSaved"
     ];
 
     private static readonly string[] Locales = ["en", "it"];

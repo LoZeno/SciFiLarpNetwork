@@ -15,12 +15,12 @@ public sealed class CardPrintingTests
         var renderer = provider.GetRequiredService<ICharacterCardRenderer>();
 
         await Assert.ThrowsAsync<CardRenderingException>(() => renderer.RenderAsync(
-            new CharacterCardDocument("en", new Dictionary<string, string>(), []),
+            new CharacterCardDocument("en", new Dictionary<string, string>(), []), "x"u8.ToArray(),
             TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public async Task TypstThatRunsTooLongIsARenderingFailure()
+    public async Task TemplateThatRunsTooLongIsATemplateFailure()
     {
         var folder = Directory.CreateTempSubdirectory("scifilarp-slow-typst-");
         try
@@ -28,8 +28,8 @@ public sealed class CardPrintingTests
             using var provider = CreateProvider(SlowTypst(folder.FullName), timeout: "00:00:01");
             var renderer = provider.GetRequiredService<ICharacterCardRenderer>();
 
-            await Assert.ThrowsAsync<CardRenderingException>(() => renderer.RenderAsync(
-                new CharacterCardDocument("en", new Dictionary<string, string>(), []),
+            await Assert.ThrowsAsync<CardTemplateException>(() => renderer.RenderAsync(
+                new CharacterCardDocument("en", new Dictionary<string, string>(), []), "x"u8.ToArray(),
                 TestContext.Current.CancellationToken));
         }
         finally
@@ -46,8 +46,8 @@ public sealed class CardPrintingTests
         {
             using var provider = CreateProvider(SlowTypst(folder.FullName), timeout: "00:00:01");
             var renderer = provider.GetRequiredService<ICharacterCardRenderer>();
-            await Assert.ThrowsAsync<CardRenderingException>(() => renderer.RenderAsync(
-                new CharacterCardDocument("en", new Dictionary<string, string>(), []),
+            await Assert.ThrowsAsync<CardTemplateException>(() => renderer.RenderAsync(
+                new CharacterCardDocument("en", new Dictionary<string, string>(), []), "x"u8.ToArray(),
                 TestContext.Current.CancellationToken));
 
             var workFolder = (await File.ReadAllTextAsync(WorkFolderRecord(folder.FullName), TestContext.Current.CancellationToken)).Trim();
