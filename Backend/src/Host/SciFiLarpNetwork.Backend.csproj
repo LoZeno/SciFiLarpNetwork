@@ -13,6 +13,8 @@
     <Content Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <Import Project="Typst.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\Application\SciFiLarpNetwork.Backend.Application.csproj" />
     <ProjectReference Include="..\Domain\SciFiLarpNetwork.Backend.Domain.csproj" />

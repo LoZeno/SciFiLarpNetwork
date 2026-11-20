@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text.Json;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Api.Networks;
@@ -16,6 +17,10 @@ namespace SciFiLarpNetwork.Management.ViewModels.Players;
 public sealed class PlayerRosterViewModel : ScreenViewModel
 {
     private const string ActiveStatus = "active";
+    private const string PrintCardsAction = "print-character-cards";
+    private const string PdfMediaType = "application/pdf";
+    private const string CardsFileName = "character-cards.pdf";
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IPlayerDialogService _dialogs;
     private readonly string _playersHref;
     private readonly AsyncCommand _reloadPlayersCommand;
@@ -92,6 +97,9 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         RegenerateQrCommand = new AsyncCommand(() => RunAsync(RegenerateQrAsync), HandleUnexpectedFailure, CanChangeCharacter);
         ManageStatsCommand = new AsyncCommand(() => RunAsync(ManageStatsAsync), HandleUnexpectedFailure,
             () => !IsBusy && _players is not null);
+        PreviewCardsCommand = new AsyncCommand(() => RunAsync(PreviewCardsAsync), HandleUnexpectedFailure, CanPrintCards);
+        ExportCardsCommand = new AsyncCommand(() => RunAsync(ExportCardsAsync), HandleUnexpectedFailure, CanPrintCards);
+        SelectedCharacters.CollectionChanged += (_, _) => NotifyCommandsChanged();
     }
 
     public AsyncCommand SearchPlayersCommand { get; }
@@ -128,9 +136,16 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     public AsyncCommand ManageStatsCommand { get; }
 
+    public AsyncCommand PreviewCardsCommand { get; }
+
+    public AsyncCommand ExportCardsCommand { get; }
+
     public ObservableCollection<PlayerListItem> Players { get; } = [];
 
     public ObservableCollection<CharacterListItem> Characters { get; } = [];
+
+    /// <summary>The characters whose cards are printed, kept in step with the character list's selection.</summary>
+    public ObservableCollection<CharacterListItem> SelectedCharacters { get; } = [];
 
     public PlayerListItem? SelectedPlayer
     {
@@ -278,6 +293,10 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     public string RegenerateQrLabel => Translate("players.regenerateQr");
 
+    public string PreviewCardsLabel => Translate("players.previewCards");
+
+    public string ExportCardsLabel => Translate("players.exportCards");
+
     public string TogglePlayerActiveLabel =>
         Translate(SelectedPlayer is { IsActive: false } ? "players.activate" : "players.deactivate");
 
@@ -311,7 +330,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
                      nameof(PlayersHeading), nameof(CharactersHeading), nameof(PlayerSearchLabel), nameof(CharacterSearchLabel),
                      nameof(QrIdentifierLabel), nameof(SearchLabel), nameof(ClearSearchLabel), nameof(FindByQrLabel),
                      nameof(ShowArchivedLabel), nameof(PreviousLabel), nameof(NextLabel), nameof(NewLabel), nameof(EditLabel),
-                     nameof(StatsLabel), nameof(RegenerateQrLabel), nameof(TogglePlayerActiveLabel),
+                     nameof(StatsLabel), nameof(RegenerateQrLabel), nameof(PreviewCardsLabel), nameof(ExportCardsLabel),
+                     nameof(TogglePlayerActiveLabel),
                      nameof(TogglePlayerArchivedLabel), nameof(ToggleCharacterArchivedLabel)
                  })
         {
@@ -329,7 +349,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
                      TogglePlayerActiveCommand, TogglePlayerArchivedCommand, SearchCharactersCommand,
                      ClearCharacterSearchCommand, FindByQrCommand, PreviousCharactersCommand, NextCharactersCommand,
                      NewCharacterCommand, EditCharacterCommand, ToggleCharacterArchivedCommand, RegenerateQrCommand,
-                     ManageStatsCommand
+                     ManageStatsCommand, PreviewCardsCommand, ExportCardsCommand
                  })
         {
             command.NotifyCanExecuteChanged();
@@ -460,6 +480,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         var selectedId = SelectedCharacter?.CharacterId;
         ReplaceAll(Characters, entities.Select(entity => ToCharacterItem(entity, showPlayer)));
         SelectedCharacter = Characters.FirstOrDefault(character => character.CharacterId == selectedId);
+        KeepOnlySelectedCharacterForPrinting();
         OnPropertyChanged(nameof(CharactersPlaceholder));
         OnPropertyChanged(nameof(HasCharactersPlaceholder));
         NotifyCommandsChanged();
@@ -717,6 +738,38 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         await LoadCharactersCoreAsync();
     }
 
+    private async Task PreviewCardsAsync()
+    {
+        if (!await _dialogs.PreviewPdfAsync(await PrintCardsAsync(), CardsFileName))
+        {
+            StatusMessage = Translate("players.cardsPreviewFailed");
+        }
+    }
+
+    private async Task ExportCardsAsync()
+    {
+        if (await _dialogs.ExportPdfAsync(await PrintCardsAsync(), CardsFileName, Translate("players.cardsFileType")))
+        {
+            StatusMessage = Translate("players.cardsExported");
+        }
+    }
+
+    /// <summary>Prints the selected characters' cards, in the order the list shows them.</summary>
+    private Task<byte[]> PrintCardsAsync()
+    {
+        var action = (_players ?? throw MissingAction()).FindAction(PrintCardsAction) ?? throw MissingAction();
+        var characterIds = Characters.Where(SelectedCharacters.Contains).Select(character => character.CharacterId).ToArray();
+        return ApiClient.DownloadActionAsync(
+            ApiBaseUrl,
+            action,
+            JsonSerializer.SerializeToElement(new { characterIds }, JsonOptions),
+            PdfMediaType,
+            Locale);
+    }
+
+    private bool CanPrintCards() =>
+        !IsBusy && SelectedCharacters.Count > 0 && _players?.FindAction(PrintCardsAction) is not null;
+
     private RosterChoice[] Choices(Func<RosterCollectionProperties, IReadOnlyList<RosterOptionProperties>> select) =>
         select(SirenProperties.Read<RosterCollectionProperties>((_players ?? throw MissingAction()).Properties))
             .Select(option => new RosterChoice(option.Name, option.Title))
@@ -775,7 +828,22 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     private bool CanChangePlayer() => CanWrite && !IsBusy && SelectedPlayer is not null;
 
-    private bool CanChangeCharacter() => CanWrite && !IsBusy && SelectedCharacter is not null;
+    // Clearing the list resets the ListBox selection, so after a reload only the restored row stays selected.
+    private void KeepOnlySelectedCharacterForPrinting()
+    {
+        foreach (var other in SelectedCharacters.Where(character => character != SelectedCharacter).ToArray())
+        {
+            SelectedCharacters.Remove(other);
+        }
+
+        if (SelectedCharacter is { } selected && !SelectedCharacters.Contains(selected))
+        {
+            SelectedCharacters.Add(selected);
+        }
+    }
+
+    // Edit, archive and new QR act on one character, so they are off while several are selected.
+    private bool CanChangeCharacter() => CanWrite && !IsBusy && SelectedCharacter is not null && SelectedCharacters.Count <= 1;
 
     private void SetText(ref string field, string value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {

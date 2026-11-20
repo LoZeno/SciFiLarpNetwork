@@ -1,0 +1,96 @@
+<Project>
+  <!--
+    Bundles the Typst compiler that renders printable cards. The release archive for the target runtime is downloaded
+    once per version, checked against its published SHA-256, and copied to tools/typst in the build and publish
+    output, so the deployed backend never downloads anything. Release assets: https://github.com/typst/typst/releases
+  -->
+  <PropertyGroup>
+    <TypstVersion>0.15.1</TypstVersion>
+    <TypstRuntimeIdentifier>$(RuntimeIdentifier)</TypstRuntimeIdentifier>
+    <TypstRuntimeIdentifier Condition="'$(TypstRuntimeIdentifier)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</TypstRuntimeIdentifier>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'win-x64'">
+      <PropertyGroup>
+        <TypstTarget>x86_64-pc-windows-msvc</TypstTarget>
+        <TypstArchiveExtension>zip</TypstArchiveExtension>
+        <TypstSha256>19ce3551153c2fe7ee9fa2f95208310c8f4d3209fedb699e0333faf8913f6736</TypstSha256>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'win-arm64'">
+      <PropertyGroup>
+        <TypstTarget>aarch64-pc-windows-msvc</TypstTarget>
+        <TypstArchiveExtension>zip</TypstArchiveExtension>
+        <TypstSha256>4ab28e1b71ec3184d38d580ab797f499b6770d952b6b19167be5cea5c2662e14</TypstSha256>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'linux-x64'">
+      <PropertyGroup>
+        <TypstTarget>x86_64-unknown-linux-musl</TypstTarget>
+        <TypstArchiveExtension>tar.xz</TypstArchiveExtension>
+        <TypstSha256>a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c</TypstSha256>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'linux-arm64'">
+      <PropertyGroup>
+        <TypstTarget>aarch64-unknown-linux-musl</TypstTarget>
+        <TypstArchiveExtension>tar.xz</TypstArchiveExtension>
+        <TypstSha256>5aa8d74a3d906e60ea12a66ac2f37f8eef1b14cbad7182a745e393a10c23dcee</TypstSha256>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'osx-x64'">
+      <PropertyGroup>
+        <TypstTarget>x86_64-apple-darwin</TypstTarget>
+        <TypstArchiveExtension>tar.xz</TypstArchiveExtension>
+        <TypstSha256>7f9fdd9584866245de9a79e0add8f9236fae6f40a8a45e2c4771ccc14db4e0fa</TypstSha256>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(TypstRuntimeIdentifier)' == 'osx-arm64'">
+      <PropertyGroup>
+        <TypstTarget>aarch64-apple-darwin</TypstTarget>
+        <TypstArchiveExtension>tar.xz</TypstArchiveExtension>
+        <TypstSha256>48f62ed034aa3a7978309579ac6ca00045e2ef0da73114e8af27cfd8e74dc05a</TypstSha256>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <PropertyGroup>
+    <TypstArchiveName>typst-$(TypstTarget).$(TypstArchiveExtension)</TypstArchiveName>
+    <TypstCacheDirectory>$(BaseIntermediateOutputPath)typst/$(TypstVersion)/$(TypstTarget)/</TypstCacheDirectory>
+    <TypstArchivePath>$(TypstCacheDirectory)$(TypstArchiveName)</TypstArchivePath>
+    <TypstExtractedDirectory>$(TypstCacheDirectory)typst-$(TypstTarget)/</TypstExtractedDirectory>
+    <TypstExecutableName Condition="$(TypstTarget.Contains('windows'))">typst.exe</TypstExecutableName>
+    <TypstExecutableName Condition="!$(TypstTarget.Contains('windows'))">typst</TypstExecutableName>
+  </PropertyGroup>
+
+  <Target Name="BundleTypst" BeforeTargets="AssignTargetPaths">
+    <Error Condition="'$(TypstTarget)' == ''"
+           Text="Typst is not bundled for runtime '$(TypstRuntimeIdentifier)'. Supported: win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64." />
+
+    <DownloadFile Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)')"
+                  SourceUrl="https://github.com/typst/typst/releases/download/v$(TypstVersion)/$(TypstArchiveName)"
+                  DestinationFolder="$(TypstCacheDirectory)"
+                  Retries="3"
+                  RetryDelayMilliseconds="2000" />
+    <GetFileHash Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)')"
+                 Files="$(TypstArchivePath)" Algorithm="SHA256">
+      <Output TaskParameter="Hash" PropertyName="TypstDownloadedSha256" />
+    </GetFileHash>
+    <Error Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)') And '$(TypstDownloadedSha256.ToLowerInvariant())' != '$(TypstSha256)'"
+           Text="The downloaded $(TypstArchiveName) has SHA-256 $(TypstDownloadedSha256); expected $(TypstSha256)." />
+    <Unzip Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)') And '$(TypstArchiveExtension)' == 'zip'"
+           SourceFiles="$(TypstArchivePath)" DestinationFolder="$(TypstCacheDirectory)" />
+    <Exec Condition="!Exists('$(TypstExtractedDirectory)$(TypstExecutableName)') And '$(TypstArchiveExtension)' == 'tar.xz'"
+          Command="tar -xJf &quot;$(TypstArchiveName)&quot;" WorkingDirectory="$(TypstCacheDirectory)" />
+    <Delete Files="$(TypstArchivePath)" />
+
+    <ItemGroup>
+      <_TypstFile Include="$(TypstExtractedDirectory)$(TypstExecutableName);$(TypstExtractedDirectory)LICENSE;$(TypstExtractedDirectory)NOTICE" />
+      <None Include="@(_TypstFile)"
+            Link="tools/typst/%(_TypstFile.Filename)%(_TypstFile.Extension)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -48,4 +48,16 @@ public interface IManagementApiClient
         JsonElement? body,
         string locale,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Submits an advertised JSON action whose successful response is a file of <paramref name="mediaType"/>, such as
+    /// a PDF, and returns the file. Errors are read as Siren errors, as for <see cref="SubmitActionAsync"/>.
+    /// </summary>
+    Task<byte[]> DownloadActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        JsonElement body,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default);
 }

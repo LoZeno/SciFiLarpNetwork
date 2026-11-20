@@ -93,6 +93,29 @@ public sealed class PlayerRosterWindowTests
         shown!.Close();
     }
 
+    [AvaloniaFact]
+    public async Task SelectingSeveralCharactersInTheListSelectsThemForPrinting()
+    {
+        var api = new FakePlayerApi();
+        var ann = api.AddPlayer("Ann");
+        api.AddCharacter(ann, "Kira");
+        api.AddCharacter(ann, "Vel");
+        var roster = new PlayerRosterViewModel(api, new JsonLocalizer(), new FakePlayerDialogs(), "http://localhost/api", "en",
+            FakePlayerApi.PlayersHref);
+        await roster.LoadAsync();
+        roster.SelectedPlayer = roster.Players[0];
+        var window = new Window { Content = new PlayerRosterView { DataContext = roster } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var characterList = window.GetVisualDescendants().OfType<ListBox>()
+            .Single(list => ReferenceEquals(list.ItemsSource, roster.Characters));
+
+        characterList.SelectAll();
+
+        Assert.Equal(roster.Characters, roster.SelectedCharacters);
+        window.Close();
+    }
+
     private sealed class NullSettingsStore : IManagementSettingsStore
     {
         public ManagementSettings Load() => new();

@@ -39,14 +39,16 @@ public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) :
     }
 
     [Fact]
-    public async Task ReaderSeesOnlyTheSearchActions()
+    public async Task ReaderSeesOnlyTheSearchAndPrintActions()
     {
         using var client = factory.CreateClient();
         var token = await ReaderTokenAsync(client);
 
         using var response = await GetAsync(client, token, PlayersPath);
 
-        Assert.Equal("search-players,search-characters,find-character-by-qr", string.Join(',', (await ReadAsync(response)).ActionNames()));
+        Assert.Equal(
+            "search-players,search-characters,find-character-by-qr,print-character-cards",
+            string.Join(',', (await ReadAsync(response)).ActionNames()));
     }
 
     [Fact]

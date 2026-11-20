@@ -189,6 +189,35 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         string locale,
         CancellationToken cancellationToken = default)
     {
+        using var request = CreateActionRequest(apiBaseUrl, action, body, locale);
+        request.Headers.Accept.Add(SirenMediaType);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        return await ReadEntityAsync(response, cancellationToken);
+    }
+
+    public async Task<byte[]> DownloadActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        JsonElement body,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        using var request = CreateActionRequest(apiBaseUrl, action, body, locale);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
+        request.Headers.Accept.Add(SirenMediaType);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        if (!string.Equals(response.Content.Headers.ContentType?.MediaType, mediaType, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"The API response was not {mediaType}.");
+        }
+
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
+    private HttpRequestMessage CreateActionRequest(string apiBaseUrl, SirenAction action, JsonElement? body, string locale)
+    {
         var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
         if (string.IsNullOrWhiteSpace(action.Href) || string.IsNullOrWhiteSpace(action.Method))
         {
@@ -223,8 +252,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
             throw new InvalidOperationException("GET Siren actions cannot include a request body.");
         }
 
-        using var request = new HttpRequestMessage(method, target);
-        request.Headers.Accept.Add(SirenMediaType);
+        var request = new HttpRequestMessage(method, target);
         request.Headers.AcceptLanguage.ParseAdd(locale);
         AddSessionAuthorization(request);
         if (body is { } jsonBody)
@@ -235,8 +263,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
                 "application/json");
         }
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        return await ReadEntityAsync(response, cancellationToken);
+        return request;
     }
 
     private async Task<SirenEntity> GetEntityAsync(

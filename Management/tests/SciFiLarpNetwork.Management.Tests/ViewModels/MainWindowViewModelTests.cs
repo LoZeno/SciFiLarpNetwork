@@ -675,6 +675,15 @@ public sealed class MainWindowViewModelTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Resource);
 
+        public Task<byte[]> DownloadActionAsync(
+            string apiBaseUrl,
+            SirenAction action,
+            JsonElement body,
+            string mediaType,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<byte[]>(new NotSupportedException("This fake prints no files."));
+
         public Task<byte[]> GetImageAsync(
             string apiBaseUrl,
             string href,

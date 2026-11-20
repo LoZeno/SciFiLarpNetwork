@@ -65,6 +65,15 @@ internal sealed class FakeNetworkApi : IManagementApiClient
         });
     }
 
+    public Task<byte[]> DownloadActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        JsonElement body,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<byte[]>(new NotSupportedException("This fake prints no files."));
+
     public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default) =>
         ImageFailure is { } failure
             ? Task.FromException<byte[]>(failure)

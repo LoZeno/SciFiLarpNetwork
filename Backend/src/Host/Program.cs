@@ -15,6 +15,7 @@ using SciFiLarpNetwork.Backend.Api.ErrorResponses;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Infrastructure;
+using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Localization.Text;
 using SciFiLarpNetwork.Common.Siren;
 
@@ -63,6 +64,7 @@ builder.Services.AddSingleton<IApiErrorResponseFactory, ApiErrorResponseFactory>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IEventActorContext, HttpEventActorContext>();
 builder.Services.AddEventStore(builder.Configuration);
+builder.Services.AddCardPrinting(builder.Configuration);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services

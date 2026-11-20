@@ -84,6 +84,15 @@ public sealed class DesktopApplicationBootstrapperTests
             CancellationToken cancellationToken = default) =>
             Task.FromException<SirenEntity<JsonElement>>(new NotImplementedException());
 
+        public Task<byte[]> DownloadActionAsync(
+            string apiBaseUrl,
+            SirenAction action,
+            JsonElement body,
+            string mediaType,
+            string locale,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<byte[]>(new NotSupportedException("This fake prints no files."));
+
         public Task<byte[]> GetImageAsync(
             string apiBaseUrl,
             string href,

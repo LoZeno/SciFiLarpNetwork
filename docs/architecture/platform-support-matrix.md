@@ -20,6 +20,8 @@ Here, **x86 means 32-bit Intel**, distinct from **x64**, which includes Intel/AM
 
 Approval resolves the 32-bit scope conflict and establishes the framework-level target matrix; it does not mean all targets have already been built, published, or smoke-tested. Product-level verification for all six RIDs, including native dependencies, packaging, database setup, and runtime behavior, is a release gate in the later Avalonia, deployment, and CI steps. Do not claim a target as shipped support before that evidence exists.
 
+The CI job `card-printing-platforms` runs the character card API tests on a GitHub-hosted runner for each of the six RIDs (`ubuntu-latest`, `ubuntu-24.04-arm`, `windows-latest`, `windows-11-arm`, `macos-15-intel`, `macos-latest`). It checks that the bundled Typst downloads, runs, and renders cards on each target with PostgreSQL. It is backend evidence for one feature, not the full release smoke test.
+
 ## Upstream evidence reviewed
 
 Reviewed 2026-10-31:

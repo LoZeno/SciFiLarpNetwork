@@ -122,6 +122,23 @@ internal sealed class FakePlayerApi : IManagementApiClient
     public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default) =>
         Task.FromException<byte[]>(NotFound());
 
+    /// <summary>The PDF every print request returns.</summary>
+    public static readonly byte[] PrintedPdf = [0x25, 0x50, 0x44, 0x46];
+
+    public Task<byte[]> DownloadActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        JsonElement body,
+        string mediaType,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        Submissions.Add(new Submission(action.Name, body.GetRawText()));
+        return SubmitFailures.Remove(action.Name, out var failure)
+            ? Task.FromException<byte[]>(failure)
+            : Task.FromResult(PrintedPdf);
+    }
+
     public Task<SirenEntity> SubmitActionAsync(
         string apiBaseUrl,
         SirenAction action,
@@ -309,6 +326,7 @@ internal sealed class FakePlayerApi : IManagementApiClient
                 Method = "GET",
                 Fields = [new SirenField { Name = "identifier" }]
             });
+            actions.Add(Action("print-character-cards", "/api/v1/character-cards", "POST"));
             if (CanWrite)
             {
                 actions.Add(Action("create-player", PlayersHref, "POST"));

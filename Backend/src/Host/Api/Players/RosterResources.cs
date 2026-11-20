@@ -29,6 +29,8 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
 
     public string CharacterSkillsPath(Guid characterId) => $"{CharacterPath(characterId)}/skills";
 
+    private string CharacterCardsPath => $"{pathBase}/api/v1/character-cards";
+
     private string NetworksPath => $"{pathBase}/api/v1/networks";
 
     private string TalentsPath => $"{pathBase}/api/v1/talents";
@@ -72,6 +74,15 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
                     Method = "GET",
                     Title = text.GetLocalizedText("api.findCharacterByQr"),
                     Fields = [Field("identifier", "text", "characters.qrIdentifier", (string?)null)]
+                },
+                new SirenAction
+                {
+                    Name = "print-character-cards",
+                    Href = CharacterCardsPath,
+                    Method = "POST",
+                    Type = JsonType,
+                    Title = text.GetLocalizedText("api.printCharacterCards"),
+                    Fields = [Field("characterIds", "hidden", "cards.characters", Array.Empty<Guid>())]
                 },
                 .. canWrite
                     ?

@@ -26,7 +26,11 @@ public sealed class ApiErrorMessagesTests
         "errors.invalidStatName",
         "errors.invalidStatType",
         "errors.invalidQrIdentifier",
-        "errors.statArchived"
+        "errors.statArchived",
+        "errors.noCharactersSelected",
+        "errors.tooManyCharacters",
+        "errors.unknownCharacters",
+        "errors.cardRenderingFailed"
     ];
 
     private static readonly string[] Locales = ["en", "it"];

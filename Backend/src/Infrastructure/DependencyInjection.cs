@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SciFiLarpNetwork.Backend.Application.Administration;
+using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Application.Networks;
 using SciFiLarpNetwork.Backend.Application.Players;
@@ -23,6 +24,7 @@ using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
@@ -56,6 +58,7 @@ public static class DependencyInjection
         services.AddSingleton<ICharacterService, CharacterService>();
         services.AddSingleton<ICharacterStatService, CharacterStatService>();
         services.AddSingleton<ICharacterSkillService, CharacterSkillService>();
+        services.AddSingleton<ICharacterCardService, CharacterCardService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
