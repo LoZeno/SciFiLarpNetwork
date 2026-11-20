@@ -12,7 +12,7 @@ Character cards ([MANAGER-13](../specifications/legacy-features/manager-tabs/MAN
    typst compile --root <folder> --ignore-system-fonts character-cards.typ cards.pdf
    ```
 
-   The folder is the Typst root, so a template can read only these two files. System fonts are ignored, so the output is the same on every host; the fonts built into Typst (for example Libertinus Serif and New Computer Modern) are available. Environment variables starting with `TYPST_` are not passed to Typst. If Typst runs longer than `CardPrinting:Timeout` (one minute by default), it is stopped and waited for. The folder is deleted afterwards; if a file is still held, the folder is left and a warning is logged, so cleanup never changes the result.
+   The folder is the Typst root, so a template can read only these two files. System fonts are ignored, so the output is the same on every host; the fonts built into Typst (for example Libertinus Serif and New Computer Modern) are available. Environment variables starting with `TYPST_` are not passed to Typst. If Typst runs longer than `CardPrinting:Timeout` (one minute by default), it is stopped and waited for (at most 10 seconds, so a request never hangs). The folder is deleted afterwards; if a file is still held, the folder is left and a warning is logged, so cleanup never changes the result.
 4. The QR image is made by the backend (QRCoder) as SVG and passed in the data, so the default template needs no Typst packages and rendering never uses the network.
 
 The default template lays out an A4 page as a 4 × 2 grid of 105 × 74.25 mm cards: each row is one card, front on the left and back on the right, with thin cut lines.

@@ -38,17 +38,42 @@ public sealed class CardPrintingTests
         }
     }
 
+    [Fact]
+    public async Task TypstThatRunsTooLongLeavesNoWorkFolder()
+    {
+        var folder = Directory.CreateTempSubdirectory("scifilarp-slow-typst-");
+        try
+        {
+            using var provider = CreateProvider(SlowTypst(folder.FullName), timeout: "00:00:01");
+            var renderer = provider.GetRequiredService<ICharacterCardRenderer>();
+            await Assert.ThrowsAsync<CardRenderingException>(() => renderer.RenderAsync(
+                new CharacterCardDocument("en", new Dictionary<string, string>(), []),
+                TestContext.Current.CancellationToken));
+
+            var workFolder = (await File.ReadAllTextAsync(WorkFolderRecord(folder.FullName), TestContext.Current.CancellationToken)).Trim();
+
+            Assert.False(Directory.Exists(workFolder));
+        }
+        finally
+        {
+            folder.Delete(recursive: true);
+        }
+    }
+
+    private static string WorkFolderRecord(string folder) => Path.Combine(folder, "work-folder.txt");
+
+    // The fake Typst records the folder it runs in, which is the renderer's work folder, then hangs.
     private static string SlowTypst(string folder)
     {
         if (OperatingSystem.IsWindows())
         {
             var batch = Path.Combine(folder, "typst.cmd");
-            File.WriteAllText(batch, "@ping -n 60 127.0.0.1 >nul\r\n");
+            File.WriteAllText(batch, $"@echo %CD%>\"{WorkFolderRecord(folder)}\"\r\n@ping -n 60 127.0.0.1 >nul\r\n");
             return batch;
         }
 
         var script = Path.Combine(folder, "typst");
-        File.WriteAllText(script, "#!/bin/sh\nsleep 60\n");
+        File.WriteAllText(script, $"#!/bin/sh\npwd > \"{WorkFolderRecord(folder)}\"\nsleep 60\n");
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         return script;
     }

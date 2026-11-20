@@ -23,6 +23,7 @@ internal sealed partial class TypstCharacterCardRenderer(
     private const string OutputFileName = "cards.pdf";
     private const string DefaultTemplateResource = "SciFiLarpNetwork.Backend.Infrastructure.CharacterCards.character-cards.typ";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly TimeSpan StopWait = TimeSpan.FromSeconds(10);
 
     public async Task<byte[]> RenderAsync(CharacterCardDocument document, CancellationToken cancellationToken = default)
     {
@@ -117,7 +118,8 @@ internal sealed partial class TypstCharacterCardRenderer(
     }
 
     // Kill only requests termination; waiting lets the process release its files before the folder is deleted.
-    private static async Task StopAsync(Process process)
+    // The wait is bounded so a kill that does not take effect can never hang the request.
+    private async Task StopAsync(Process process)
     {
         try
         {
@@ -128,7 +130,15 @@ internal sealed partial class TypstCharacterCardRenderer(
             return;
         }
 
-        await process.WaitForExitAsync(CancellationToken.None);
+        using var wait = new CancellationTokenSource(StopWait);
+        try
+        {
+            await process.WaitForExitAsync(wait.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            LogStopTimedOut(StopWait);
+        }
     }
 
     private ProcessStartInfo CompileStartInfo(string folder)
@@ -161,6 +171,9 @@ internal sealed partial class TypstCharacterCardRenderer(
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Typst failed with exit code {ExitCode}: {Errors}")]
     private partial void LogCompileFailed(int exitCode, string errors);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Typst was killed but had not exited after {Wait}")]
+    private partial void LogStopTimedOut(TimeSpan wait);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Could not delete the card rendering folder {Folder}")]
     private partial void LogCleanupFailed(string folder, Exception exception);
