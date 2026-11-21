@@ -9,6 +9,7 @@ using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels.CardTemplates;
+using SciFiLarpNetwork.Management.ViewModels.LarpEvents;
 using SciFiLarpNetwork.Management.ViewModels.Networks;
 using SciFiLarpNetwork.Management.ViewModels.Players;
 using SciFiLarpNetwork.Management.ViewModels.Skills;
@@ -24,6 +25,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly INetworkDialogService _networkDialogs;
     private readonly IPlayerDialogService _playerDialogs;
     private readonly ICardTemplateDialogService _cardTemplateDialogs;
+    private readonly ILarpEventDialogService _eventDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -47,6 +49,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         INetworkDialogService networkDialogs,
         IPlayerDialogService playerDialogs,
         ICardTemplateDialogService cardTemplateDialogs,
+        ILarpEventDialogService eventDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
@@ -57,6 +60,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _networkDialogs = networkDialogs;
         _playerDialogs = playerDialogs;
         _cardTemplateDialogs = cardTemplateDialogs;
+        _eventDialogs = eventDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -297,6 +301,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged(nameof(IsPlayerRosterOpen));
             OnPropertyChanged(nameof(CardTemplates));
             OnPropertyChanged(nameof(IsCardTemplatesOpen));
+            OnPropertyChanged(nameof(Events));
+            OnPropertyChanged(nameof(IsEventsOpen));
             OnPropertyChanged(nameof(IsResourceSummaryVisible));
         }
     }
@@ -316,6 +322,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public CardTemplateScreenViewModel? CardTemplates => CurrentScreen as CardTemplateScreenViewModel;
 
     public bool IsCardTemplatesOpen => CardTemplates is not null;
+
+    public LarpEventScreenViewModel? Events => CurrentScreen as LarpEventScreenViewModel;
+
+    public bool IsEventsOpen => Events is not null;
 
     public bool IsResourceSummaryVisible => CurrentScreen is null;
 
@@ -533,6 +543,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         : link.Rel.Contains(SirenRelations.Networks, StringComparer.Ordinal) ? NavigationScreen.NetworkCatalog
         : link.Rel.Contains(SirenRelations.Players, StringComparer.Ordinal) ? NavigationScreen.PlayerRoster
         : link.Rel.Contains(SirenRelations.CardTemplates, StringComparer.Ordinal) ? NavigationScreen.CardTemplates
+        : link.Rel.Contains(SirenRelations.Events, StringComparer.Ordinal) ? NavigationScreen.Events
         : NavigationScreen.ResourceSummary;
 
     private IManagementScreen CreateScreen(NavigationItem item) =>
@@ -546,6 +557,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
                 new PlayerRosterViewModel(_apiClient, _localizer, _playerDialogs, ApiBaseUrl, Locale, item.Href),
             NavigationScreen.CardTemplates =>
                 new CardTemplateScreenViewModel(_apiClient, _localizer, _cardTemplateDialogs, ApiBaseUrl, Locale, item.Href),
+            NavigationScreen.Events =>
+                new LarpEventScreenViewModel(_apiClient, _localizer, _eventDialogs, ApiBaseUrl, Locale, item.Href),
             _ => throw new ArgumentOutOfRangeException(nameof(item), item.Screen, "The entry opens the resource summary.")
         };
 

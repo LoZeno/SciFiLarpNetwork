@@ -9,6 +9,7 @@ using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
 using SciFiLarpNetwork.Management.Views;
 using SciFiLarpNetwork.Management.Views.CardTemplates;
+using SciFiLarpNetwork.Management.Views.LarpEvents;
 using SciFiLarpNetwork.Management.Views.Networks;
 using SciFiLarpNetwork.Management.Views.Players;
 using SciFiLarpNetwork.Management.Views.Skills;
@@ -67,10 +68,11 @@ public partial class App : Avalonia.Application
         var networkDialogs = new WindowNetworkDialogService(() => window!);
         var playerDialogs = new WindowPlayerDialogService(() => window!);
         var cardTemplateDialogs = new WindowCardTemplateDialogService(() => window!);
+        var eventDialogs = new WindowLarpEventDialogService(() => window!);
         window = new MainWindow(
             new MainWindowViewModel(
-                apiClient, settingsStore, localizer, catalogDialogs, networkDialogs, playerDialogs, cardTemplateDialogs, settings,
-                startupErrorKey));
+                apiClient, settingsStore, localizer, catalogDialogs, networkDialogs, playerDialogs, cardTemplateDialogs,
+                eventDialogs, settings, startupErrorKey));
         return window;
     }
 }

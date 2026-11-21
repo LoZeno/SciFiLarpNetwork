@@ -1,0 +1,127 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.LarpEvents.LarpEventScreenView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.LarpEvents"
+    x:DataType="vm:LarpEventScreenViewModel">
+  <DockPanel>
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <TextBlock
+        Margin="0,0,0,8"
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding IsSelectedEventClosed}"
+        Text="{Binding ClosedExplanation}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="24">
+      <DockPanel Grid.Column="0">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock Classes="heading" Text="{Binding EventsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchived}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding PreviousEventsCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding EventPage}" />
+            <Button Command="{Binding NextEventsCommand}" Content="{Binding NextLabel}" />
+          </StackPanel>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding NewEventCommand}" Content="{Binding NewLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding EditEventCommand}" Content="{Binding EditLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding CloseEventCommand}" Content="{Binding CloseLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ReopenEventCommand}" Content="{Binding ReopenLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ArchiveEventCommand}" Content="{Binding ArchiveLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding UnarchiveEventCommand}" Content="{Binding UnarchiveLabel}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasEventsPlaceholder}"
+            Text="{Binding EventsPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding EventsHeading}"
+            ItemsSource="{Binding Events}"
+            SelectedItem="{Binding SelectedEvent, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:LarpEventListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding DaysHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+        <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" IsVisible="{Binding CanWrite}">
+          <Button Margin="0,0,8,8" Command="{Binding AddDayCommand}" Content="{Binding AddDayLabel}" />
+          <Button Margin="0,0,8,8" Command="{Binding RescheduleDayCommand}" Content="{Binding RescheduleDayLabel}" />
+          <Button Margin="0,0,8,8" Command="{Binding RemoveDayCommand}" Content="{Binding RemoveDayLabel}" />
+        </WrapPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasDaysPlaceholder}"
+            Text="{Binding DaysPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding DaysHeading}"
+            ItemsSource="{Binding Days}"
+            SelectedItem="{Binding SelectedDay, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:DayListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <DockPanel Grid.Column="2">
+        <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding ParticipantsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <TextBlock Classes="section" Text="{Binding ExperienceHistoryHeading}" />
+          <ItemsControl ItemsSource="{Binding ExperienceHistory}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding RegisterCommand}" Content="{Binding RegisterLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding UnregisterCommand}" Content="{Binding UnregisterLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ChangeExperienceCommand}" Content="{Binding ChangeExperienceLabel}" />
+          </WrapPanel>
+          <WrapPanel>
+            <Button Margin="0,0,8,8" Command="{Binding PreviewCardsCommand}" Content="{Binding PreviewCardsLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ExportCardsCommand}" Content="{Binding ExportCardsLabel}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasParticipantsPlaceholder}"
+            Text="{Binding ParticipantsPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding ParticipantsHeading}"
+            ItemsSource="{Binding Participants}"
+            SelectedItem="{Binding SelectedParticipant, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ParticipantListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

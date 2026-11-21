@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Management.Views.CardTemplates;
+using SciFiLarpNetwork.Management.Views.LarpEvents;
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Headless.XUnit;
@@ -28,6 +29,7 @@ public sealed class DesktopApplicationBootstrapperTests
             new WindowNetworkDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowPlayerDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowCardTemplateDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
+            new WindowLarpEventDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         var lifetime = new ClassicDesktopStyleApplicationLifetime();

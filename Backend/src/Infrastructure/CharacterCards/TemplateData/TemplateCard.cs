@@ -19,7 +19,8 @@ internal sealed record TemplateCard(
     bool IsArchived,
     IReadOnlyList<CardFlagValue> CardFlags,
     IReadOnlyList<CardStatValue> Stats,
-    IReadOnlyList<CardTalent> Talents)
+    IReadOnlyList<CardTalent> Talents,
+    CardValidity? Validity)
 {
     public static TemplateCard From(CharacterCard card, string qrSvg) =>
         new(
@@ -38,5 +39,6 @@ internal sealed record TemplateCard(
             card.IsArchived,
             card.CardFlags,
             card.Stats,
-            card.Talents);
+            card.Talents,
+            card.Validity);
 }

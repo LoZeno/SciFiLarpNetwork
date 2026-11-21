@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
+using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -30,6 +31,7 @@ public sealed class PlayerRosterWindowTests
             new FakeNetworkDialogs(),
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
+            new FakeLarpEventDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

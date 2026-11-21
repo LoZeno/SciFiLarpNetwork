@@ -11,7 +11,7 @@ public static class CharacterCardLabels
     public static readonly IReadOnlyList<string> Names =
     [
         "documentTitle", "player", "character", "gender", "species", "type", "experiencePoints", "freePoints", "skills",
-        "archived"
+        "archived", "validity"
     ];
 
     public static IReadOnlyDictionary<string, string> Localize(IApplicationText text) =>

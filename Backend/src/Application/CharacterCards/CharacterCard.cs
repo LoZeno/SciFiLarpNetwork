@@ -20,4 +20,8 @@ public sealed record CharacterCard(
     bool IsArchived,
     IReadOnlyList<CardFlagValue> CardFlags,
     IReadOnlyList<CardStatValue> Stats,
-    IReadOnlyList<CardTalent> Talents);
+    IReadOnlyList<CardTalent> Talents)
+{
+    /// <summary>The dates the card is valid for when it is printed for an event; otherwise <see langword="null"/>.</summary>
+    public CardValidity? Validity { get; init; }
+}

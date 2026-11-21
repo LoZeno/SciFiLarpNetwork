@@ -11,6 +11,7 @@ using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.CardTemplates;
 using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
+using SciFiLarpNetwork.Backend.Application.LarpEvents;
 using SciFiLarpNetwork.Backend.Application.Networks;
 using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Application.Skills;
@@ -19,6 +20,7 @@ using SciFiLarpNetwork.Backend.Domain.Events.CardFlagEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CardTemplateEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.RunningNumberEvents;
@@ -28,6 +30,8 @@ using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.CardTemplates;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
+using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents;
+using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
@@ -63,6 +67,10 @@ public static class DependencyInjection
         services.AddSingleton<ICharacterSkillService, CharacterSkillService>();
         services.AddSingleton<ICharacterCardService, CharacterCardService>();
         services.AddSingleton<ICharacterCardTemplateService, CharacterCardTemplateService>();
+        services.AddSingleton<ILarpEventService, LarpEventService>();
+        services.AddSingleton<ILarpEventDayService, LarpEventDayService>();
+        services.AddSingleton<ILarpEventParticipantService, LarpEventParticipantService>();
+        services.AddSingleton<ILarpEventCardService, LarpEventCardService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -158,6 +166,7 @@ public static class DependencyInjection
             options.Events.AddEventType<PlayerCharacterActivated>();
             options.Events.AddEventType<CharacterCreated>();
             options.Events.AddEventType<CharacterDetailsChanged>();
+            options.Events.AddEventType<CharacterExperienceChanged>();
             options.Events.AddEventType<CharacterNetworkChanged>();
             options.Events.AddEventType<CharacterStatusChanged>();
             options.Events.AddEventType<CharacterStatValuesChanged>();
@@ -190,6 +199,25 @@ public static class DependencyInjection
 
             // Template commands decide on the current template, and printing reads it right after a change.
             options.Projections.Add<CardTemplateProjection>(ProjectionLifecycle.Inline);
+
+            options.Events.AddEventType<LarpEventCreated>();
+            options.Events.AddEventType<LarpEventDetailsChanged>();
+            options.Events.AddEventType<LarpEventDayAdded>();
+            options.Events.AddEventType<LarpEventDayRescheduled>();
+            options.Events.AddEventType<LarpEventDayRemoved>();
+            options.Events.AddEventType<LarpEventClosed>();
+            options.Events.AddEventType<LarpEventReopened>();
+            options.Events.AddEventType<LarpEventArchived>();
+            options.Events.AddEventType<LarpEventUnarchived>();
+            options.Events.AddEventType<ParticipantRegistered>();
+            options.Events.AddEventType<ParticipantUnregistered>();
+            options.Events.AddEventType<ParticipantExperienceChanged>();
+
+            // Event commands decide on this write model (open status, unique dates, registrations).
+            options.Projections.Add<LarpEventProjection>(ProjectionLifecycle.Inline);
+
+            options.Schema.For<LarpEventDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, larpEvent => larpEvent.Number);
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();

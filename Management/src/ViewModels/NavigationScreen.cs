@@ -7,5 +7,6 @@ public enum NavigationScreen
     TalentCatalog,
     NetworkCatalog,
     PlayerRoster,
-    CardTemplates
+    CardTemplates,
+    Events
 }

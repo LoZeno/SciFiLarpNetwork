@@ -4,7 +4,7 @@ Character cards ([MANAGER-13](../specifications/legacy-features/manager-tabs/MAN
 
 ## How a PDF is made
 
-1. The player collection advertises `print-character-cards` (see the [Siren API profile](siren-api-profile.md)). The request lists character identifiers in print order.
+1. The player collection advertises `print-character-cards` (see the [Siren API profile](siren-api-profile.md)). The request lists character identifiers in print order. An event advertises `print-event-cards`, which prints its registered characters (of one day or of every day) in running-number order, each with its validity dates.
 2. The backend collects each character's current data and applies the card rules (`CharacterCardComposer`). Characters are loaded one after another (character, player, and skills each), so 200 cards take up to 600 queries; batch loading is the fix if this gets slow.
 3. The renderer uses the template in use: the one an administrator uploaded ([SPEC-29](../specifications/SPEC-29-card-templates.md)), or else the default template embedded in the backend.
 4. The renderer creates a new temporary work folder with an empty `packages` and `package-cache` folder and a `data` folder holding only the data (`cards.json`), and runs, from `data`:
@@ -47,7 +47,7 @@ Property names are camelCase. Values that are not set are `null`.
 | Property | Type | Meaning |
 |---|---|---|
 | `language` | text | Two-letter language of the labels: `en` or `it`. |
-| `labels` | object | Localized labels: `documentTitle`, `player`, `character`, `gender`, `species`, `type`, `experiencePoints`, `freePoints`, `skills`, `archived`. |
+| `labels` | object | Localized labels: `documentTitle`, `player`, `character`, `gender`, `species`, `type`, `experiencePoints`, `freePoints`, `skills`, `archived`, `validity`. |
 | `cards` | list | One entry per printed card, in print order. |
 
 Each card:
@@ -64,6 +64,7 @@ Each card:
 | `cardFlags` | list of `{name, value}` | Every card flag, in name order, with its value (0 when no owned skill has it). |
 | `stats` | list of `{name, value}` | Stats that are not archived, in name order; `value` is text. Empty Text values are left out. |
 | `talents` | list of `{name, skills}` | The character's talents in picked order; `skills` is a list of `{name, count, isAdvanced}` in name order. A talent may have no skills. |
+| `validity` | `{from, to}` or `null` | For cards printed from an event ([MANAGER-03](../specifications/legacy-features/manager-tabs/MANAGER-03-events.md)), the character's first and last registered day as `YYYY-MM-DD`; `null` otherwise. Templates that ignore it keep working. |
 
 Skill descriptions, specifics notes, and credentials are never in the data.
 

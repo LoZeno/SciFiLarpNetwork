@@ -12,6 +12,7 @@ public partial class CharacterProjection : SingleStreamProjection<CharacterDocum
     {
         IncludeType<CharacterCreated>();
         IncludeType<CharacterDetailsChanged>();
+        IncludeType<CharacterExperienceChanged>();
         IncludeType<CharacterNetworkChanged>();
         IncludeType<CharacterStatusChanged>();
         IncludeType<CharacterStatValuesChanged>();
@@ -50,6 +51,10 @@ public partial class CharacterProjection : SingleStreamProjection<CharacterDocum
                 Gender = changed.Gender,
                 Type = changed.Type,
                 ExperiencePoints = changed.ExperiencePoints
+            },
+            CharacterExperienceChanged experience when snapshot is not null => snapshot with
+            {
+                ExperiencePoints = experience.ExperiencePoints
             },
             CharacterNetworkChanged network when snapshot is not null => snapshot with { NetworkId = network.NetworkId },
             CharacterStatusChanged status when snapshot is not null => snapshot with

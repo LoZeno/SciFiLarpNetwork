@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
+using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Text.Json;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Common.Siren;
@@ -148,6 +149,7 @@ public sealed class NavigationOpeningTests
             new FakeNetworkDialogs(),
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
+            new FakeLarpEventDialogs(),
             new ManagementSettings());
         viewModel.NavigationItems.Add(News);
         viewModel.NavigationItems.Add(Messages);

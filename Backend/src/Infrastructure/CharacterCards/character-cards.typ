@@ -71,6 +71,10 @@
     text(weight: "bold", upper(labels.archived))
   }
   parbreak()
+  if card.validity != none {
+    [*#labels.validity:* #card.validity.from – #card.validity.to]
+    parbreak()
+  }
   if card.cardFlags.len() > 0 {
     named-values(card.cardFlags)
     parbreak()
