@@ -23,7 +23,7 @@ public sealed class LarpEventServiceTests(AdministratorAuthenticationFactory fac
         var result = await Events.CreateEventAsync(new LarpEventDefinition("  Fort weekend ", " Bring tents "), Token);
 
         Assert.Equivalent(
-            new LarpEventSummary(result.Value!.EventId, 1, "Fort weekend", "Bring tents", LarpEventStatus.Open, false, null, null, [], 0, 1),
+            new LarpEventSummary(result.Value!.EventId, 1, "Fort weekend", "Bring tents", LarpEventStatus.Open, false, null, null, null, [], 0, 1),
             result.Value,
             strict: true);
     }
@@ -74,7 +74,7 @@ public sealed class LarpEventServiceTests(AdministratorAuthenticationFactory fac
     public async Task EditStartedBeforeADayWasAddedIsStale()
     {
         var created = await _data.CreateEventAsync();
-        await _data.Days.AddDayAsync(created.EventId, LarpEventTestData.FirstDay, Token);
+        await _data.Days.AddDayAsync(created.EventId, LarpEventTestData.FirstDay, null, Token);
 
         var result = await Events.UpdateEventAsync(created.EventId, created.Version, new LarpEventDefinition("Fort", null), Token);
 
@@ -152,8 +152,8 @@ public sealed class LarpEventServiceTests(AdministratorAuthenticationFactory fac
         var early = await _data.CreateEventAsync("Early");
         var late = await _data.CreateEventAsync("Late");
         await _data.CreateEventAsync("Unscheduled");
-        await _data.Days.AddDayAsync(early.EventId, new DateOnly(2026, 1, 10), Token);
-        await _data.Days.AddDayAsync(late.EventId, new DateOnly(2026, 6, 10), Token);
+        await _data.Days.AddDayAsync(early.EventId, new DateOnly(2026, 1, 10), null, Token);
+        await _data.Days.AddDayAsync(late.EventId, new DateOnly(2026, 6, 10), null, Token);
         await _data.CreateEventAsync("Also unscheduled");
 
         var page = await Events.GetEventsAsync(new LarpEventQuery(false, 1), Token);

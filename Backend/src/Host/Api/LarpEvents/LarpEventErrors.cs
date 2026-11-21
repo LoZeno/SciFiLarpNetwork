@@ -9,6 +9,8 @@ namespace SciFiLarpNetwork.Backend.Api.LarpEvents;
 public static class LarpEventErrors
 {
     public const string InvalidDescription = "errors.invalidDescription";
+    public const string InvalidExperienceValue = "errors.invalidExperienceValue";
+    public const string AwardNotAllowed = "errors.awardNotAllowed";
     public const string EventClosed = "errors.eventClosed";
     public const string EventNotClosed = "errors.eventNotClosed";
     public const string DuplicateDate = "errors.duplicateDate";
@@ -31,6 +33,8 @@ public static class LarpEventErrors
             LarpEventOutcome.ConcurrentChange => Create(StatusCodes.Status409Conflict, CatalogErrors.ConcurrentChange),
             LarpEventOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidName),
             LarpEventOutcome.InvalidDescription => Create(StatusCodes.Status400BadRequest, InvalidDescription),
+            LarpEventOutcome.InvalidExperienceValue => Create(StatusCodes.Status400BadRequest, InvalidExperienceValue),
+            LarpEventOutcome.AwardNotAllowed => Create(StatusCodes.Status409Conflict, AwardNotAllowed),
             LarpEventOutcome.EventClosed => Create(StatusCodes.Status409Conflict, EventClosed),
             LarpEventOutcome.EventNotClosed => Create(StatusCodes.Status409Conflict, EventNotClosed),
             LarpEventOutcome.Archived => Create(StatusCodes.Status409Conflict, RosterErrors.Archived),

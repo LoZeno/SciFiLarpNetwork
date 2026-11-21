@@ -182,7 +182,7 @@ public sealed class LarpEventScreenViewModelTests
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
-        var dialogs = new FakeLarpEventDialogs { ConfirmResult = false };
+        var dialogs = new FakeLarpEventDialogs { ConfirmResult = false, OnCloseEvent = editor => editor.SaveCommand.ExecuteAsync() };
         var screen = await OpenWithEventAsync(api, dialogs);
 
         await screen.CloseEventCommand.ExecuteAsync();
@@ -196,7 +196,7 @@ public sealed class LarpEventScreenViewModelTests
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
-        var screen = await OpenWithEventAsync(api, new FakeLarpEventDialogs());
+        var screen = await OpenWithEventAsync(api, new FakeLarpEventDialogs { OnCloseEvent = editor => editor.SaveCommand.ExecuteAsync() });
 
         await screen.CloseEventCommand.ExecuteAsync();
 
@@ -240,14 +240,14 @@ public sealed class LarpEventScreenViewModelTests
     }
 
     [Fact]
-    public async Task RescheduleNeedsASingleDay()
+    public async Task EditingADayNeedsASingleDay()
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
 
         var screen = await OpenWithEventAsync(api, new FakeLarpEventDialogs());
 
-        Assert.False(screen.RescheduleDayCommand.CanExecute(null));
+        Assert.False(screen.EditDayCommand.CanExecute(null));
     }
 
     [Fact]

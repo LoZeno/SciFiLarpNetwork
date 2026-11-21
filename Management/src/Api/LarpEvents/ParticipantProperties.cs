@@ -12,4 +12,6 @@ internal sealed record ParticipantProperties(
     IReadOnlyList<Guid> DayIds,
     IReadOnlyList<DateOnly> Dates,
     long ExperienceTotal,
-    IReadOnlyList<ExperienceChangeProperties> ExperienceChanges);
+    IReadOnlyList<ExperienceChangeProperties> ExperienceChanges,
+    bool BaseExperienceGiven,
+    IReadOnlyList<Guid> GivenDayIds);

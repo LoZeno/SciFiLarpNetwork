@@ -2,6 +2,7 @@ using SciFiLarpNetwork.Backend.Domain.LarpEvents;
 
 namespace SciFiLarpNetwork.Backend.Application.LarpEvents;
 
+/// <param name="BaseExperience">The experience every chosen participant can get when the event closes.</param>
 /// <param name="FirstDate">The earliest day, or <see langword="null"/> when the event has no days.</param>
 /// <param name="LastDate">The latest day, or <see langword="null"/> when the event has no days.</param>
 /// <param name="Days">The event's days in date order.</param>
@@ -13,6 +14,7 @@ public sealed record LarpEventSummary(
     string? Description,
     LarpEventStatus Status,
     bool IsArchived,
+    int? BaseExperience,
     DateOnly? FirstDate,
     DateOnly? LastDate,
     IReadOnlyList<LarpEventDaySummary> Days,

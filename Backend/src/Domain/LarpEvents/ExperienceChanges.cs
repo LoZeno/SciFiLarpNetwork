@@ -5,6 +5,9 @@ public static class ExperienceChanges
 {
     public static bool IsValidAmount(int amount) => amount != 0;
 
+    /// <summary>An event's base experience or a day's experience: blank, or a whole number of 0 or more.</summary>
+    public static bool IsValidValue(int? value) => value is null or >= 0;
+
     /// <returns>
     /// The experience points after the change, or <see langword="null"/> when they would leave the range 0 to
     /// <see cref="int.MaxValue"/>.

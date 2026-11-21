@@ -62,7 +62,7 @@
         <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding DaysHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
         <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" IsVisible="{Binding CanWrite}">
           <Button Margin="0,0,8,8" Command="{Binding AddDayCommand}" Content="{Binding AddDayLabel}" />
-          <Button Margin="0,0,8,8" Command="{Binding RescheduleDayCommand}" Content="{Binding RescheduleDayLabel}" />
+          <Button Margin="0,0,8,8" Command="{Binding EditDayCommand}" Content="{Binding EditDayLabel}" />
           <Button Margin="0,0,8,8" Command="{Binding RemoveDayCommand}" Content="{Binding RemoveDayLabel}" />
         </WrapPanel>
         <TextBlock

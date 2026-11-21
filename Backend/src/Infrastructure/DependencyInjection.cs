@@ -203,7 +203,7 @@ public static class DependencyInjection
             options.Events.AddEventType<LarpEventCreated>();
             options.Events.AddEventType<LarpEventDetailsChanged>();
             options.Events.AddEventType<LarpEventDayAdded>();
-            options.Events.AddEventType<LarpEventDayRescheduled>();
+            options.Events.AddEventType<LarpEventDayChanged>();
             options.Events.AddEventType<LarpEventDayRemoved>();
             options.Events.AddEventType<LarpEventClosed>();
             options.Events.AddEventType<LarpEventReopened>();
@@ -212,6 +212,7 @@ public static class DependencyInjection
             options.Events.AddEventType<ParticipantRegistered>();
             options.Events.AddEventType<ParticipantUnregistered>();
             options.Events.AddEventType<ParticipantExperienceChanged>();
+            options.Events.AddEventType<ClosingExperienceAwarded>();
 
             // Event commands decide on this write model (open status, unique dates, registrations).
             options.Projections.Add<LarpEventProjection>(ProjectionLifecycle.Inline);

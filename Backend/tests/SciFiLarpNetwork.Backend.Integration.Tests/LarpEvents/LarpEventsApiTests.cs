@@ -123,7 +123,7 @@ public sealed class LarpEventsApiTests(AdministratorAuthenticationFactory factor
         using var response = await GetAsync(client, token, eventPath);
 
         Assert.Equal(
-            "list-participants,print-event-cards,update-event,add-day,reschedule-day,remove-day,register-participant,unregister-participant,change-experience,close-event",
+            "list-participants,print-event-cards,update-event,add-day,update-day,remove-day,register-participant,unregister-participant,change-experience,close-event",
             string.Join(',', (await ReadAsync(response)).ActionNames()));
     }
 
@@ -133,7 +133,7 @@ public sealed class LarpEventsApiTests(AdministratorAuthenticationFactory factor
         using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var eventPath = await CreateEventAsync(client, token);
-        (await PostAsync(client, token, $"{eventPath}/close", new { })).Dispose();
+        await CloseAsync(client, token, eventPath);
 
         using var response = await GetAsync(client, token, eventPath);
 
@@ -159,11 +159,31 @@ public sealed class LarpEventsApiTests(AdministratorAuthenticationFactory factor
         using var client = factory.CreateClient();
         var token = await AdministratorTokenAsync(client);
         var eventPath = await CreateEventAsync(client, token);
-        (await PostAsync(client, token, $"{eventPath}/close", new { })).Dispose();
+        await CloseAsync(client, token, eventPath);
 
         using var response = await PostAsync(client, token, $"{eventPath}/days", new { date = "2026-05-01" });
 
         Assert.Equal(new ErrorSnapshot(HttpStatusCode.Conflict, "errors.eventClosed"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task ClosingWithAwardsGivesTheCharacterExperience()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        using var created = await SendAsync(client, token, HttpMethod.Post, EventsPath, new { name = "Fort", baseExperience = 4 });
+        var eventPath = (await ReadAsync(created)).LinkHref("self");
+        using var withDay = await PostAsync(client, token, $"{eventPath}/days", new { date = "2026-05-01", experience = 6 });
+        var dayId = (await ReadAsync(withDay)).Property("days")[0].GetProperty("dayId").GetGuid();
+        var characterId = await CreateCharacterAsync(client, token);
+        using var registered = await PostAsync(client, token, $"{eventPath}/participants", new { characterId, dayIds = new[] { dayId } });
+        var version = (await ReadAsync(registered)).Property("version").GetInt64();
+
+        (await PostAsync(client, token, $"{eventPath}/close",
+            new { version, awards = new[] { new { characterId, baseExperience = true, dayIds = new[] { dayId } } } })).Dispose();
+
+        using var character = await GetAsync(client, token, $"/local/api/v1/characters/{characterId:D}");
+        Assert.Equal(10, (await ReadAsync(character)).Property("experiencePoints").GetInt32());
     }
 
     [Fact]
@@ -227,6 +247,14 @@ public sealed class LarpEventsApiTests(AdministratorAuthenticationFactory factor
         using var registered = await PostAsync(client, token, $"{eventPath}/participants", new { characterId, dayIds });
         registered.EnsureSuccessStatusCode();
         return (eventPath, characterId);
+    }
+
+    private static async Task CloseAsync(HttpClient client, string token, string eventPath)
+    {
+        using var current = await GetAsync(client, token, eventPath);
+        var version = (await ReadAsync(current)).Property("version").GetInt64();
+        using var closed = await PostAsync(client, token, $"{eventPath}/close", new { version, awards = Array.Empty<object>() });
+        closed.EnsureSuccessStatusCode();
     }
 
     private static async Task<string> CreateEventAsync(HttpClient client, string token)

@@ -7,7 +7,7 @@
     x:DataType="vm:LarpEventEditorViewModel"
     Title="{Binding Title}"
     Width="560"
-    Height="460"
+    Height="560"
     MinWidth="420"
     MinHeight="360"
     WindowStartupLocation="CenterOwner">
@@ -36,6 +36,9 @@
           MaxLength="2000"
           Text="{Binding Description, Mode=TwoWay}"
           TextWrapping="Wrap" />
+      <TextBlock Text="{Binding BaseExperienceLabel}" />
+      <TextBox AutomationProperties.Name="{Binding BaseExperienceLabel}" MaxLength="10" Text="{Binding BaseExperience, Mode=TwoWay}" />
+      <TextBlock Text="{Binding ExperienceHelp}" TextWrapping="Wrap" />
     </StackPanel>
   </DockPanel>
 </Window>

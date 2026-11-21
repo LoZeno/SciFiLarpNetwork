@@ -13,7 +13,7 @@ public partial class LarpEventProjection : SingleStreamProjection<LarpEventDocum
         IncludeType<LarpEventCreated>();
         IncludeType<LarpEventDetailsChanged>();
         IncludeType<LarpEventDayAdded>();
-        IncludeType<LarpEventDayRescheduled>();
+        IncludeType<LarpEventDayChanged>();
         IncludeType<LarpEventDayRemoved>();
         IncludeType<LarpEventClosed>();
         IncludeType<LarpEventReopened>();
@@ -22,6 +22,7 @@ public partial class LarpEventProjection : SingleStreamProjection<LarpEventDocum
         IncludeType<ParticipantRegistered>();
         IncludeType<ParticipantUnregistered>();
         IncludeType<ParticipantExperienceChanged>();
+        IncludeType<ClosingExperienceAwarded>();
     }
 
     public override LarpEventDocument? Evolve(LarpEventDocument? snapshot, Guid id, IEvent e) =>
@@ -34,17 +35,23 @@ public partial class LarpEventProjection : SingleStreamProjection<LarpEventDocum
                 created.NormalizedName,
                 created.Description,
                 LarpEventStatus.Open,
-                IsArchived: false),
+                IsArchived: false)
+            {
+                BaseExperience = created.BaseExperience
+            },
             LarpEventDetailsChanged changed when snapshot is not null => snapshot with
             {
                 Name = changed.Name,
                 NormalizedName = changed.NormalizedName,
-                Description = changed.Description
+                Description = changed.Description,
+                BaseExperience = changed.BaseExperience
             },
             LarpEventDayAdded added when snapshot is not null =>
-                WithDays(snapshot, [.. snapshot.Days, new LarpEventDay(added.DayId, added.Date)]),
-            LarpEventDayRescheduled rescheduled when snapshot is not null =>
-                WithDays(snapshot, snapshot.Days.Select(day => day.DayId == rescheduled.DayId ? day with { Date = rescheduled.Date } : day)),
+                WithDays(snapshot, [.. snapshot.Days, new LarpEventDay(added.DayId, added.Date, added.Experience)]),
+            LarpEventDayChanged changed when snapshot is not null =>
+                WithDays(snapshot, snapshot.Days.Select(day => day.DayId == changed.DayId
+                    ? day with { Date = changed.Date, Experience = changed.Experience }
+                    : day)),
             LarpEventDayRemoved removed when snapshot is not null =>
                 WithDays(snapshot, snapshot.Days.Where(day => day.DayId != removed.DayId)),
             LarpEventClosed when snapshot is not null => snapshot with { Status = LarpEventStatus.Closed },
@@ -64,8 +71,17 @@ public partial class LarpEventProjection : SingleStreamProjection<LarpEventDocum
                 ExperienceChanges =
                 [
                     .. snapshot.ExperienceChanges,
-                    new LarpEventExperienceEntry(experience.CharacterId, experience.Amount, e.UserName, experience.OccurredAtUtc)
+                    new LarpEventExperienceEntry(experience.CharacterId, experience.Amount, e.UserName, experience.OccurredAtUtc, IsClosingAward: false)
                 ]
+            },
+            ClosingExperienceAwarded awarded when snapshot is not null => snapshot with
+            {
+                ExperienceChanges =
+                [
+                    .. snapshot.ExperienceChanges,
+                    new LarpEventExperienceEntry(awarded.CharacterId, awarded.Amount, e.UserName, awarded.OccurredAtUtc, IsClosingAward: true)
+                ],
+                GivenAwards = Give(snapshot.GivenAwards, awarded)
             },
             _ => snapshot
         };
@@ -78,6 +94,18 @@ public partial class LarpEventProjection : SingleStreamProjection<LarpEventDocum
             Days = ordered,
             FirstDayNumber = ordered.Length == 0 ? null : ordered[0].Date.DayNumber
         };
+    }
+
+    private static LarpEventGivenAward[] Give(LarpEventGivenAward[] given, ClosingExperienceAwarded awarded)
+    {
+        var existing = given.FirstOrDefault(award => award.CharacterId == awarded.CharacterId)
+                       ?? new LarpEventGivenAward(awarded.CharacterId, false, []);
+        var updated = existing with
+        {
+            BaseExperience = existing.BaseExperience || awarded.BaseExperience,
+            DayIds = [.. existing.DayIds.Union(awarded.DayIds)]
+        };
+        return [.. given.Where(award => award.CharacterId != awarded.CharacterId), updated];
     }
 
     private static LarpEventParticipant[] Register(

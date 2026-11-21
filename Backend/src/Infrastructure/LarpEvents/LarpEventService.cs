@@ -1,6 +1,7 @@
 using Marten;
 using Marten.Pagination;
 using SciFiLarpNetwork.Backend.Application.LarpEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
 using SciFiLarpNetwork.Backend.Domain.LarpEvents;
 using SciFiLarpNetwork.Backend.Domain.Skills;
@@ -69,6 +70,7 @@ internal sealed class LarpEventService(AttributedSessionFactory sessions, TimePr
                 definition.Name.Trim(),
                 CatalogNames.Normalize(definition.Name),
                 LarpEventTexts.Normalize(definition.Description),
+                definition.BaseExperience,
                 now));
         return await SaveAsync(session, eventId, editedVersion: null, cancellationToken);
     }
@@ -101,8 +103,10 @@ internal sealed class LarpEventService(AttributedSessionFactory sessions, TimePr
             definition.Name.Trim(),
             CatalogNames.Normalize(definition.Name),
             LarpEventTexts.Normalize(definition.Description),
+            definition.BaseExperience,
             timeProvider.GetUtcNow());
-        if (changed.Name == current.Name && changed.Description == current.Description)
+        if (changed.Name == current.Name && changed.Description == current.Description &&
+            changed.BaseExperience == current.BaseExperience)
         {
             return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
         }
@@ -111,21 +115,78 @@ internal sealed class LarpEventService(AttributedSessionFactory sessions, TimePr
         return await SaveAsync(session, eventId, expectedVersion, cancellationToken);
     }
 
-    public async Task<LarpEventResult<LarpEventSummary>> CloseEventAsync(Guid eventId,
+    /// <remarks>
+    /// The event is taken at the version the closing grid was built from, so a registration or value changed since
+    /// then makes the close stale instead of paying from an outdated grid. Every character that gets experience is
+    /// also taken for writing, so a character edit at the same moment conflicts with the close.
+    /// </remarks>
+    public async Task<LarpEventResult<LarpEventSummary>> CloseEventAsync(
+        Guid eventId,
+        long expectedVersion,
+        IReadOnlyList<ClosingAward> awards,
         CancellationToken cancellationToken = default)
     {
         await using var session = sessions.OpenSession();
-        var stream = await session.Events.FetchForWriting<LarpEventDocument>(eventId, cancellationToken);
-        switch (stream.Aggregate)
+        var (fetchOutcome, stream) = await session.FetchExpectedEventAsync(eventId, expectedVersion, cancellationToken);
+        if (stream?.Aggregate is not { } current)
         {
-            case null:
-                return LarpEventResult<LarpEventSummary>.Failure(LarpEventOutcome.NotFound);
-            case { Status: LarpEventStatus.Closed } current:
-                return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
+            return LarpEventResult<LarpEventSummary>.Failure(fetchOutcome);
         }
 
-        stream.AppendOne(new LarpEventClosed(eventId, timeProvider.GetUtcNow()));
-        return await SaveAsync(session, eventId, editedVersion: null, cancellationToken);
+        if (current.Status == LarpEventStatus.Closed)
+        {
+            return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
+        }
+
+        var (grantOutcome, grants) = ClosingGrants.From(current, awards);
+        if (grantOutcome != LarpEventOutcome.Succeeded)
+        {
+            return LarpEventResult<LarpEventSummary>.Failure(grantOutcome);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        foreach (var grant in grants)
+        {
+            if (await AppendGrantAsync(session, stream, grant, now, cancellationToken) is var granted and not LarpEventOutcome.Succeeded)
+            {
+                return LarpEventResult<LarpEventSummary>.Failure(granted);
+            }
+        }
+
+        stream.AppendOne(new LarpEventClosed(eventId, now));
+        return await SaveAsync(session, eventId, expectedVersion, cancellationToken);
+    }
+
+    /// <summary>
+    /// Records the grant on the event and, when it gives any experience, adds it to the character. A grant of 0 is
+    /// still recorded, so a later close shows those cells as given.
+    /// </summary>
+    private static async Task<LarpEventOutcome> AppendGrantAsync(
+        IDocumentSession session,
+        JasperFx.Events.IEventStream<LarpEventDocument> stream,
+        ClosingGrant grant,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (grant.Amount > 0)
+        {
+            var character = await session.Events.FetchForWriting<CharacterDocument>(grant.CharacterId, cancellationToken);
+            if (character.Aggregate is not { } current)
+            {
+                return LarpEventOutcome.UnknownCharacter;
+            }
+
+            if (ExperienceChanges.Apply(current.ExperiencePoints, grant.Amount) is not { } experiencePoints)
+            {
+                return LarpEventOutcome.ExperienceOutOfRange;
+            }
+
+            character.AppendOne(new CharacterExperienceChanged(grant.CharacterId, stream.Id, grant.Amount, experiencePoints, now));
+        }
+
+        stream.AppendOne(new ClosingExperienceAwarded(stream.Id, grant.CharacterId, grant.BaseExperience, grant.DayIds,
+            grant.Amount, now));
+        return LarpEventOutcome.Succeeded;
     }
 
     public async Task<LarpEventResult<LarpEventSummary>> ReopenEventAsync(Guid eventId,

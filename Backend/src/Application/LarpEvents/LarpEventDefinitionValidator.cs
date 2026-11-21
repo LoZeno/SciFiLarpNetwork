@@ -9,5 +9,6 @@ public static class LarpEventDefinitionValidator
     public static LarpEventOutcome? Validate(LarpEventDefinition definition) =>
         !CatalogNames.IsValid(definition.Name) ? LarpEventOutcome.InvalidName
         : !LarpEventTexts.IsValidDescription(definition.Description) ? LarpEventOutcome.InvalidDescription
+        : !ExperienceChanges.IsValidValue(definition.BaseExperience) ? LarpEventOutcome.InvalidExperienceValue
         : null;
 }

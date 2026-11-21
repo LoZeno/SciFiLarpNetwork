@@ -63,12 +63,12 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
         NewEventCommand = new AsyncCommand(() => RunAsync(CreateEventAsync), HandleUnexpectedFailure,
             () => !IsBusy && _events?.FindAction("create-event") is not null);
         EditEventCommand = EventCommand(EditEventAsync, "update-event");
-        CloseEventCommand = EventCommand(() => ConfirmEventActionAsync("close-event", "events.confirmClose", "events.close"), "close-event");
+        CloseEventCommand = EventCommand(CloseEventAsync, "close-event");
         ReopenEventCommand = EventCommand(() => ConfirmEventActionAsync("reopen-event", "events.confirmReopen", "events.reopen"), "reopen-event");
         ArchiveEventCommand = EventCommand(() => ConfirmEventActionAsync("archive-event", "events.confirmArchive", "events.archive"), "archive-event");
         UnarchiveEventCommand = EventCommand(() => ConfirmEventActionAsync("unarchive-event", "events.confirmUnarchive", "events.unarchive"), "unarchive-event");
         AddDayCommand = EventCommand(AddDayAsync, "add-day");
-        RescheduleDayCommand = EventCommand(RescheduleDayAsync, "reschedule-day", () => SelectedDay?.DayId is not null);
+        EditDayCommand = EventCommand(EditDayAsync, "update-day", () => SelectedDay?.DayId is not null);
         RemoveDayCommand = EventCommand(RemoveDayAsync, "remove-day", () => SelectedDay?.DayId is not null);
         RegisterCommand = EventCommand(RegisterAsync, "register-participant", () => _eventProperties?.Days.Count > 0);
         UnregisterCommand = EventCommand(UnregisterAsync, "unregister-participant", () => SelectedParticipant is not null);
@@ -95,7 +95,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
     public AsyncCommand AddDayCommand { get; }
 
-    public AsyncCommand RescheduleDayCommand { get; }
+    public AsyncCommand EditDayCommand { get; }
 
     public AsyncCommand RemoveDayCommand { get; }
 
@@ -217,7 +217,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
     public string AddDayLabel => Translate("api.addDay");
 
-    public string RescheduleDayLabel => Translate("api.rescheduleDay");
+    public string EditDayLabel => Translate("api.updateDay");
 
     public string RemoveDayLabel => Translate("api.removeDay");
 
@@ -256,7 +256,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
                      nameof(EventsHeading), nameof(DaysHeading), nameof(ParticipantsHeading), nameof(ShowArchivedLabel),
                      nameof(PreviousLabel), nameof(NextLabel), nameof(NewLabel), nameof(EditLabel), nameof(CloseLabel),
                      nameof(ReopenLabel), nameof(ArchiveLabel), nameof(UnarchiveLabel), nameof(AddDayLabel),
-                     nameof(RescheduleDayLabel), nameof(RemoveDayLabel), nameof(RegisterLabel), nameof(UnregisterLabel),
+                     nameof(EditDayLabel), nameof(RemoveDayLabel), nameof(RegisterLabel), nameof(UnregisterLabel),
                      nameof(ChangeExperienceLabel), nameof(PreviewCardsLabel), nameof(ExportCardsLabel),
                      nameof(ExperienceHistoryHeading), nameof(ClosedExplanation)
                  })
@@ -272,7 +272,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
         foreach (var command in new[]
                  {
                      PreviousEventsCommand, NextEventsCommand, NewEventCommand, EditEventCommand, CloseEventCommand,
-                     ReopenEventCommand, ArchiveEventCommand, UnarchiveEventCommand, AddDayCommand, RescheduleDayCommand,
+                     ReopenEventCommand, ArchiveEventCommand, UnarchiveEventCommand, AddDayCommand, EditDayCommand,
                      RemoveDayCommand, RegisterCommand, UnregisterCommand, ChangeExperienceCommand, PreviewCardsCommand,
                      ExportCardsCommand
                  })
@@ -373,15 +373,19 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
         ExperienceHistory = SelectedParticipant is { } selected && _participantDetails.TryGetValue(selected.CharacterId, out var details)
             ? details.ExperienceChanges
                 .Reverse()
-                .Select(change => string.Format(
-                    CultureInfo.CurrentCulture,
-                    Translate("events.experienceEntry"),
-                    change.Amount.ToString("+#;-#", CultureInfo.CurrentCulture),
-                    change.ChangedBy ?? "?",
-                    change.ChangedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)))
+                .Select(ExperienceEntry)
                 .ToArray()
             : [];
         OnPropertyChanged(nameof(ExperienceHistory));
+    }
+
+    private string ExperienceEntry(ExperienceChangeProperties change)
+    {
+        var amount = change.Amount.ToString("+#;-#;0", CultureInfo.CurrentCulture);
+        var when = change.ChangedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+        return change.IsClosingAward
+            ? string.Format(CultureInfo.CurrentCulture, Translate("events.closingAwardEntry"), amount, when)
+            : string.Format(CultureInfo.CurrentCulture, Translate("events.experienceEntry"), amount, change.ChangedBy ?? "?", when);
     }
 
     private async Task CreateEventAsync()
@@ -415,13 +419,53 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
                     var latest = SirenProperties.Read<LarpEventProperties>(current.Properties);
                     editor.Name = latest.Name;
                     editor.Description = latest.Description ?? string.Empty;
+                    editor.BaseExperience = ExperienceValueText.Format(latest.BaseExperience);
                 }))
         {
             Name = properties.Name,
-            Description = properties.Description ?? string.Empty
+            Description = properties.Description ?? string.Empty,
+            BaseExperience = ExperienceValueText.Format(properties.BaseExperience)
         };
         await _dialogs.ShowEventEditorAsync(editor);
         await ReloadAfterDialogAsync(editor.IsSaved);
+    }
+
+    /// <summary>
+    /// Shows the closing grid built from the latest event and its participants. A close from a grid that is no
+    /// longer current is refused as stale, and the grid reloads with the latest data.
+    /// </summary>
+    private async Task CloseEventAsync()
+    {
+        var (resource, larpEvent, participants) = await LoadClosingDataAsync();
+        var action = resource.FindAction("close-event") ?? throw MissingAction();
+        var editor = new CloseEventViewModel(
+            Localizer,
+            Locale,
+            larpEvent,
+            participants,
+            () => ConfirmAsync("events.confirmCloseAwards", "events.close", larpEvent.Name),
+            editor => SubmitEditorAsync(
+                editor,
+                () => SubmitAsync(action, editor.CreateBody()),
+                async () =>
+                {
+                    var (latest, latestEvent, latestParticipants) = await LoadClosingDataAsync();
+                    action = latest.FindAction("close-event") ?? throw MissingAction();
+                    editor.Load(latestEvent, latestParticipants);
+                }));
+        await _dialogs.ShowCloseEventAsync(editor);
+        await ReloadAfterDialogAsync(editor.IsSaved);
+    }
+
+    private async Task<(SirenEntity Resource, LarpEventProperties Event, IReadOnlyList<ParticipantProperties> Participants)> LoadClosingDataAsync()
+    {
+        var resource = await GetAsync(SelectedEvent?.Href ?? throw MissingAction());
+        var list = resource.FindAction("list-participants") ?? throw MissingAction();
+        var participants = await GetAsync(list.ToQueryHref(new Dictionary<string, string?>()));
+        return (
+            resource,
+            SirenProperties.Read<LarpEventProperties>(resource.Properties),
+            (participants.Entities ?? []).Select(entity => SirenProperties.Read<ParticipantProperties>(entity.Properties)).ToArray());
     }
 
     private async Task ConfirmEventActionAsync(string actionName, string messageKey, string confirmKey)
@@ -442,17 +486,17 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
     private async Task AddDayAsync()
     {
         var action = _event?.FindAction("add-day") ?? throw MissingAction();
-        var editor = new DayEditorViewModel(Localizer, Locale, "events.addDay", NextSuggestedDate(),
+        var editor = new DayEditorViewModel(Localizer, Locale, "events.addDay", NextSuggestedDate(), null,
             editor => SubmitEditorAsync(editor, () => SubmitAsync(action, editor.CreateBody(null)), null));
         await _dialogs.ShowDayEditorAsync(editor);
         await ReloadAfterDialogAsync(editor.IsSaved);
     }
 
-    private async Task RescheduleDayAsync()
+    private async Task EditDayAsync()
     {
-        var action = _event?.FindAction("reschedule-day") ?? throw MissingAction();
+        var action = _event?.FindAction("update-day") ?? throw MissingAction();
         var day = SelectedDay ?? throw MissingAction();
-        var editor = new DayEditorViewModel(Localizer, Locale, "events.rescheduleDay", day.Date,
+        var editor = new DayEditorViewModel(Localizer, Locale, "events.editDay", day.Date, day.Experience,
             editor => SubmitEditorAsync(editor, () => SubmitAsync(action, editor.CreateBody(day.DayId)), null));
         await _dialogs.ShowDayEditorAsync(editor);
         await ReloadAfterDialogAsync(editor.IsSaved);
@@ -593,13 +637,17 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
     private IEnumerable<DayListItem> DayItems(LarpEventProperties larpEvent) =>
     [
-        new DayListItem(null, null, string.Format(CultureInfo.CurrentCulture, Translate("events.allDaysCount"), larpEvent.ParticipantCount)),
-        .. larpEvent.Days.Select(day => new DayListItem(
-            day.DayId,
-            day.Date,
-            string.Format(CultureInfo.CurrentCulture, Translate("events.dayEntry"),
-                day.Date.ToString(IsoDate, CultureInfo.InvariantCulture), day.ParticipantCount)))
+        new DayListItem(null, null, null, string.Format(CultureInfo.CurrentCulture, Translate("events.allDaysCount"), larpEvent.ParticipantCount)),
+        .. larpEvent.Days.Select(day => new DayListItem(day.DayId, day.Date, day.Experience, DayEntry(day)))
     ];
+
+    private string DayEntry(LarpEventDayProperties day)
+    {
+        var date = day.Date.ToString(IsoDate, CultureInfo.InvariantCulture);
+        return day.Experience is { } experience
+            ? string.Format(CultureInfo.CurrentCulture, Translate("events.dayEntryExperience"), date, day.ParticipantCount, experience)
+            : string.Format(CultureInfo.CurrentCulture, Translate("events.dayEntry"), date, day.ParticipantCount);
+    }
 
     private LarpEventListItem ToEventItem(SirenSubEntity entity, LarpEventCollectionProperties page)
     {

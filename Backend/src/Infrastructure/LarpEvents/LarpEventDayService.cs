@@ -1,6 +1,7 @@
 using Marten;
 using SciFiLarpNetwork.Backend.Application.LarpEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
+using SciFiLarpNetwork.Backend.Domain.LarpEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
@@ -12,9 +13,14 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.LarpEvents;
 /// </summary>
 internal sealed class LarpEventDayService(AttributedSessionFactory sessions, TimeProvider timeProvider) : ILarpEventDayService
 {
-    public async Task<LarpEventResult<LarpEventSummary>> AddDayAsync(Guid eventId, DateOnly dayDate,
+    public async Task<LarpEventResult<LarpEventSummary>> AddDayAsync(Guid eventId, DateOnly dayDate, int? experience,
         CancellationToken cancellationToken = default)
     {
+        if (!ExperienceChanges.IsValidValue(experience))
+        {
+            return Failure(LarpEventOutcome.InvalidExperienceValue);
+        }
+
         await using var session = sessions.OpenSession();
         var (outcome, stream) = await session.FetchOpenEventAsync(eventId, cancellationToken);
         if (stream?.Aggregate is not { } current)
@@ -27,13 +33,18 @@ internal sealed class LarpEventDayService(AttributedSessionFactory sessions, Tim
             return Failure(LarpEventOutcome.DuplicateDate);
         }
 
-        stream.AppendOne(new LarpEventDayAdded(eventId, Guid.NewGuid(), dayDate, timeProvider.GetUtcNow()));
+        stream.AppendOne(new LarpEventDayAdded(eventId, Guid.NewGuid(), dayDate, experience, timeProvider.GetUtcNow()));
         return await SaveAsync(session, eventId, cancellationToken);
     }
 
-    public async Task<LarpEventResult<LarpEventSummary>> RescheduleDayAsync(Guid eventId, Guid dayId, DateOnly dayDate,
-        CancellationToken cancellationToken = default)
+    public async Task<LarpEventResult<LarpEventSummary>> UpdateDayAsync(Guid eventId, Guid dayId, DateOnly dayDate,
+        int? experience, CancellationToken cancellationToken = default)
     {
+        if (!ExperienceChanges.IsValidValue(experience))
+        {
+            return Failure(LarpEventOutcome.InvalidExperienceValue);
+        }
+
         await using var session = sessions.OpenSession();
         var (outcome, stream) = await session.FetchOpenEventAsync(eventId, cancellationToken);
         if (stream?.Aggregate is not { } current)
@@ -41,22 +52,22 @@ internal sealed class LarpEventDayService(AttributedSessionFactory sessions, Tim
             return Failure(outcome);
         }
 
-        if (current.Days.FirstOrDefault(day => day.DayId == dayId) is not { } rescheduled)
+        if (current.Days.FirstOrDefault(day => day.DayId == dayId) is not { } changed)
         {
             return Failure(LarpEventOutcome.UnknownDay);
         }
 
-        if (rescheduled.Date == dayDate)
+        if (changed.Date == dayDate && changed.Experience == experience)
         {
             return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
         }
 
-        if (current.Days.Any(day => day.Date == dayDate))
+        if (current.Days.Any(day => day.DayId != dayId && day.Date == dayDate))
         {
             return Failure(LarpEventOutcome.DuplicateDate);
         }
 
-        stream.AppendOne(new LarpEventDayRescheduled(eventId, dayId, dayDate, timeProvider.GetUtcNow()));
+        stream.AppendOne(new LarpEventDayChanged(eventId, dayId, dayDate, experience, timeProvider.GetUtcNow()));
         return await SaveAsync(session, eventId, cancellationToken);
     }
 

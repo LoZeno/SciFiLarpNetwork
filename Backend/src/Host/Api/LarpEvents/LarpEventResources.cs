@@ -159,7 +159,7 @@ internal sealed class LarpEventResources(IApplicationText text, string pathBase,
                 Fields = [VersionField(larpEvent.Version), .. DetailFields(larpEvent)]
             },
             DayAction("add-day", $"{path}/days", "api.addDay", withDay: false, withDate: true),
-            DayAction("reschedule-day", $"{path}/days/reschedule", "api.rescheduleDay", withDay: true, withDate: true),
+            DayAction("update-day", $"{path}/days/update", "api.updateDay", withDay: true, withDate: true),
             DayAction("remove-day", $"{path}/days/remove", "api.removeDay", withDay: true, withDate: false),
             new SirenAction
             {
@@ -192,7 +192,15 @@ internal sealed class LarpEventResources(IApplicationText text, string pathBase,
                     Field("amount", "number", "events.experienceChange", (int?)null)
                 ]
             },
-            SimpleAction("close-event", $"{path}/close", "api.closeEvent")
+            new SirenAction
+            {
+                Name = "close-event",
+                Href = $"{path}/close",
+                Method = "POST",
+                Type = JsonType,
+                Title = text.GetLocalizedText("api.closeEvent"),
+                Fields = [VersionField(larpEvent.Version), Field("awards", "hidden", "events.awards", Array.Empty<ClosingAwardRequest>())]
+            }
         ];
     }
 
@@ -207,7 +215,9 @@ internal sealed class LarpEventResources(IApplicationText text, string pathBase,
             Fields =
             [
                 .. withDay ? [Field("dayId", "hidden", "events.day", (Guid?)null)] : Array.Empty<SirenField>(),
-                .. withDate ? [Field("date", "date", "events.date", (DateOnly?)null)] : Array.Empty<SirenField>()
+                .. withDate
+                    ? [Field("date", "date", "events.date", (DateOnly?)null), Field("experience", "number", "events.dayExperience", (int?)null)]
+                    : Array.Empty<SirenField>()
             ]
         };
 
@@ -220,7 +230,8 @@ internal sealed class LarpEventResources(IApplicationText text, string pathBase,
     private SirenField[] DetailFields(LarpEventSummary? larpEvent) =>
     [
         Field("name", "text", "events.name", larpEvent?.Name),
-        Field("description", "textarea", "events.description", larpEvent?.Description)
+        Field("description", "textarea", "events.description", larpEvent?.Description),
+        Field("baseExperience", "number", "events.baseExperience", larpEvent?.BaseExperience)
     ];
 
     private SirenLink[] PageLinks(LarpEventPage page, LarpEventQuery query)

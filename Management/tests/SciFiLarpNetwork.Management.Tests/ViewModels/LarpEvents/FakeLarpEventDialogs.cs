@@ -14,6 +14,8 @@ internal sealed class FakeLarpEventDialogs : ILarpEventDialogService
 
     public Func<ExperienceEditorViewModel, Task> OnExperience { get; init; } = _ => Task.CompletedTask;
 
+    public Func<CloseEventViewModel, Task> OnCloseEvent { get; init; } = _ => Task.CompletedTask;
+
     public bool ConfirmResult { get; init; } = true;
 
     public bool ExportResult { get; init; } = true;
@@ -33,6 +35,8 @@ internal sealed class FakeLarpEventDialogs : ILarpEventDialogService
     public Task ShowRegistrationAsync(RegistrationEditorViewModel editor) => OnRegistration(editor);
 
     public Task ShowExperienceAsync(ExperienceEditorViewModel editor) => OnExperience(editor);
+
+    public Task ShowCloseEventAsync(CloseEventViewModel editor) => OnCloseEvent(editor);
 
     public Task<bool> ConfirmAsync(ConfirmationRequest request)
     {

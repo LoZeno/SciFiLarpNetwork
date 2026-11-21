@@ -21,7 +21,16 @@ public interface ILarpEventService
         LarpEventDefinition definition,
         CancellationToken cancellationToken = default);
 
-    Task<LarpEventResult<LarpEventSummary>> CloseEventAsync(Guid eventId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Closes an Open event that is still at <paramref name="expectedVersion"/> and, in the same command, gives each
+    /// participant the experience of their <paramref name="awards"/>. Experience an earlier close already gave is
+    /// never given again. A stale version reports <see cref="LarpEventOutcome.StaleVersion"/> and changes nothing.
+    /// </summary>
+    Task<LarpEventResult<LarpEventSummary>> CloseEventAsync(
+        Guid eventId,
+        long expectedVersion,
+        IReadOnlyList<ClosingAward> awards,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Opens a Closed event again; an archived event must be unarchived first.</summary>
     Task<LarpEventResult<LarpEventSummary>> ReopenEventAsync(Guid eventId, CancellationToken cancellationToken = default);

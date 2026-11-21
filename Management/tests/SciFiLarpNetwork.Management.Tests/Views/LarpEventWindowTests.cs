@@ -86,7 +86,7 @@ public sealed class LarpEventWindowTests
     }
 
     [AvaloniaFact]
-    public async Task DayWindowShowsTheDayBeingRescheduled()
+    public async Task DayWindowShowsTheDayBeingEdited()
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
@@ -106,7 +106,7 @@ public sealed class LarpEventWindowTests
         screen.SelectedEvent = screen.Events[0];
         screen.SelectedDay = screen.Days[1];
 
-        await screen.RescheduleDayCommand.ExecuteAsync();
+        await screen.EditDayCommand.ExecuteAsync();
 
         Assert.Equal(new DateTime(2026, 5, 1), shown!.GetVisualDescendants().OfType<CalendarDatePicker>().Single().SelectedDate);
         shown?.Close();
@@ -163,6 +163,35 @@ public sealed class LarpEventWindowTests
         await screen.ChangeExperienceCommand.ExecuteAsync();
 
         Assert.Contains(shown!.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == "Kira has 10 XP; 0 given at this event.");
+        shown?.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task CloseWindowShowsABaseAndADayCheckboxPerCharacter()
+    {
+        var api = new FakeLarpEventApi();
+        var fort = api.AddEvent("Fort", true, FirstDay);
+        fort.BaseExperience = 5;
+        fort.Days[0] = fort.Days[0] with { Experience = 2 };
+        fort.Registrations[FakeLarpEventApi.KiraId] = [fort.Days[0].Id];
+        CloseEventWindow? shown = null;
+        var dialogs = new FakeLarpEventDialogs
+        {
+            OnCloseEvent = editor =>
+            {
+                shown = new CloseEventWindow(editor);
+                shown.Show();
+                Dispatcher.UIThread.RunJobs();
+                return Task.CompletedTask;
+            }
+        };
+        var screen = new LarpEventScreenViewModel(api, new JsonLocalizer(), dialogs, "http://localhost/api", "en", FakeLarpEventApi.EventsHref);
+        await screen.LoadAsync();
+        screen.SelectedEvent = screen.Events[0];
+
+        await screen.CloseEventCommand.ExecuteAsync();
+
+        Assert.Equal(2, shown!.GetVisualDescendants().OfType<CheckBox>().Count(box => box.IsEffectivelyVisible && box.IsChecked == true));
         shown?.Close();
     }
 

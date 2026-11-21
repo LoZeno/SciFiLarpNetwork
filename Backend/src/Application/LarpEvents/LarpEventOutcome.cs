@@ -15,6 +15,15 @@ public enum LarpEventOutcome
     InvalidName,
     InvalidDescription,
 
+    /// <summary>A base or day experience value must be blank or a whole number of 0 or more.</summary>
+    InvalidExperienceValue,
+
+    /// <summary>
+    /// A closing award names a character that is not registered, a day the character is not registered for or that has
+    /// no experience, base experience the event does not have, or experience an earlier close already gave.
+    /// </summary>
+    AwardNotAllowed,
+
     /// <summary>The event is Closed, so its details, days, registrations, and experience cannot change.</summary>
     EventClosed,
 

@@ -16,12 +16,14 @@ internal static class LarpEventMappings
                 larpEvent.Description,
                 larpEvent.Status,
                 larpEvent.IsArchived,
+                larpEvent.BaseExperience,
                 larpEvent.Days.Length == 0 ? null : larpEvent.Days[0].Date,
                 larpEvent.Days.Length == 0 ? null : larpEvent.Days[^1].Date,
                 larpEvent.Days
                     .Select(day => new LarpEventDaySummary(
                         day.DayId,
                         day.Date,
+                        day.Experience,
                         larpEvent.Participants.Count(participant => participant.DayIds.Contains(day.DayId))))
                     .ToArray(),
                 larpEvent.Participants.Length,
@@ -32,6 +34,10 @@ internal static class LarpEventMappings
 
         public bool HasDay(Guid dayId) => larpEvent.Days.Any(day => day.DayId == dayId);
 
+        public LarpEventGivenAward GivenAward(Guid characterId) =>
+            larpEvent.GivenAwards.FirstOrDefault(award => award.CharacterId == characterId)
+            ?? new LarpEventGivenAward(characterId, false, []);
+
         /// <param name="playerNames">Player display names by player identifier.</param>
         /// <param name="administratorNames">Administrator user names by the recorded account identifier.</param>
         public ParticipantSummary ToParticipantSummary(
@@ -40,13 +46,15 @@ internal static class LarpEventMappings
             IReadOnlyDictionary<Guid, string> playerNames,
             IReadOnlyDictionary<string, string> administratorNames)
         {
+            var given = larpEvent.GivenAward(participant.CharacterId);
             var days = larpEvent.Days.Where(day => participant.DayIds.Contains(day.DayId)).ToArray();
             var changes = larpEvent.ExperienceChanges
                 .Where(change => change.CharacterId == participant.CharacterId)
                 .Select(change => new ExperienceChangeSummary(
                     change.Amount,
                     change.ChangedBy is { } recorded ? administratorNames.GetValueOrDefault(recorded, recorded) : null,
-                    change.ChangedAtUtc))
+                    change.ChangedAtUtc,
+                    change.IsClosingAward))
                 .ToArray();
             return new ParticipantSummary(
                 character.Id,
@@ -60,7 +68,9 @@ internal static class LarpEventMappings
                 days.Select(day => day.DayId).ToArray(),
                 days.Select(day => day.Date).ToArray(),
                 changes.Sum(change => (long)change.Amount),
-                changes);
+                changes,
+                given.BaseExperience,
+                given.DayIds);
         }
     }
 }

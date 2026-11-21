@@ -21,8 +21,12 @@ public sealed class WindowLarpEventDialogService(Func<Window> owner) : ILarpEven
     public Task ShowExperienceAsync(ExperienceEditorViewModel editor) =>
         new ExperienceWindow(editor).ShowDialog(owner());
 
+    public Task ShowCloseEventAsync(CloseEventViewModel editor) =>
+        new CloseEventWindow(editor).ShowDialog(owner());
+
+    /// <remarks>The confirmation can open from the close dialog, so it is owned by the active window.</remarks>
     public Task<bool> ConfirmAsync(ConfirmationRequest request) =>
-        new ConfirmationWindow(request).ShowDialog<bool>(owner());
+        new ConfirmationWindow(request).ShowDialog<bool>(ActiveWindow());
 
     public async Task<bool> ExportPdfAsync(byte[] pdf, string suggestedFileName, string fileTypeName)
     {
@@ -48,5 +52,11 @@ public sealed class WindowLarpEventDialogService(Func<Window> owner) : ILarpEven
         var path = Path.Combine(new PdfPreviewFolders(Path.GetTempPath()).Create().FullName, fileName);
         await File.WriteAllBytesAsync(path, pdf);
         return await owner().Launcher.LaunchFileInfoAsync(new FileInfo(path));
+    }
+
+    private Window ActiveWindow()
+    {
+        var main = owner();
+        return main.OwnedWindows.LastOrDefault(window => window.IsVisible) ?? main;
     }
 }

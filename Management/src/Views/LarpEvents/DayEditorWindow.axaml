@@ -7,7 +7,7 @@
     x:DataType="vm:DayEditorViewModel"
     Title="{Binding Title}"
     Width="420"
-    Height="300"
+    Height="400"
     MinWidth="360"
     MinHeight="260"
     WindowStartupLocation="CenterOwner">
@@ -28,6 +28,9 @@
       <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
       <TextBlock Text="{Binding DateLabel}" />
       <CalendarDatePicker AutomationProperties.Name="{Binding DateLabel}" SelectedDate="{Binding Date, Mode=TwoWay}" />
+      <TextBlock Text="{Binding ExperienceLabel}" />
+      <TextBox AutomationProperties.Name="{Binding ExperienceLabel}" MaxLength="10" Text="{Binding Experience, Mode=TwoWay}" />
+      <TextBlock Text="{Binding ExperienceHelp}" TextWrapping="Wrap" />
     </StackPanel>
   </DockPanel>
 </Window>

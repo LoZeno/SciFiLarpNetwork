@@ -40,6 +40,8 @@ public sealed class LarpEventParticipantServiceTests(AdministratorAuthentication
                 LarpEventTestData.AllDays(created),
                 [LarpEventTestData.FirstDay, LarpEventTestData.FirstDay.AddDays(1)],
                 0,
+                [],
+                false,
                 []),
             result.Value,
             strict: true);

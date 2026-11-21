@@ -7,6 +7,7 @@ internal sealed record LarpEventProperties(
     string? Description,
     string Status,
     bool IsArchived,
+    int? BaseExperience,
     DateOnly? FirstDate,
     DateOnly? LastDate,
     IReadOnlyList<LarpEventDayProperties> Days,

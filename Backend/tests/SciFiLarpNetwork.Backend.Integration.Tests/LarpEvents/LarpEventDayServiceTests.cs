@@ -20,8 +20,8 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     public async Task DaysAreListedInDateOrderWithFirstAndLastDates()
     {
         var created = await _data.CreateEventAsync();
-        await Days.AddDayAsync(created.EventId, new DateOnly(2026, 5, 3), Token);
-        var result = await Days.AddDayAsync(created.EventId, new DateOnly(2026, 5, 1), Token);
+        await Days.AddDayAsync(created.EventId, new DateOnly(2026, 5, 3), null, Token);
+        var result = await Days.AddDayAsync(created.EventId, new DateOnly(2026, 5, 1), null, Token);
 
         Assert.Equal(
             new { First = (DateOnly?)new DateOnly(2026, 5, 1), Last = (DateOnly?)new DateOnly(2026, 5, 3), Dates = "2026-05-01,2026-05-03" },
@@ -38,7 +38,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     {
         var created = await _data.CreateEventAsync(dayCount: 1);
 
-        var result = await Days.AddDayAsync(created.EventId, LarpEventTestData.FirstDay, Token);
+        var result = await Days.AddDayAsync(created.EventId, LarpEventTestData.FirstDay, null, Token);
 
         Assert.Equal(LarpEventOutcome.DuplicateDate, result.Outcome);
     }
@@ -48,7 +48,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     {
         var closed = await _data.CloseAsync(await _data.CreateEventAsync());
 
-        var result = await Days.AddDayAsync(closed.EventId, LarpEventTestData.FirstDay, Token);
+        var result = await Days.AddDayAsync(closed.EventId, LarpEventTestData.FirstDay, null, Token);
 
         Assert.Equal(LarpEventOutcome.EventClosed, result.Outcome);
     }
@@ -56,7 +56,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     [Fact]
     public async Task UnknownEventGetsNoDays()
     {
-        var result = await Days.AddDayAsync(Guid.NewGuid(), LarpEventTestData.FirstDay, Token);
+        var result = await Days.AddDayAsync(Guid.NewGuid(), LarpEventTestData.FirstDay, null, Token);
 
         Assert.Equal(LarpEventOutcome.NotFound, result.Outcome);
     }
@@ -69,9 +69,9 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
         var dayId = created.Days[0].DayId;
         await _data.Participants.RegisterAsync(created.EventId, character.CharacterId, [dayId], Token);
 
-        var result = await Days.RescheduleDayAsync(created.EventId, dayId, new DateOnly(2026, 7, 1), Token);
+        var result = await Days.UpdateDayAsync(created.EventId, dayId, new DateOnly(2026, 7, 1), null, Token);
 
-        Assert.Equal([new LarpEventDaySummary(dayId, new DateOnly(2026, 7, 1), 1)], result.Value!.Days);
+        Assert.Equal([new LarpEventDaySummary(dayId, new DateOnly(2026, 7, 1), null, 1)], result.Value!.Days);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     {
         var created = await _data.CreateEventAsync(dayCount: 2);
 
-        var result = await Days.RescheduleDayAsync(created.EventId, created.Days[1].DayId, LarpEventTestData.FirstDay, Token);
+        var result = await Days.UpdateDayAsync(created.EventId, created.Days[1].DayId, LarpEventTestData.FirstDay, null, Token);
 
         Assert.Equal(LarpEventOutcome.DuplicateDate, result.Outcome);
     }
@@ -89,7 +89,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     {
         var created = await _data.CreateEventAsync(dayCount: 1);
 
-        var result = await Days.RescheduleDayAsync(created.EventId, Guid.NewGuid(), new DateOnly(2026, 7, 1), Token);
+        var result = await Days.UpdateDayAsync(created.EventId, Guid.NewGuid(), new DateOnly(2026, 7, 1), null, Token);
 
         Assert.Equal(LarpEventOutcome.UnknownDay, result.Outcome);
     }

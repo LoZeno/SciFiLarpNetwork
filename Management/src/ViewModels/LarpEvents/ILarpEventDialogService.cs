@@ -11,6 +11,8 @@ public interface ILarpEventDialogService
 
     Task ShowExperienceAsync(ExperienceEditorViewModel editor);
 
+    Task ShowCloseEventAsync(CloseEventViewModel editor);
+
     Task<bool> ConfirmAsync(ConfirmationRequest request);
 
     /// <summary>Asks where to save the PDF and saves it there.</summary>

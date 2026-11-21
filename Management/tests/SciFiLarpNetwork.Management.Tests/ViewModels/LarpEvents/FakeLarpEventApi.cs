@@ -27,6 +27,9 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
         [OdoId] = (2, "Odo", 4)
     };
 
+    /// <summary>Characters shown as Retired in participant lists.</summary>
+    public HashSet<Guid> InactiveCharacters { get; } = [];
+
     public List<Submission> Submissions { get; } = [];
 
     /// <summary>One-shot failures for the next submission of the named action.</summary>
@@ -37,7 +40,7 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
         var added = new FakeEvent(Guid.NewGuid(), Events.Count + 1, name)
         {
             IsOpen = isOpen,
-            Days = dates.Select(date => (Guid.NewGuid(), date)).ToList()
+            Days = dates.Select(date => (Guid.NewGuid(), date, (int?)null)).ToList()
         };
         Events.Add(added);
         return added;
@@ -118,9 +121,17 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
         {
             case "update-event":
                 target.Name = body!.Value.GetProperty("name").GetString()!;
+                target.BaseExperience = OptionalInt(body.Value, "baseExperience");
                 break;
             case "close-event":
                 target.IsOpen = false;
+                foreach (var award in body!.Value.GetProperty("awards").EnumerateArray())
+                {
+                    var awarded = award.GetProperty("characterId").GetGuid();
+                    target.BaseGiven.UnionWith(award.GetProperty("baseExperience").GetBoolean() ? [awarded] : []);
+                    target.GivenDays[awarded] = [.. target.GivenDays.GetValueOrDefault(awarded) ?? [], .. DayIds(award)];
+                }
+
                 break;
             case "reopen-event":
                 target.IsOpen = true;
@@ -132,11 +143,11 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
                 target.IsArchived = false;
                 break;
             case "add-day":
-                target.Days.Add((Guid.NewGuid(), Date(body!.Value)));
+                target.Days.Add((Guid.NewGuid(), Date(body!.Value), OptionalInt(body.Value, "experience")));
                 break;
-            case "reschedule-day":
+            case "update-day":
                 var dayId = body!.Value.GetProperty("dayId").GetGuid();
-                target.Days[target.Days.FindIndex(day => day.Id == dayId)] = (dayId, Date(body.Value));
+                target.Days[target.Days.FindIndex(day => day.Id == dayId)] = (dayId, Date(body.Value), OptionalInt(body.Value, "experience"));
                 break;
             case "remove-day":
                 var removed = body!.Value.GetProperty("dayId").GetGuid();
@@ -214,7 +225,7 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
                 [
                     Action("update-event", href, "PUT"),
                     Action("add-day", $"{href}/days", "POST"),
-                    Action("reschedule-day", $"{href}/days/reschedule", "POST"),
+                    Action("update-day", $"{href}/days/update", "POST"),
                     Action("remove-day", $"{href}/days/remove", "POST"),
                     Action("register-participant", $"{href}/participants", "POST"),
                     Action("unregister-participant", $"{href}/participants/unregister", "POST"),
@@ -250,12 +261,14 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
             description = (string?)null,
             status = item.IsOpen ? "open" : "closed",
             isArchived = item.IsArchived,
+            baseExperience = item.BaseExperience,
             firstDate = days.Length == 0 ? (DateOnly?)null : days[0].Date,
             lastDate = days.Length == 0 ? (DateOnly?)null : days[^1].Date,
             days = days.Select(day => new
             {
                 dayId = day.Id,
                 date = day.Date,
+                experience = day.Experience,
                 participantCount = item.Registrations.Count(registration => registration.Value.Contains(day.Id))
             }),
             participantCount = item.Registrations.Count,
@@ -284,15 +297,17 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
                         characterName = Characters[registration.Key].Name,
                         playerId = Guid.Empty,
                         playerDisplayName = "Ann",
-                        status = "active",
+                        status = InactiveCharacters.Contains(registration.Key) ? "retired" : "active",
                         isArchived = false,
                         experiencePoints = Characters[registration.Key].Experience,
                         dayIds = registration.Value,
                         dates = item.Days.Where(day => registration.Value.Contains(day.Id)).Select(day => day.Date).Order(),
                         experienceTotal = item.Experience.GetValueOrDefault(registration.Key),
                         experienceChanges = item.Experience.TryGetValue(registration.Key, out var total)
-                            ? new[] { new { amount = total, changedBy = "local-admin", changedAtUtc = new DateTimeOffset(2026, 5, 2, 18, 0, 0, TimeSpan.Zero) } }
-                            : []
+                            ? new[] { new { amount = total, changedBy = "local-admin", changedAtUtc = new DateTimeOffset(2026, 5, 2, 18, 0, 0, TimeSpan.Zero), isClosingAward = false } }
+                            : [],
+                        baseExperienceGiven = item.BaseGiven.Contains(registration.Key),
+                        givenDayIds = item.GivenDays.GetValueOrDefault(registration.Key) ?? []
                     })
                 })
                 .ToArray()
@@ -352,6 +367,9 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
     private static DateOnly Date(JsonElement body) =>
         DateOnly.ParseExact(body.GetProperty("date").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+    private static int? OptionalInt(JsonElement body, string name) =>
+        body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt32() : null;
+
     private static Guid Character(JsonElement body) => body.GetProperty("characterId").GetGuid();
 
     private static IEnumerable<Guid> DayIds(JsonElement body) =>
@@ -374,7 +392,13 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
 
         public bool IsArchived { get; set; }
 
-        public List<(Guid Id, DateOnly Date)> Days { get; init; } = [];
+        public int? BaseExperience { get; set; }
+
+        public List<(Guid Id, DateOnly Date, int? Experience)> Days { get; init; } = [];
+
+        public HashSet<Guid> BaseGiven { get; } = [];
+
+        public Dictionary<Guid, List<Guid>> GivenDays { get; } = [];
 
         public Dictionary<Guid, List<Guid>> Registrations { get; } = [];
 

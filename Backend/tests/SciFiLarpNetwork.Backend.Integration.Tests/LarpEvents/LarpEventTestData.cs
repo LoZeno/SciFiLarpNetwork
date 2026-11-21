@@ -29,7 +29,7 @@ internal sealed class LarpEventTestData(AdministratorAuthenticationFactory facto
         var created = (await Events.CreateEventAsync(new LarpEventDefinition(name, null), Token)).Value!;
         for (var day = 0; day < dayCount; day++)
         {
-            created = (await Days.AddDayAsync(created.EventId, FirstDay.AddDays(day), Token)).Value!;
+            created = (await Days.AddDayAsync(created.EventId, FirstDay.AddDays(day), null, Token)).Value!;
         }
 
         return created;
@@ -59,7 +59,8 @@ internal sealed class LarpEventTestData(AdministratorAuthenticationFactory facto
     }
 
     public async Task<LarpEventSummary> CloseAsync(LarpEventSummary larpEvent) =>
-        (await Events.CloseEventAsync(larpEvent.EventId, Token)).Value!;
+        (await Events.CloseEventAsync(
+            larpEvent.EventId, (await Events.GetEventAsync(larpEvent.EventId, Token))!.Version, [], Token)).Value!;
 
     public static Guid[] AllDays(LarpEventSummary larpEvent) => larpEvent.Days.Select(day => day.DayId).ToArray();
 }

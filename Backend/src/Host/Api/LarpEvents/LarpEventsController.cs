@@ -73,9 +73,11 @@ public sealed class LarpEventsController(
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{eventId:guid}/close")]
-    public async Task<ActionResult<SirenEntity<LarpEventSummary>>> CloseEvent(Guid eventId,
+    public async Task<ActionResult<SirenEntity<LarpEventSummary>>> CloseEvent(
+        Guid eventId,
+        [FromBody] CloseEventRequest request,
         CancellationToken cancellationToken) =>
-        EventResult(await events.CloseEventAsync(eventId, cancellationToken));
+        EventResult(await events.CloseEventAsync(eventId, request.Version, request.ToAwards(), cancellationToken));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{eventId:guid}/reopen")]
@@ -101,15 +103,15 @@ public sealed class LarpEventsController(
         Guid eventId,
         [FromBody] DayAddRequest request,
         CancellationToken cancellationToken) =>
-        EventResult(await days.AddDayAsync(eventId, request.Date, cancellationToken));
+        EventResult(await days.AddDayAsync(eventId, request.Date, request.Experience, cancellationToken));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
-    [HttpPost("{eventId:guid}/days/reschedule")]
-    public async Task<ActionResult<SirenEntity<LarpEventSummary>>> RescheduleDay(
+    [HttpPost("{eventId:guid}/days/update")]
+    public async Task<ActionResult<SirenEntity<LarpEventSummary>>> UpdateDay(
         Guid eventId,
-        [FromBody] DayRescheduleRequest request,
+        [FromBody] DayUpdateRequest request,
         CancellationToken cancellationToken) =>
-        EventResult(await days.RescheduleDayAsync(eventId, request.DayId, request.Date, cancellationToken));
+        EventResult(await days.UpdateDayAsync(eventId, request.DayId, request.Date, request.Experience, cancellationToken));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{eventId:guid}/days/remove")]

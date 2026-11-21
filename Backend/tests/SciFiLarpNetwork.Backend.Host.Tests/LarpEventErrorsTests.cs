@@ -11,6 +11,8 @@ public sealed class LarpEventErrorsTests
     [InlineData(LarpEventOutcome.ConcurrentChange, 409, "errors.concurrentChange")]
     [InlineData(LarpEventOutcome.InvalidName, 400, "errors.invalidName")]
     [InlineData(LarpEventOutcome.InvalidDescription, 400, "errors.invalidDescription")]
+    [InlineData(LarpEventOutcome.InvalidExperienceValue, 400, "errors.invalidExperienceValue")]
+    [InlineData(LarpEventOutcome.AwardNotAllowed, 409, "errors.awardNotAllowed")]
     [InlineData(LarpEventOutcome.EventClosed, 409, "errors.eventClosed")]
     [InlineData(LarpEventOutcome.EventNotClosed, 409, "errors.eventNotClosed")]
     [InlineData(LarpEventOutcome.Archived, 409, "errors.archived")]
