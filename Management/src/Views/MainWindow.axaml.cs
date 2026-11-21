@@ -137,11 +137,13 @@ public partial class MainWindow : Window
             return null;
         }
 
-        var scale = RenderScaling;
+        // Taken at 96 DPI whatever the screen scaling: Image draws a higher-DPI RenderTargetBitmap zoomed in (seen at
+        // 175%), and the snapshot only shows for the 200 ms it takes to slide away.
         _leavingSnapshot = new RenderTargetBitmap(
-            new PixelSize((int)Math.Ceiling(size.Width * scale), (int)Math.Ceiling(size.Height * scale)),
-            new Vector(96 * scale, 96 * scale));
+            new PixelSize((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height)), new Vector(96, 96));
         _leavingSnapshot.Render(Workspace);
+        LeavingWorkspace.Width = size.Width;
+        LeavingWorkspace.Height = size.Height;
         LeavingWorkspace.Source = _leavingSnapshot;
         LeavingWorkspace.IsVisible = true;
         return _leavingSnapshot;

@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Localization;
@@ -256,6 +257,36 @@ public sealed class MainWindowAnimationTests
     }
 
     [AvaloniaFact]
+    public async Task TheLeavingViewLooksLikeTheScreenOnAScaledScreen()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+        window.SetRenderScaling(1.75);
+        LetAnimationsFinish();
+        var screen = window.CaptureRenderedFrame()!;
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        window.UpdateLayout();
+
+        Assert.True(TextMismatch(screen, AsDrawn(Named<Image>(window, "LeavingWorkspace"), window.RenderScaling), WorkspacePixelOrigin(window)) < 0.5);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task TheOldViewIsDrawnAtTheWorkspaceSizeOnAScaledScreen()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+        window.SetRenderScaling(1.75);
+        LetAnimationsFinish();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+
+        Assert.Equal(Named<Grid>(window, "Workspace").Bounds.Size, Named<Image>(window, "LeavingWorkspace").Bounds.Size);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task TheOldViewIsGoneOnceItHasLeft()
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
@@ -294,6 +325,53 @@ public sealed class MainWindowAnimationTests
 
     private static string[] ShownEntries(Window window) =>
         [.. Named<ListBox>(window, "NavigationList").Items.Cast<NavigationItem>().Select(item => item.Title)];
+
+    /// <summary>Renders the leaving view the way the screen draws it, at the screen's scaling.</summary>
+    private static RenderTargetBitmap AsDrawn(Image leaving, double scaling)
+    {
+        var drawn = new RenderTargetBitmap(
+            new PixelSize((int)Math.Ceiling(leaving.Bounds.Width * scaling), (int)Math.Ceiling(leaving.Bounds.Height * scaling)),
+            new Vector(96 * scaling, 96 * scaling));
+        drawn.Render(leaving);
+        return drawn;
+    }
+
+    private static PixelPoint WorkspacePixelOrigin(Window window)
+    {
+        var origin = ((Visual)Named<Grid>(window, "Workspace").GetVisualParent()!).TranslatePoint(default, window)!.Value * window.RenderScaling;
+        return new PixelPoint((int)Math.Round(origin.X), (int)Math.Round(origin.Y));
+    }
+
+    /// <summary>
+    /// How much of the bright (text and line) pixels differ between the snapshot and the screen under it: 0 when they
+    /// line up, about 0.25 for the 96 DPI snapshot (its text is softer), and near 1 when it is drawn at another scale.
+    /// </summary>
+    private static double TextMismatch(Bitmap screen, Bitmap snapshot, PixelPoint origin)
+    {
+        var area = new PixelRect(origin, new PixelSize(
+            Math.Min(snapshot.PixelSize.Width, screen.PixelSize.Width - origin.X),
+            Math.Min(snapshot.PixelSize.Height, screen.PixelSize.Height - origin.Y)));
+        var onScreen = BrightPixels(screen, area);
+        var inSnapshot = BrightPixels(snapshot, new PixelRect(default, area.Size));
+        var either = onScreen.Zip(inSnapshot).Count(pair => pair.First || pair.Second);
+        return either == 0 ? 0 : (double)onScreen.Zip(inSnapshot).Count(pair => pair.First != pair.Second) / either;
+    }
+
+    private static bool[] BrightPixels(Bitmap bitmap, PixelRect area)
+    {
+        var pixels = new byte[area.Width * area.Height * 4];
+        var pinned = System.Runtime.InteropServices.GCHandle.Alloc(pixels, System.Runtime.InteropServices.GCHandleType.Pinned);
+        try
+        {
+            bitmap.CopyPixels(area, pinned.AddrOfPinnedObject(), pixels.Length, area.Width * 4);
+        }
+        finally
+        {
+            pinned.Free();
+        }
+
+        return [.. Enumerable.Range(0, pixels.Length / 4).Select(pixel => pixels.Skip(pixel * 4).Take(3).Max() > 140)];
+    }
 
     private static double WorkspaceOffset(Window window) => OffsetOf(Named<Grid>(window, "Workspace"));
 
