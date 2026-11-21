@@ -92,15 +92,16 @@ public static class DependencyInjection
             options.Events.AddEventType<AccountAuthorityUsed>();
             options.Events.AddEventType<AdministratorRosterChanged>();
 
-            // Administrator accounts, sessions and grants are write models: sign-in, session
-            // validation and grant checks must see every committed event immediately. Inline
-            // projections are updated in the same transaction as the appended events, which
-            // gives that strong consistency (Marten "Projections" docs, ProjectionLifecycle).
+            // Sign-in and session validation query these documents, so they are updated in the same
+            // transaction as the appended events (Marten "Projections" docs, ProjectionLifecycle).
             options.Projections.Add<AdministratorAccountProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<AdministratorSessionProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorGrantProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorAuditProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<AdministratorRosterProjection>(ProjectionLifecycle.Inline);
+
+            // Commands only reach grants and the roster through FetchForWriting, which folds events the
+            // daemon has not applied yet onto the stored snapshot; nothing in production reads the audit.
+            options.Projections.Add<AdministratorGrantProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<AdministratorAuditProjection>(ProjectionLifecycle.Async);
+            options.Projections.Add<AdministratorRosterProjection>(ProjectionLifecycle.Async);
 
             options.Schema.For<AdministratorAccountDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, account => account.NormalizedUserName);
@@ -123,12 +124,14 @@ public static class DependencyInjection
             options.Events.AddEventType<CardFlagDefined>();
             options.Events.AddEventType<PrerequisiteGraphChanged>();
 
-            // Skill commands decide on these write models (unique names, archived talents, prerequisite loops),
+            // Skill commands query these write models (unique names, archived talents, prerequisite loops),
             // so they are updated in the same transaction as the events.
             options.Projections.Add<TalentProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<SkillProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<CardFlagProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<PrerequisiteGraphProjection>(ProjectionLifecycle.Inline);
+
+            // Only a FetchForWriting concurrency lock: the snapshot can lag behind the events.
+            options.Projections.Add<PrerequisiteGraphProjection>(ProjectionLifecycle.Async);
 
             options.Schema.For<TalentDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, talent => talent.NormalizedName);
@@ -147,9 +150,11 @@ public static class DependencyInjection
             options.Events.AddEventType<NetworkDefaultCleared>();
             options.Events.AddEventType<DefaultNetworkChosen>();
 
-            // Network commands decide on these write models (unique names and codes, the single default).
+            // Network commands query this write model (unique names and codes, the current default).
             options.Projections.Add<NetworkProjection>(ProjectionLifecycle.Inline);
-            options.Projections.Add<NetworkDefaultProjection>(ProjectionLifecycle.Inline);
+
+            // Only a FetchForWriting concurrency lock: the snapshot can lag behind the events.
+            options.Projections.Add<NetworkDefaultProjection>(ProjectionLifecycle.Async);
 
             // Two calls create two separate unique indexes; one call with both members would make one composite index.
             options.Schema.For<NetworkDocument>()
@@ -179,9 +184,11 @@ public static class DependencyInjection
             options.Events.AddEventType<CharacterStatArchived>();
             options.Events.AddEventType<CharacterStatUnarchived>();
 
-            // Player and character commands decide on these write models (running numbers, player status,
-            // unique stat names and QR identifiers).
-            options.Projections.Add<RunningNumberProjection>(ProjectionLifecycle.Inline);
+            // Running numbers are only read through FetchForWriting, which folds unapplied events onto the snapshot.
+            options.Projections.Add<RunningNumberProjection>(ProjectionLifecycle.Async);
+
+            // Player and character commands query these write models (player status, unique numbers,
+            // stat names and QR identifiers).
             options.Projections.Add<PlayerProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<CharacterProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<CharacterStatProjection>(ProjectionLifecycle.Inline);

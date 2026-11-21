@@ -687,15 +687,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
 
     public CapturingLoggerProvider LogMessages { get; } = new();
 
-    public async ValueTask InitializeAsync()
-    {
-        var store = Services.GetRequiredService<IDocumentStore>();
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAccountDocument));
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorSessionDocument));
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorGrantDocument));
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAuditDocument));
-    }
+    public async ValueTask InitializeAsync() => await Services.ResetAllMartenDataAsync();
 
     public new async ValueTask DisposeAsync()
     {
@@ -730,7 +722,8 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         Clock.Reset();
         LogMessages.Messages.Clear();
-        await Services.GetRequiredService<IDocumentStore>().Advanced.ResetAllData();
+        // Async projections are running, so the daemon must restart along with the data reset.
+        await Services.ResetAllMartenDataAsync();
     }
 
     public async Task WaitForProjectionsAsync()
