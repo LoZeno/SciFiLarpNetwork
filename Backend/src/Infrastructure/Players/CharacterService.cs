@@ -52,9 +52,10 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         return RosterSearch.ToPage(page, await ToSummariesAsync(session, page.ToArray(), cancellationToken));
     }
 
-    public async Task<IReadOnlyList<CharacterSummary>> GetCharactersOfPlayerAsync(
+    public async Task<RosterPage<CharacterSummary>> GetCharacterPageOfPlayerAsync(
         Guid playerId,
         bool includeArchived,
+        int pageNumber,
         CancellationToken cancellationToken = default)
     {
         await using var session = sessions.QuerySession();
@@ -64,8 +65,9 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
             characters = characters.Where(character => !character.IsArchived);
         }
 
-        var documents = await characters.OrderBy(character => character.Number).ToListAsync(cancellationToken);
-        return await ToSummariesAsync(session, documents, cancellationToken);
+        var page = await characters.OrderBy(character => character.Number)
+            .ToPagedListAsync(pageNumber, RosterQuery.PageSize, cancellationToken);
+        return RosterSearch.ToPage(page, await ToSummariesAsync(session, page.ToArray(), cancellationToken));
     }
 
     public async Task<CharacterSummary?> GetCharacterAsync(Guid characterId,
@@ -513,10 +515,10 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
 
     private static async Task<IReadOnlyList<CharacterSummary>> ToSummariesAsync(
         IQuerySession session,
-        IReadOnlyList<CharacterDocument> characters,
+        CharacterDocument[] characters,
         CancellationToken cancellationToken)
     {
-        if (characters.Count == 0)
+        if (characters.Length == 0)
         {
             return [];
         }

@@ -45,12 +45,12 @@ public sealed class MainWindowNavigationTests
     }
 
     [AvaloniaFact]
-    public void NavigationButtonsStillFillThePanelWidth()
+    public void PanelControlsStillFillThePanelWidth()
     {
         var (window, navigation) = ShowShortWindow();
-        var panel = (StackPanel)navigation.Parent!;
+        var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
-        Assert.Equal(panel.Bounds.Width, panel.Children.OfType<Button>().Last().Bounds.Width);
+        Assert.Equal(panel.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
     }
 
@@ -68,7 +68,7 @@ public sealed class MainWindowNavigationTests
     {
         var (window, navigation) = ShowShortWindow();
         var bar = BoundsIn(window, VerticalScrollBar(navigation));
-        var panel = (StackPanel)navigation.Parent!;
+        var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
         var covered = panel.GetVisualDescendants().OfType<Control>()
             .Where(control => control is TemplatedControl or TextBlock && control.IsEffectivelyVisible)
@@ -83,7 +83,7 @@ public sealed class MainWindowNavigationTests
     public void ScrollBarKeepsAGapFromTheControls()
     {
         var (window, navigation) = ShowShortWindow();
-        var panel = BoundsIn(window, (StackPanel)navigation.Parent!);
+        var panel = BoundsIn(window, navigation.FindAncestorOfType<StackPanel>()!);
 
         Assert.True(BoundsIn(window, VerticalScrollBar(navigation)).Left - panel.Right >= 4);
         window.Close();
@@ -133,7 +133,7 @@ public sealed class MainWindowNavigationTests
     {
         var (window, navigation) = ShowShortWindow();
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
-        var panel = (StackPanel)navigation.Parent!;
+        var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
         window.MouseWheel(panel.TranslatePoint(new Point(20, 20), window)!.Value, new Vector(0, -3));
         Dispatcher.UIThread.RunJobs();
@@ -147,9 +147,9 @@ public sealed class MainWindowNavigationTests
     {
         var (window, navigation) = ShowWindow(height: 2000);
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
-        var panel = (StackPanel)navigation.Parent!;
+        var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
-        Assert.Equal(scroller.Bounds.Width, panel.Children.OfType<Button>().Last().Bounds.Width);
+        Assert.Equal(scroller.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
     }
 
@@ -186,7 +186,7 @@ public sealed class MainWindowNavigationTests
         Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();
         var navigation = window.GetVisualDescendants().OfType<ListBox>()
-            .Single(list => ReferenceEquals(list.ItemsSource, viewModel.NavigationItems));
+            .Single(list => list.Name == "NavigationList");
         return (window, navigation);
     }
 

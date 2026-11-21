@@ -29,6 +29,69 @@ public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) :
     }
 
     [Fact]
+    public async Task VersionRootNamesThePlayersEntryPlayersAndCharacters()
+    {
+        using var client = factory.CreateClient();
+        var token = await ReaderTokenAsync(client);
+
+        using var response = await GetAsync(client, token, "/local/api/v1");
+
+        Assert.Equal("Players and Characters", (await ReadAsync(response)).LinkTitle(SirenRelations.Players));
+    }
+
+    [Fact]
+    public async Task PlayerLinksToItsPagedCharacters()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var playerId = await CreatePlayerAsync(client, token, "Ann");
+
+        using var response = await GetAsync(client, token, $"{PlayersPath}/{playerId:D}");
+
+        Assert.Equal($"{PlayersPath}/{playerId:D}/characters", (await ReadAsync(response)).LinkHref(SirenRelations.Characters));
+    }
+
+    [Fact]
+    public async Task PlayerResourceEmbedsNoCharacters()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var playerId = await CreatePlayerAsync(client, token, "Ann");
+        await CreateCharacterAsync(client, token, playerId, "Kira");
+
+        using var response = await GetAsync(client, token, $"{PlayersPath}/{playerId:D}");
+
+        Assert.False((await ReadAsync(response)).Root.TryGetProperty("entities", out _));
+    }
+
+    [Fact]
+    public async Task PlayerCharactersPageListsThePlayersCharacters()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var ann = await CreatePlayerAsync(client, token, "Ann");
+        var bob = await CreatePlayerAsync(client, token, "Bob");
+        await CreateCharacterAsync(client, token, ann, "Kira");
+        await CreateCharacterAsync(client, token, bob, "Odo");
+        await CreateCharacterAsync(client, token, ann, "Vel");
+
+        using var response = await GetAsync(client, token, $"{PlayersPath}/{ann:D}/characters");
+
+        Assert.Equal(["Kira", "Vel"], (await ReadAsync(response)).EntityValues("name"));
+    }
+
+    [Fact]
+    public async Task UnknownPlayerHasNoCharactersPage()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await GetAsync(client, token, $"{PlayersPath}/{Guid.NewGuid():D}/characters");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task AnonymousRequestCannotListPlayers()
     {
         using var client = factory.CreateClient();
@@ -439,6 +502,11 @@ public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) :
                     .Select(link => link.GetProperty("href").GetString())
                     .FirstOrDefault()
                 : null;
+
+        public string? LinkTitle(string rel) =>
+            Root.GetProperty("links").EnumerateArray()
+                .Single(link => link.GetProperty("rel").EnumerateArray().Any(value => value.GetString() == rel))
+                .GetProperty("title").GetString();
 
         public string FirstEntityHref() => Root.GetProperty("entities")[0].GetProperty("href").GetString()!;
 

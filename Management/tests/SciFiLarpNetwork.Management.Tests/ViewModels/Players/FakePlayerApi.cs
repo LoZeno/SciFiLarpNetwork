@@ -99,6 +99,7 @@ internal sealed class FakePlayerApi : IManagementApiClient
             {
                 ["api", "v1", "players"] => PlayerCollection(query),
                 ["api", "v1", "players", var id] => PlayerEntity(FindPlayer(id), query.ContainsKey("includeArchived")),
+                ["api", "v1", "players", var id, "characters"] => PlayerCharacterCollection(FindPlayer(id), query),
                 ["api", "v1", "characters"] => CharacterCollection(query),
                 ["api", "v1", "characters", "by-qr"] => CharacterEntity(FindByQr(query.GetValueOrDefault("identifier"))),
                 ["api", "v1", "characters", var id] => CharacterEntity(FindCharacter(id)),
@@ -289,6 +290,16 @@ internal sealed class FakePlayerApi : IManagementApiClient
         return Page(CharactersHref, "character-collection", query, matches, CharacterItem, playerCollection: false);
     }
 
+    private SirenEntity PlayerCharacterCollection(FakePlayer player, Dictionary<string, string> query)
+    {
+        var includeArchived = query.ContainsKey("includeArchived");
+        var matches = Characters
+            .Where(character => character.PlayerId == player.Id && (includeArchived || !character.IsArchived))
+            .ToArray();
+        return Page($"{PlayersHref}/{player.Id:D}/characters", "character-collection", query, matches, CharacterItem,
+            playerCollection: false);
+    }
+
     private SirenEntity Page<T>(
         string path,
         string className,
@@ -394,14 +405,15 @@ internal sealed class FakePlayerApi : IManagementApiClient
         {
             Class = ["player"],
             Properties = PlayerProperties(player),
-            Entities = Characters
-                .Where(character => character.PlayerId == player.Id && (includeArchived || !character.IsArchived))
-                .Select(CharacterItem)
-                .ToArray(),
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = path },
                 new SirenLink { Rel = [SirenRelations.WithArchived], Href = $"{path}?includeArchived=true" },
+                new SirenLink
+                {
+                    Rel = [SirenRelations.Characters],
+                    Href = includeArchived ? $"{path}/characters?includeArchived=true" : $"{path}/characters"
+                },
                 new SirenLink { Rel = [SirenRelations.CharacterStats], Href = StatsHref },
                 new SirenLink { Rel = [SirenRelations.Networks], Href = NetworksHref }
             ],

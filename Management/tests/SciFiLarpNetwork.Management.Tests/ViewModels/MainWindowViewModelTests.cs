@@ -332,6 +332,83 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SignInNamesTheSignedInAdministrator()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        viewModel.UserName = "operator";
+
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        Assert.Equal("Administrator: operator", viewModel.SignedInAccountLabel);
+    }
+
+    [Fact]
+    public void ConnectButtonReadsConnectBeforeConnecting()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+
+        Assert.Equal("Connect", viewModel.ConnectLabel);
+    }
+
+    [Fact]
+    public async Task ConnectButtonReadsReconnectAfterConnecting()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        Assert.Equal("Reconnect", viewModel.ConnectLabel);
+    }
+
+    [Fact]
+    public async Task ConnectButtonReadsConnectAgainAfterAFailedConnect()
+    {
+        var apiClient = new StubApiClient();
+        var viewModel = CreateViewModel(apiClient, new StubSettingsStore());
+        await viewModel.ConnectCommand.ExecuteAsync();
+        viewModel.ApiBaseUrl = "not a url";
+
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        Assert.Equal("Connect", viewModel.ConnectLabel);
+    }
+
+    [Fact]
+    public async Task ConnectButtonReadsConnectAgainAfterSigningOut()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        await viewModel.SignInCommand.ExecuteAsync();
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        Assert.Equal("Connect", viewModel.ConnectLabel);
+    }
+
+    [Fact]
+    public async Task ReconnectFollowsTheLocale()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        await viewModel.ConnectCommand.ExecuteAsync();
+
+        viewModel.Locale = "it";
+
+        Assert.Equal("Riconnetti", viewModel.ConnectLabel);
+    }
+
+    [Fact]
+    public async Task SignedInAdministratorFollowsTheLocale()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        viewModel.UserName = "operator";
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        viewModel.Locale = "it";
+
+        Assert.Equal("Amministratore: operator", viewModel.SignedInAccountLabel);
+    }
+
+    [Fact]
     public async Task CredentialBearingApiAddressIsNotSaved()
     {
         var settingsStore = new StubSettingsStore();

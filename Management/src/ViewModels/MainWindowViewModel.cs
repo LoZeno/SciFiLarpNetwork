@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
@@ -29,8 +30,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string? _apiErrorCode;
     private bool _isBusy;
     private bool _isAuthenticated;
+    private bool _isConnected;
     private string _userName = string.Empty;
     private string _password = string.Empty;
+    private string _signedInAccount = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
     private IManagementScreen? _currentScreen;
@@ -211,7 +214,24 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public string ApiAddressLabel => _localizer.Translate("management.apiAddress", Locale);
 
-    public string ConnectLabel => _localizer.Translate("management.connect", Locale);
+    /// <summary>True after a successful Connect, until the next Connect starts or the session ends.</summary>
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set
+        {
+            if (_isConnected == value)
+            {
+                return;
+            }
+
+            _isConnected = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ConnectLabel));
+        }
+    }
+
+    public string ConnectLabel => _localizer.Translate(IsConnected ? "management.reconnect" : "management.connect", Locale);
 
     public string UserNameLabel => _localizer.Translate("management.userName", Locale);
 
@@ -220,6 +240,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public string SignInLabel => _localizer.Translate("management.signIn", Locale);
 
     public string SignOutLabel => _localizer.Translate("management.signOut", Locale);
+
+    public string SignedInAccountLabel => string.Format(
+        CultureInfo.GetCultureInfo(Locale), _localizer.Translate("management.signedInAs", Locale), _signedInAccount);
 
     public string LanguageLabel => _localizer.Translate("common.language", Locale);
 
@@ -299,6 +322,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private async Task ConnectAsync()
     {
         IsBusy = true;
+        ++_openGeneration;
+        IsConnected = false;
         SetStatus("management.connecting");
         NavigationItems.Clear();
         AvailableActions.Clear();
@@ -320,6 +345,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             }
 
             SetResource(discovery.ApiResource);
+            IsConnected = true;
             SetStatus("app.apiConnected");
         }
         catch (ManagementApiException exception)
@@ -359,7 +385,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SetStatus("management.signingIn");
         try
         {
-            await _apiClient.SignInAsync(ApiBaseUrl, UserName, Password, Locale);
+            var session = await _apiClient.SignInAsync(ApiBaseUrl, UserName, Password, Locale);
+            _signedInAccount = session.UserName;
+            OnPropertyChanged(nameof(SignedInAccountLabel));
             Password = string.Empty;
             IsAuthenticated = true;
             SetStatus("management.signedIn");
@@ -419,7 +447,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         var generation = ++_openGeneration;
-        IsBusy = true;
         var opened = false;
         try
         {
@@ -431,7 +458,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             if (generation == _openGeneration)
             {
-                IsBusy = false;
                 ClearFailedSelection(item, opened);
             }
         }
@@ -450,7 +476,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private async Task<bool> OpenGenericResourceAsync(NavigationItem item, int generation)
     {
-        SetStatus("management.connecting");
         try
         {
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
@@ -558,7 +583,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private void ClearSessionState()
     {
+        ++_openGeneration;
         IsAuthenticated = false;
+        IsConnected = false;
         Password = string.Empty;
         NavigationItems.Clear();
         SelectedNavigationItem = null;
@@ -629,6 +656,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(PasswordLabel));
         OnPropertyChanged(nameof(SignInLabel));
         OnPropertyChanged(nameof(SignOutLabel));
+        OnPropertyChanged(nameof(SignedInAccountLabel));
         OnPropertyChanged(nameof(LanguageLabel));
         OnPropertyChanged(nameof(LocaleIndex));
         OnPropertyChanged(nameof(NavigationHeading));

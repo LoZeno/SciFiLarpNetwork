@@ -1,0 +1,96 @@
+<!--
+  HUD look for the Fluent controls the app uses: dark windows, inset text fields with a cyan lower edge that glows
+  on focus, square combo boxes, and list rows that mark the selected row with a cyan bar on the left.
+  Selectors name parts of the Fluent 12.1.5 templates (TextBox Border#PART_BorderElement, ComboBox Border#Background,
+  ListBoxItem ContentPresenter#PART_ContentPresenter).
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector=":is(Window)">
+    <Setter Property="Background" Value="{DynamicResource HudVoidBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource HudTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="17" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="3" />
+    <Setter Property="Foreground" Value="{DynamicResource HudHeadingBrush}" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="3" />
+    <Setter Property="Foreground" Value="{DynamicResource HudLineBrush}" />
+  </Style>
+  <Style Selector="TextBlock.label">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="LetterSpacing" Value="1.5" />
+    <Setter Property="Foreground" Value="{DynamicResource HudMutedBrush}" />
+  </Style>
+  <Style Selector="TextBlock.ok">
+    <Setter Property="Foreground" Value="{DynamicResource HudOkBrush}" />
+  </Style>
+  <Style Selector="Border.rule">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource HudLineDimBrush}" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{DynamicResource HudInsetBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource HudTextBrightBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HudFieldEdgeBrush}" />
+    <Setter Property="BorderThickness" Value="1,1,1,2" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="CaretBrush" Value="{DynamicResource HudLineBrush}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource HudPressedBrush}" />
+  </Style>
+  <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource HudInsetBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HudLineBrush}" />
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="{DynamicResource HudInsetBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HudLineBrush}" />
+    <Setter Property="BorderThickness" Value="1,1,1,2" />
+    <Setter Property="BoxShadow" Value="0 0 10 0 #882EC5FF" />
+  </Style>
+  <Style Selector="TextBox:pointerover, TextBox:focus">
+    <Setter Property="Foreground" Value="{DynamicResource HudTextBrightBrush}" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{DynamicResource HudInsetBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HudLineDimBrush}" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="ComboBox:pointerover /template/ Border#Background">
+    <Setter Property="Background" Value="{DynamicResource HudHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HudLineBrush}" />
+  </Style>
+
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ListBoxItem:selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource HudLineBrush}" />
+  </Style>
+  <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource HudMutedBrush}" />
+  </Style>
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#0A2533" />
+    <Setter Property="Foreground" Value="{DynamicResource HudTextBrush}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HudHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource HudTextBrightBrush}" />
+  </Style>
+</Styles>

@@ -92,10 +92,20 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
             service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken),
             service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken));
 
-        Assert.Equal(
-            new[] { AdministratorOperationResult.Succeeded, AdministratorOperationResult.InvalidGrant }.OrderBy(x => x),
-            results.OrderBy(x => x));
+        Assert.Equal(["Rejected", "Succeeded"], results.Select(Outcome).Order());
     }
+
+    /// <summary>
+    /// The losing call reports InvalidGrant when it reads the grant after the winner used it, or AlreadyInitialized
+    /// when it read the grant before and the winner's account is stored by the time it checks for accounts.
+    /// </summary>
+    private static string Outcome(AdministratorOperationResult result) =>
+        result switch
+        {
+            AdministratorOperationResult.Succeeded => "Succeeded",
+            AdministratorOperationResult.InvalidGrant or AdministratorOperationResult.AlreadyInitialized => "Rejected",
+            _ => result.ToString()
+        };
 
     [Fact]
     public async Task SignInReturnsSessionToken()

@@ -7,6 +7,8 @@
     xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
     xmlns:players="using:SciFiLarpNetwork.Management.Views.Players"
     xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
+    xmlns:hud="using:SciFiLarpNetwork.Management.Views.Hud"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
     Title="{Binding WindowTitle}"
@@ -14,113 +16,183 @@
     Height="720"
     MinWidth="720"
     MinHeight="480">
-  <Grid RowDefinitions="Auto,*">
-    <Border Grid.Row="0" Padding="24,18" Background="{DynamicResource SystemAccentColor}">
-      <TextBlock
-          FontSize="22"
-          FontWeight="SemiBold"
-          Foreground="White"
-          Text="{Binding WindowTitle}" />
-    </Border>
-    <Grid Grid.Row="1" ColumnDefinitions="300,*">
-      <Border Grid.Column="0" Padding="20" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,0">
-        <ScrollViewer
-            HorizontalScrollBarVisibility="Disabled"
-            VerticalScrollBarVisibility="Auto">
-          <StackPanel Spacing="12">
-            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding ConnectionHeading}" />
-            <TextBlock Text="{Binding ApiAddressLabel}" />
-            <TextBox
-                AutomationProperties.Name="{Binding ApiAddressLabel}"
-                Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
-            <TextBlock Text="{Binding UserNameLabel}" />
-            <TextBox
-                AutomationProperties.Name="{Binding UserNameLabel}"
-                Text="{Binding UserName, Mode=TwoWay}" />
-            <TextBlock Text="{Binding PasswordLabel}" />
-            <TextBox
-                AutomationProperties.Name="{Binding PasswordLabel}"
-                PasswordChar="●"
-                Text="{Binding Password, Mode=TwoWay}" />
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-              <Button
-                  Grid.Column="0"
-                  HorizontalAlignment="Stretch"
-                  Command="{Binding SignInCommand}"
-                  Content="{Binding SignInLabel}" />
-              <ComboBox
-                  Grid.Column="1"
-                  AutomationProperties.Name="{Binding LanguageLabel}"
-                  SelectedIndex="{Binding LocaleIndex, Mode=TwoWay}">
-                <ComboBoxItem Content="English" Tag="en" />
-                <ComboBoxItem Content="Italiano" Tag="it" />
-              </ComboBox>
+  <Panel>
+    <hud:HudBackdrop Ink="{DynamicResource HudDotBrush}" />
+    <Grid Margin="14" RowDefinitions="Auto,*">
+      <hud:ChamferBorder
+          Grid.Row="0"
+          Padding="24,12"
+          AccentLength="180"
+          Background="{DynamicResource HudPanelBrush}"
+          BorderBrush="{DynamicResource HudLineBrush}"
+          Chamfer="16"
+          Corners="BottomLeft, BottomRight"
+          Glow="4">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock
+              Classes="heading"
+              FontSize="20"
+              LetterSpacing="5"
+              Text="{Binding WindowTitle, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <TextBlock
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              Classes="section"
+              Text="▮▮▮ ◦◦◦" />
+        </Grid>
+      </hud:ChamferBorder>
+      <Grid Grid.Row="1" Margin="0,14,0,0" ColumnDefinitions="300,*" ColumnSpacing="14">
+        <hud:ChamferBorder
+            Grid.Column="0"
+            Padding="18"
+            Background="{DynamicResource HudSidePanelBrush}"
+            BorderBrush="{DynamicResource HudLineDimBrush}"
+            Chamfer="14"
+            Glow="2">
+          <ScrollViewer
+              HorizontalScrollBarVisibility="Disabled"
+              VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="section" Text="{Binding ConnectionHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+              <Border Classes="rule" />
+              <TextBlock Classes="label" Text="{Binding ApiAddressLabel, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+              <TextBox
+                  AutomationProperties.Name="{Binding ApiAddressLabel}"
+                  Text="{Binding ApiBaseUrl, Mode=TwoWay}" />
+              <Panel>
+                <hud:Reveal Name="CredentialsReveal" IsExpanded="{Binding !IsAuthenticated}">
+                  <StackPanel Spacing="10">
+                    <TextBlock Classes="label" Text="{Binding UserNameLabel, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+                    <TextBox
+                        AutomationProperties.Name="{Binding UserNameLabel}"
+                        Text="{Binding UserName, Mode=TwoWay}" />
+                    <TextBlock Classes="label" Text="{Binding PasswordLabel, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+                    <TextBox
+                        AutomationProperties.Name="{Binding PasswordLabel}"
+                        PasswordChar="●"
+                        Text="{Binding Password, Mode=TwoWay}" />
+                  </StackPanel>
+                </hud:Reveal>
+                <hud:Reveal Name="AccountReveal" IsExpanded="{Binding IsAuthenticated}">
+                  <TextBlock
+                      Classes="ok"
+                      Text="{Binding SignedInAccountLabel}"
+                      TextWrapping="Wrap" />
+                </hud:Reveal>
+              </Panel>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Panel Grid.Column="0">
+                  <hud:Reveal Name="SignInReveal" IsExpanded="{Binding !IsAuthenticated}" Mode="Squeeze">
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding SignInCommand}"
+                        Content="{Binding SignInLabel}" />
+                  </hud:Reveal>
+                  <hud:Reveal Name="SignOutReveal" IsExpanded="{Binding IsAuthenticated}" Mode="Squeeze">
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding SignOutCommand}"
+                        Content="{Binding SignOutLabel}" />
+                  </hud:Reveal>
+                </Panel>
+                <ComboBox
+                    Grid.Column="1"
+                    AutomationProperties.Name="{Binding LanguageLabel}"
+                    SelectedIndex="{Binding LocaleIndex, Mode=TwoWay}">
+                  <ComboBoxItem Content="English" Tag="en" />
+                  <ComboBoxItem Content="Italiano" Tag="it" />
+                </ComboBox>
+              </Grid>
+              <hud:Reveal Name="ConnectReveal" IsExpanded="{Binding IsAuthenticated}">
+                <Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding ConnectCommand}"
+                    Content="{Binding ConnectLabel}" />
+              </hud:Reveal>
+              <TextBlock
+                  AutomationProperties.LiveSetting="Polite"
+                  Text="{Binding StatusMessage}"
+                  TextWrapping="Wrap" />
+              <TextBlock
+                  Margin="0,12,0,0"
+                  Classes="section"
+                  Text="{Binding NavigationHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+              <Border Classes="rule" />
+              <hud:Reveal Name="NavigationReveal" WaitsForPartner="False">
+                <ListBox
+                    Name="NavigationList"
+                    AutomationProperties.Name="{Binding NavigationHeading}"
+                    SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:NavigationItem">
+                      <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </hud:Reveal>
+            </StackPanel>
+          </ScrollViewer>
+        </hud:ChamferBorder>
+        <hud:ChamferBorder
+            Grid.Column="1"
+            AccentLength="140"
+            Background="{DynamicResource HudPanelBrush}"
+            BorderBrush="{DynamicResource HudLineBrush}"
+            Chamfer="22"
+            Glow="4">
+          <Panel Margin="2" ClipToBounds="True">
+            <hud:HudBackdrop Ink="{DynamicResource HudStripeBrush}" Pattern="Stripes" Spacing="8" />
+            <Grid Name="Workspace">
+              <ScrollViewer IsVisible="{Binding IsResourceSummaryVisible}">
+                <StackPanel Margin="28" Spacing="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock Classes="heading" FontSize="22" Text="{Binding ResourceTitle, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+                    <Border
+                        Width="90"
+                        Height="2"
+                        HorizontalAlignment="Left"
+                        Background="{DynamicResource HudLineBrush}" />
+                  </StackPanel>
+                  <TextBlock
+                      FontSize="14"
+                      Text="{Binding ResourceSummary}"
+                      TextWrapping="Wrap" />
+                  <TextBlock
+                      Classes="section"
+                      IsVisible="{Binding HasAvailableActions}"
+                      Text="{Binding ActionsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+                  <ItemsControl ItemsSource="{Binding AvailableActions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <TextBlock Margin="0,4" Text="{Binding}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </ScrollViewer>
+              <Panel Margin="28" IsVisible="{Binding IsTalentCatalogOpen}">
+                <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
+              </Panel>
+              <Panel Margin="28" IsVisible="{Binding IsNetworkCatalogOpen}">
+                <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
+              </Panel>
+              <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
+                <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
+              </Panel>
+              <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
+                <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
+              </Panel>
             </Grid>
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding SignOutCommand}"
-                Content="{Binding SignOutLabel}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding ConnectCommand}"
-                Content="{Binding ConnectLabel}" />
-            <TextBlock
-                AutomationProperties.LiveSetting="Polite"
-                Text="{Binding StatusMessage}"
-                TextWrapping="Wrap" />
-            <TextBlock
-                Margin="0,14,0,0"
-                FontSize="18"
-                FontWeight="SemiBold"
-                Text="{Binding NavigationHeading}" />
-            <ListBox
-                AutomationProperties.Name="{Binding NavigationHeading}"
-                ItemsSource="{Binding NavigationItems}"
-                SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}">
-              <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="models:NavigationItem">
-                  <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </StackPanel>
-        </ScrollViewer>
-      </Border>
-      <Grid Grid.Column="1">
-        <ScrollViewer IsVisible="{Binding IsResourceSummaryVisible}">
-          <StackPanel Margin="28" Spacing="16">
-            <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding ResourceTitle}" />
-            <TextBlock
-                FontSize="14"
-                Text="{Binding ResourceSummary}"
-                TextWrapping="Wrap" />
-            <TextBlock
-                FontSize="18"
-                FontWeight="SemiBold"
-                IsVisible="{Binding HasAvailableActions}"
-                Text="{Binding ActionsHeading}" />
-            <ItemsControl ItemsSource="{Binding AvailableActions}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="x:String">
-                  <TextBlock Margin="0,4" Text="{Binding}" />
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </ScrollViewer>
-        <Panel Margin="28" IsVisible="{Binding IsTalentCatalogOpen}">
-          <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
-        </Panel>
-        <Panel Margin="28" IsVisible="{Binding IsNetworkCatalogOpen}">
-          <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
-        </Panel>
-        <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
-          <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
-        </Panel>
-        <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
-          <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
-        </Panel>
+            <Image
+                Name="LeavingWorkspace"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                IsHitTestVisible="False"
+                IsVisible="False"
+                Stretch="None" />
+          </Panel>
+        </hud:ChamferBorder>
       </Grid>
     </Grid>
-  </Grid>
+  </Panel>
 </Window>

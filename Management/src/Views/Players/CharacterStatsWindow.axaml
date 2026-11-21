@@ -2,6 +2,7 @@
     x:Class="SciFiLarpNetwork.Management.Views.Players.CharacterStatsWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Players"
     x:DataType="vm:CharacterStatsViewModel"
     Title="{Binding Title}"
@@ -12,7 +13,7 @@
     WindowStartupLocation="CenterOwner">
   <DockPanel Margin="24">
     <StackPanel DockPanel.Dock="Top" Spacing="8">
-      <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
+      <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
       <TextBlock FontSize="12" Text="{Binding Help}" TextWrapping="Wrap" />
       <TextBlock
           AutomationProperties.LiveSetting="Polite"

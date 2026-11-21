@@ -35,7 +35,7 @@
     </StackPanel>
     <ScrollViewer>
       <StackPanel Margin="0,0,12,0" Spacing="10">
-        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static converters:UpperCaseConverter.Instance}}" />
         <TextBlock Text="{Binding CodeLabel}" />
         <TextBox
             AutomationProperties.HelpText="{Binding CodeHelp}"
