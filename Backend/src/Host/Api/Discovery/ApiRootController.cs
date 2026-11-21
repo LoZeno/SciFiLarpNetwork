@@ -73,7 +73,7 @@ public sealed class ApiRootController(IApplicationText text) : ControllerBase
             {
                 Rel = [SirenRelations.Navigation, SirenRelations.Players],
                 Href = ApiPath("/api/v1/players"),
-                Title = text.GetLocalizedText("api.players")
+                Title = text.GetLocalizedText("api.playersAndCharacters")
             });
             links.Add(new SirenLink
             {

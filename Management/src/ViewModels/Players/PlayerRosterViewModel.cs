@@ -28,6 +28,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
     private SirenEntity? _players;
     private SirenEntity? _selectedPlayerResource;
     private SirenEntity? _characterResults;
+    private SirenEntity? _characterPage;
+    private string? _characterPagePlayerHref;
     private PlayerListItem? _selectedPlayer;
     private CharacterListItem? _selectedCharacter;
     private string _playerSearch = string.Empty;
@@ -78,13 +80,13 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         FindByQrCommand = new AsyncCommand(() => RunAsync(FindByQrAsync), HandleUnexpectedFailure,
             () => !IsBusy && !string.IsNullOrWhiteSpace(QrIdentifierSearch));
         PreviousCharactersCommand = new AsyncCommand(
-            () => RunAsync(() => ShowCharacterResultsAsync(_characterResults?.FindLinkHref(SirenRelations.Previous))),
+            () => RunAsync(() => ShowCharacterPageAsync(_characterPage?.FindLinkHref(SirenRelations.Previous))),
             HandleUnexpectedFailure,
-            () => !IsBusy && _characterResults?.FindLinkHref(SirenRelations.Previous) is not null);
+            () => !IsBusy && _characterPage?.FindLinkHref(SirenRelations.Previous) is not null);
         NextCharactersCommand = new AsyncCommand(
-            () => RunAsync(() => ShowCharacterResultsAsync(_characterResults?.FindLinkHref(SirenRelations.Next))),
+            () => RunAsync(() => ShowCharacterPageAsync(_characterPage?.FindLinkHref(SirenRelations.Next))),
             HandleUnexpectedFailure,
-            () => !IsBusy && _characterResults?.FindLinkHref(SirenRelations.Next) is not null);
+            () => !IsBusy && _characterPage?.FindLinkHref(SirenRelations.Next) is not null);
         NewCharacterCommand = new AsyncCommand(
             () => RunAsync(CreateCharacterAsync),
             HandleUnexpectedFailure,
@@ -310,6 +312,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     public string CharacterPage { get; private set; } = string.Empty;
 
+    public bool HasCharacterPage => CharacterPage.Length > 0;
+
     public string? PlayersPlaceholder => Players.Count == 0 ? Translate("common.noResults") : null;
 
     public bool HasPlayersPlaceholder => PlayersPlaceholder is not null;
@@ -406,6 +410,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
         var generation = ++_characterLoadGeneration;
         SirenEntity? player = null;
+        SirenEntity? characters = null;
         if (SelectedPlayer is { } selected)
         {
             player = await GetAsync(selected.Href);
@@ -413,6 +418,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
             {
                 player = await GetAsync(player.FindLinkHref(SirenRelations.WithArchived) ?? throw MissingAction());
             }
+
+            characters = await GetAsync(CharacterPageHrefOf(player));
         }
 
         if (generation != _characterLoadGeneration)
@@ -421,9 +428,45 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         }
 
         _selectedPlayerResource = player;
-        ShowCharacters(player?.Entities ?? [], showPlayer: false);
-        CharacterPage = string.Empty;
+        _characterPagePlayerHref = player?.FindLinkHref("self");
+        ShowCharacters(characters?.Entities ?? [], showPlayer: false);
+        SetCharacterPage(characters);
+    }
+
+    /// <summary>
+    /// The page of the player's characters to show: the page already shown when it belongs to the same player and
+    /// archive filter, so a reload after an edit stays on that page; otherwise the first page.
+    /// </summary>
+    private string CharacterPageHrefOf(SirenEntity player) =>
+        player.FindLinkHref("self") == _characterPagePlayerHref && _characterPage?.FindLinkHref("self") is { } shown
+            ? shown
+            : player.FindLinkHref(SirenRelations.Characters) ?? throw MissingAction();
+
+    private Task ShowCharacterPageAsync(string? href) =>
+        IsCharacterSearchActive ? ShowCharacterResultsAsync(href) : ShowPlayerCharactersAsync(href);
+
+    private async Task ShowPlayerCharactersAsync(string? href)
+    {
+        var generation = ++_characterLoadGeneration;
+        var characters = await GetAsync(href ?? throw MissingAction());
+        if (generation != _characterLoadGeneration)
+        {
+            return;
+        }
+
+        ShowCharacters(characters.Entities ?? [], showPlayer: false);
+        SetCharacterPage(characters);
+    }
+
+    private void SetCharacterPage(SirenEntity? collection)
+    {
+        _characterPage = collection;
+        CharacterPage = collection is null
+            ? string.Empty
+            : PageText(SirenProperties.Read<RosterCollectionProperties>(collection.Properties));
         OnPropertyChanged(nameof(CharacterPage));
+        OnPropertyChanged(nameof(HasCharacterPage));
+        NotifyCommandsChanged();
     }
 
     private async Task SearchCharactersAsync()
@@ -447,9 +490,9 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         }
 
         _characterResults = results;
+        _characterPagePlayerHref = null;
         ShowCharacters(results.Entities ?? [], showPlayer: true);
-        CharacterPage = PageText(SirenProperties.Read<RosterCollectionProperties>(results.Properties));
-        OnPropertyChanged(nameof(CharacterPage));
+        SetCharacterPage(results);
     }
 
     private async Task ClearCharacterSearchAsync()
@@ -468,11 +511,11 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         ++_characterLoadGeneration;
         IsCharacterSearchActive = true;
         _characterResults = null;
+        _characterPagePlayerHref = null;
         ShowCharacters(
             [new SirenSubEntity { Rel = ["item"], Href = character.FindLinkHref("self"), Properties = character.Properties }],
             showPlayer: true);
-        CharacterPage = string.Empty;
-        OnPropertyChanged(nameof(CharacterPage));
+        SetCharacterPage(null);
     }
 
     private void ShowCharacters(IEnumerable<SirenSubEntity> entities, bool showPlayer)

@@ -45,12 +45,12 @@ public sealed class MainWindowNavigationTests
     }
 
     [AvaloniaFact]
-    public void NavigationButtonsStillFillThePanelWidth()
+    public void PanelControlsStillFillThePanelWidth()
     {
         var (window, navigation) = ShowShortWindow();
         var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
-        Assert.Equal(panel.Bounds.Width, panel.Children.OfType<Button>().Last().Bounds.Width);
+        Assert.Equal(panel.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
     }
 
@@ -149,7 +149,7 @@ public sealed class MainWindowNavigationTests
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
         var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
-        Assert.Equal(scroller.Bounds.Width, panel.Children.OfType<Button>().Last().Bounds.Width);
+        Assert.Equal(scroller.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
     }
 

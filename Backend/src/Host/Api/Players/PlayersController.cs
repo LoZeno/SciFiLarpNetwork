@@ -40,6 +40,20 @@ public sealed class PlayersController(
         return Ok(await PlayerResourceAsync(player, includeArchived, cancellationToken));
     }
 
+    [Authorize(Policy = AdministratorAuthorizationPolicies.Read)]
+    [HttpGet("{playerId:guid}/characters")]
+    public async Task<ActionResult<SirenEntity<RosterCollectionProperties>>> GetCharactersOfPlayer(
+        Guid playerId,
+        [FromQuery] bool includeArchived,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        CancellationToken cancellationToken = default)
+    {
+        _ = await playerService.GetPlayerAsync(playerId, cancellationToken)
+            ?? throw RosterErrors.ToApiException(RosterOutcome.NotFound);
+        var characters = await characterService.GetCharacterPageOfPlayerAsync(playerId, includeArchived, page, cancellationToken);
+        return Ok(Resources.PlayerCharacterCollection(playerId, characters, new RosterQuery(null, includeArchived, page)));
+    }
+
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost]
     public async Task<ActionResult<SirenEntity<PlayerSummary>>> CreatePlayer(

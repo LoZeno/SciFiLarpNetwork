@@ -63,6 +63,39 @@ public sealed class MainWindowAnimationTests
     }
 
     [AvaloniaFact]
+    public void ConnectIsHiddenBeforeSigningIn()
+    {
+        var (window, _) = ShowWindow();
+
+        Assert.False(Named<Reveal>(window, "ConnectReveal").Child!.IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task SigningInUnfoldsConnect()
+    {
+        var (window, viewModel) = ShowWindow();
+
+        await viewModel.SignInCommand.ExecuteAsync();
+        LetAnimationsFinish();
+
+        Assert.True(Named<Reveal>(window, "ConnectReveal").Bounds.Height > 0);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task SigningOutFoldsConnectAway()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+        LetAnimationsFinish();
+
+        Assert.False(Named<Reveal>(window, "ConnectReveal").Child!.IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task SignOutButtonWaitsWhileSignInSqueezesAway()
     {
         var (window, viewModel) = ShowWindow();

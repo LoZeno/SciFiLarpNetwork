@@ -19,6 +19,8 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
 
     public string PlayerPath(Guid playerId) => $"{PlayersPath}/{playerId:D}";
 
+    public string PlayerCharactersPath(Guid playerId) => $"{PlayerPath(playerId)}/characters";
+
     public string CharactersPath => $"{pathBase}/api/v1/characters";
 
     public string CharacterPath(Guid characterId) => $"{CharactersPath}/{characterId:D}";
@@ -111,6 +113,18 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
             Actions = [SearchAction("search-characters", CharactersPath, "api.searchCharacters", query)]
         };
 
+    public SirenEntity<RosterCollectionProperties> PlayerCharacterCollection(
+        Guid playerId,
+        RosterPage<CharacterSummary> page,
+        RosterQuery query) =>
+        new()
+        {
+            Class = ["character-collection"],
+            Properties = CollectionProperties("api.characters", "api.charactersDescription", page, query),
+            Entities = page.Items.Select(CharacterItem).ToArray(),
+            Links = [.. PageLinks(PlayerCharactersPath(playerId), page, query), new SirenLink { Rel = ["up"], Href = PlayerPath(playerId) }]
+        };
+
     public SirenEntity<PlayerSummary> Player(PlayerSummary player, IReadOnlyList<CharacterSummary> characters,
         bool includeArchivedCharacters)
     {
@@ -126,6 +140,13 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
                 new SirenLink { Rel = ["collection"], Href = PlayersPath },
                 new SirenLink { Rel = [SirenRelations.WithArchived], Href = WithArchived(path) },
                 new SirenLink { Rel = [SirenRelations.WithoutArchived], Href = path },
+                new SirenLink
+                {
+                    Rel = [SirenRelations.Characters],
+                    Href = includeArchivedCharacters
+                        ? WithArchived(PlayerCharactersPath(player.PlayerId))
+                        : PlayerCharactersPath(player.PlayerId)
+                },
                 new SirenLink { Rel = [SirenRelations.CharacterStats], Href = StatsPath },
                 new SirenLink { Rel = [SirenRelations.Networks], Href = NetworksPath }
             ],

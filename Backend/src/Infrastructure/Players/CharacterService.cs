@@ -68,6 +68,24 @@ internal sealed class CharacterService(AttributedSessionFactory sessions, TimePr
         return await ToSummariesAsync(session, documents, cancellationToken);
     }
 
+    public async Task<RosterPage<CharacterSummary>> GetCharacterPageOfPlayerAsync(
+        Guid playerId,
+        bool includeArchived,
+        int pageNumber,
+        CancellationToken cancellationToken = default)
+    {
+        await using var session = sessions.QuerySession();
+        var characters = session.Query<CharacterDocument>().Where(character => character.PlayerId == playerId);
+        if (!includeArchived)
+        {
+            characters = characters.Where(character => !character.IsArchived);
+        }
+
+        var page = await characters.OrderBy(character => character.Number)
+            .ToPagedListAsync(pageNumber, RosterQuery.PageSize, cancellationToken);
+        return RosterSearch.ToPage(page, await ToSummariesAsync(session, page.ToArray(), cancellationToken));
+    }
+
     public async Task<CharacterSummary?> GetCharacterAsync(Guid characterId,
         CancellationToken cancellationToken = default)
     {

@@ -282,6 +282,48 @@ public sealed class CharacterServiceTests(AdministratorAuthenticationFactory fac
     }
 
     [Fact]
+    public async Task PlayerCharacterPagesHoldFiftyCharactersInRunningNumberOrder()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        for (var index = 1; index <= RosterQuery.PageSize + 1; index++)
+        {
+            await CreateCharacterAsync(player, $"Character {index}");
+        }
+
+        var page = await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 2, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new { Names = "Character 51", PageNumber = 2, PageCount = 2, TotalCount = 51L },
+            new { Names = string.Join(", ", page.Items.Select(character => character.Name)), page.PageNumber, page.PageCount, page.TotalCount });
+    }
+
+    [Fact]
+    public async Task PlayerCharacterPageHidesArchivedCharacters()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Vel");
+        var retired = await RetireAsync(await CreateCharacterAsync(player, "Kira"));
+        await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
+
+        var page = await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["Vel"], page.Items.Select(character => character.Name));
+    }
+
+    [Fact]
+    public async Task PlayerCharacterPageWithArchivedShowsArchivedCharacters()
+    {
+        var player = await CreatePlayerAsync("Ann");
+        await CreateCharacterAsync(player, "Vel");
+        var retired = await RetireAsync(await CreateCharacterAsync(player, "Kira"));
+        await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
+
+        var page = await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, true, 1, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["Vel", "Kira"], page.Items.Select(character => character.Name));
+    }
+
+    [Fact]
     public async Task ArchivedCharacterCannotBecomeActive()
     {
         var retired = await RetireAsync(await CreateCharacterAsync(await CreatePlayerAsync("Ann"), "Kira"));

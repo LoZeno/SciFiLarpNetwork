@@ -105,6 +105,69 @@ public sealed class PlayerRosterViewModelTests
     }
 
     [Fact]
+    public async Task SelectingAPlayerShowsTheFirstPageOfItsCharacters()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+
+        Assert.Equal(new { Names = "Kira, Vel", Page = "Page 1 of 2 (3 in total)" },
+            new { Names = string.Join(", ", roster.Characters.Select(character => character.Name)), Page = roster.CharacterPage });
+    }
+
+    [Fact]
+    public async Task NextCharactersPageShowsThePlayersNextCharacters()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+
+        await roster.NextCharactersCommand.ExecuteAsync();
+
+        Assert.Equal(new { Names = "Odo", Page = "Page 2 of 2 (3 in total)" },
+            new { Names = string.Join(", ", roster.Characters.Select(character => character.Name)), Page = roster.CharacterPage });
+    }
+
+    [Fact]
+    public async Task PreviousCharactersPageGoesBackToThePlayersFirstPage()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+        await roster.NextCharactersCommand.ExecuteAsync();
+
+        await roster.PreviousCharactersCommand.ExecuteAsync();
+
+        Assert.Equal("Kira, Vel", string.Join(", ", roster.Characters.Select(character => character.Name)));
+    }
+
+    [Fact]
+    public async Task PlayerCharactersShowTheirPager()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+
+        Assert.True(roster.HasCharacterPage);
+    }
+
+    [Fact]
+    public async Task ChangingACharacterKeepsTheShownCharacterPage()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+        await roster.NextCharactersCommand.ExecuteAsync();
+        roster.SelectedCharacter = roster.Characters[0];
+
+        await roster.RegenerateQrCommand.ExecuteAsync();
+
+        Assert.Equal("Page 2 of 2 (3 in total)", roster.CharacterPage);
+    }
+
+    [Fact]
+    public async Task ClearingACharacterSearchShowsThePlayersFirstPage()
+    {
+        var roster = await RosterWithThreeCharactersAsync();
+        roster.CharacterSearch = "o";
+        await roster.SearchCharactersCommand.ExecuteAsync();
+
+        await roster.ClearCharacterSearchCommand.ExecuteAsync();
+
+        Assert.Equal("Kira, Vel", string.Join(", ", roster.Characters.Select(character => character.Name)));
+    }
+
+    [Fact]
     public async Task NewPlayerSubmitsTheDialogValues()
     {
         var api = new FakePlayerApi();
@@ -491,6 +554,18 @@ public sealed class PlayerRosterViewModelTests
 
     private static PlayerRosterViewModel CreateRoster(FakePlayerApi api, FakePlayerDialogs? dialogs = null) =>
         new(api, new JsonLocalizer(), dialogs ?? new FakePlayerDialogs(), "http://localhost/api", "en", FakePlayerApi.PlayersHref);
+
+    private static async Task<PlayerRosterViewModel> RosterWithThreeCharactersAsync()
+    {
+        var api = new FakePlayerApi { PageSize = 2 };
+        var ann = api.AddPlayer("Ann");
+        api.AddCharacter(ann, "Kira");
+        api.AddCharacter(ann, "Vel");
+        api.AddCharacter(ann, "Odo");
+        var roster = await LoadedRosterAsync(api);
+        roster.SelectedPlayer = roster.Players[0];
+        return roster;
+    }
 
     private static async Task<PlayerRosterViewModel> LoadedRosterAsync(FakePlayerApi api, FakePlayerDialogs? dialogs = null)
     {

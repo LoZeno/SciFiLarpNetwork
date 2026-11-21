@@ -12,6 +12,13 @@ public interface ICharacterService
         bool includeArchived,
         CancellationToken cancellationToken = default);
 
+    /// <summary>One page of the player's characters, ordered by running number.</summary>
+    Task<RosterPage<CharacterSummary>> GetCharacterPageOfPlayerAsync(
+        Guid playerId,
+        bool includeArchived,
+        int pageNumber,
+        CancellationToken cancellationToken = default);
+
     Task<CharacterSummary?> GetCharacterAsync(Guid characterId, CancellationToken cancellationToken = default);
 
     /// <summary>

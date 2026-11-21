@@ -30,6 +30,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string? _apiErrorCode;
     private bool _isBusy;
     private bool _isAuthenticated;
+    private bool _isConnected;
     private string _userName = string.Empty;
     private string _password = string.Empty;
     private string _signedInAccount = string.Empty;
@@ -213,7 +214,24 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public string ApiAddressLabel => _localizer.Translate("management.apiAddress", Locale);
 
-    public string ConnectLabel => _localizer.Translate("management.connect", Locale);
+    /// <summary>True after a successful Connect, until the next Connect starts or the session ends.</summary>
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set
+        {
+            if (_isConnected == value)
+            {
+                return;
+            }
+
+            _isConnected = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ConnectLabel));
+        }
+    }
+
+    public string ConnectLabel => _localizer.Translate(IsConnected ? "management.reconnect" : "management.connect", Locale);
 
     public string UserNameLabel => _localizer.Translate("management.userName", Locale);
 
@@ -304,6 +322,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private async Task ConnectAsync()
     {
         IsBusy = true;
+        ++_openGeneration;
+        IsConnected = false;
         SetStatus("management.connecting");
         NavigationItems.Clear();
         AvailableActions.Clear();
@@ -325,6 +345,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             }
 
             SetResource(discovery.ApiResource);
+            IsConnected = true;
             SetStatus("app.apiConnected");
         }
         catch (ManagementApiException exception)
@@ -426,7 +447,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         var generation = ++_openGeneration;
-        IsBusy = true;
         var opened = false;
         try
         {
@@ -438,7 +458,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             if (generation == _openGeneration)
             {
-                IsBusy = false;
                 ClearFailedSelection(item, opened);
             }
         }
@@ -457,7 +476,6 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private async Task<bool> OpenGenericResourceAsync(NavigationItem item, int generation)
     {
-        SetStatus("management.connecting");
         try
         {
             var resource = await _apiClient.GetResourceAsync(ApiBaseUrl, item.Href, Locale);
@@ -565,7 +583,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private void ClearSessionState()
     {
+        ++_openGeneration;
         IsAuthenticated = false;
+        IsConnected = false;
         Password = string.Empty;
         NavigationItems.Clear();
         SelectedNavigationItem = null;

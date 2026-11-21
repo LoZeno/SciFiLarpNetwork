@@ -103,10 +103,12 @@
                   <ComboBoxItem Content="Italiano" Tag="it" />
                 </ComboBox>
               </Grid>
-              <Button
-                  HorizontalAlignment="Stretch"
-                  Command="{Binding ConnectCommand}"
-                  Content="{Binding ConnectLabel}" />
+              <hud:Reveal Name="ConnectReveal" IsExpanded="{Binding IsAuthenticated}">
+                <Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding ConnectCommand}"
+                    Content="{Binding ConnectLabel}" />
+              </hud:Reveal>
               <TextBlock
                   AutomationProperties.LiveSetting="Polite"
                   Text="{Binding StatusMessage}"

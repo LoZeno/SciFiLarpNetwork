@@ -69,6 +69,75 @@ public sealed class NavigationOpeningTests
         Assert.Equal("API connection established", viewModel.StatusMessage);
     }
 
+    [Fact]
+    public async Task OpeningAnEntryKeepsSignOutAvailable()
+    {
+        var api = new ScriptedApiClient();
+        var viewModel = await CreateConnectedViewModelAsync(api);
+        api.Hold(News.Href);
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        Assert.True(viewModel.SignOutCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task OpeningAnEntryKeepsConnectAvailable()
+    {
+        var api = new ScriptedApiClient();
+        var viewModel = await CreateConnectedViewModelAsync(api);
+        api.Hold(News.Href);
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        Assert.True(viewModel.ConnectCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task OpeningAnEntryNeverShowsAnotherStatus()
+    {
+        var api = new ScriptedApiClient();
+        var viewModel = await CreateConnectedViewModelAsync(api);
+        var heldNews = api.Hold(News.Href);
+        var shown = new List<string>();
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.StatusMessage))
+            {
+                shown.Add(viewModel.StatusMessage);
+            }
+        };
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        heldNews.SetResult(Titled("News"));
+
+        Assert.DoesNotContain(shown, status => status != "API connection established");
+    }
+
+    [Fact]
+    public async Task AnOpenStillLoadingWhenSigningOutShowsNothing()
+    {
+        var api = new ScriptedApiClient();
+        var viewModel = await CreateConnectedViewModelAsync(api);
+        var heldNews = api.Hold(News.Href);
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        heldNews.SetResult(Titled("News"));
+
+        Assert.Equal("Network workspace", viewModel.ResourceTitle);
+    }
+
+    private static async Task<MainWindowViewModel> CreateConnectedViewModelAsync(ScriptedApiClient api)
+    {
+        var viewModel = CreateViewModel(api);
+        await viewModel.SignInCommand.ExecuteAsync();
+        await viewModel.ConnectCommand.ExecuteAsync();
+        viewModel.NavigationItems.Add(News);
+        viewModel.NavigationItems.Add(Messages);
+        return viewModel;
+    }
+
     private static MainWindowViewModel CreateViewModel(ScriptedApiClient api)
     {
         var viewModel = new MainWindowViewModel(

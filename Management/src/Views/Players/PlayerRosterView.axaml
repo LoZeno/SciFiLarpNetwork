@@ -95,7 +95,7 @@
           </StackPanel>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
-          <StackPanel IsVisible="{Binding IsCharacterSearchActive}" Orientation="Horizontal" Spacing="8">
+          <StackPanel IsVisible="{Binding HasCharacterPage}" Orientation="Horizontal" Spacing="8">
             <Button Command="{Binding PreviousCharactersCommand}" Content="{Binding PreviousLabel}" />
             <TextBlock VerticalAlignment="Center" Text="{Binding CharacterPage}" />
             <Button Command="{Binding NextCharactersCommand}" Content="{Binding NextLabel}" />
