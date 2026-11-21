@@ -1,0 +1,121 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.LarpEvents.CloseEventWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.LarpEvents"
+    x:DataType="vm:CloseEventViewModel"
+    Title="{Binding Title}"
+    Width="900"
+    Height="640"
+    MinWidth="560"
+    MinHeight="420"
+    WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <Style Selector="Border.cell">
+      <Setter Property="Width" Value="140" />
+      <Setter Property="Padding" Value="4" />
+    </Style>
+    <Style Selector="Border.name">
+      <Setter Property="Width" Value="220" />
+      <Setter Property="Padding" Value="4" />
+    </Style>
+  </Window.Styles>
+  <DockPanel Margin="24">
+    <StackPanel DockPanel.Dock="Top" Spacing="10">
+      <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+      <TextBlock
+          AutomationProperties.LiveSetting="Polite"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          Text="{Binding Warning}"
+          TextWrapping="Wrap" />
+      <TextBlock IsVisible="{Binding HasNothingToAward}" Text="{Binding NothingToAwardText}" TextWrapping="Wrap" />
+      <WrapPanel IsVisible="{Binding HasAnythingToAward}">
+        <Button Margin="0,0,8,8" Command="{Binding ToggleAllDaysCommand}" Content="{Binding ToggleAllDaysLabel}" />
+        <Button
+            Margin="0,0,8,8"
+            Command="{Binding ToggleAllBaseCommand}"
+            Content="{Binding ToggleAllBaseLabel}"
+            IsVisible="{Binding HasBaseColumn}" />
+      </WrapPanel>
+    </StackPanel>
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding SaveCommand}" Content="{Binding CloseLabel}" />
+        <Button Command="{Binding CancelCommand}" Content="{Binding CancelLabel}" IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" IsVisible="{Binding HasAnythingToAward}">
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <Border Classes="name">
+            <TextBlock FontWeight="Bold" Text="{Binding CharacterHeader}" />
+          </Border>
+          <Border Classes="cell" IsVisible="{Binding HasBaseColumn}">
+            <TextBlock FontWeight="Bold" Text="{Binding BaseHeader}" TextWrapping="Wrap" />
+          </Border>
+          <ItemsControl ItemsSource="{Binding DayHeaders}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <Border Classes="cell">
+                  <TextBlock FontWeight="Bold" Text="{Binding}" TextWrapping="Wrap" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ClosingRowViewModel">
+              <StackPanel Orientation="Horizontal">
+                <Border Classes="name">
+                  <TextBlock Text="{Binding CharacterName}" TextWrapping="Wrap" />
+                </Border>
+                <Border Classes="cell" IsVisible="{Binding HasBaseCell}">
+                  <ContentControl Content="{Binding BaseCell}">
+                    <ContentControl.ContentTemplate>
+                      <DataTemplate x:DataType="vm:ClosingCellViewModel">
+                        <Panel>
+                          <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsVisible="{Binding IsCheckbox}" />
+                          <TextBlock IsVisible="{Binding IsText}" Text="{Binding Text}" />
+                        </Panel>
+                      </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                  </ContentControl>
+                </Border>
+                <ItemsControl ItemsSource="{Binding DayCells}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ClosingCellViewModel">
+                      <Border Classes="cell">
+                        <Panel>
+                          <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsVisible="{Binding IsCheckbox}" />
+                          <TextBlock IsVisible="{Binding IsText}" Text="{Binding Text}" />
+                        </Panel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

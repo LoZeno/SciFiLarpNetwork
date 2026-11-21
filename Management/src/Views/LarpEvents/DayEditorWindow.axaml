@@ -1,0 +1,36 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.LarpEvents.DayEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.LarpEvents"
+    x:DataType="vm:DayEditorViewModel"
+    Title="{Binding Title}"
+    Width="420"
+    Height="400"
+    MinWidth="360"
+    MinHeight="260"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding SaveCommand}" Content="{Binding SaveLabel}" IsDefault="True" />
+        <Button Command="{Binding CancelCommand}" Content="{Binding CancelLabel}" IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <StackPanel Spacing="10">
+      <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+      <TextBlock Text="{Binding DateLabel}" />
+      <CalendarDatePicker AutomationProperties.Name="{Binding DateLabel}" SelectedDate="{Binding Date, Mode=TwoWay}" />
+      <TextBlock Text="{Binding ExperienceLabel}" />
+      <TextBox AutomationProperties.Name="{Binding ExperienceLabel}" MaxLength="10" Text="{Binding Experience, Mode=TwoWay}" />
+      <TextBlock Text="{Binding ExperienceHelp}" TextWrapping="Wrap" />
+    </StackPanel>
+  </DockPanel>
+</Window>

@@ -4,6 +4,7 @@ using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
 using SciFiLarpNetwork.Management.ViewModels;
+using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 
@@ -41,7 +42,7 @@ public sealed class MainWindowCardTemplateTests
 
     private static MainWindowViewModel CreateViewModel(FakeCardTemplateApi api) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), new ManagementSettings());
+            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {

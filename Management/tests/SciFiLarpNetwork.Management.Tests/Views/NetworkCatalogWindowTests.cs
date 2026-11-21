@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
+using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -121,6 +122,7 @@ public sealed class NetworkCatalogWindowTests
             new FakeNetworkDialogs(),
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
+            new FakeLarpEventDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

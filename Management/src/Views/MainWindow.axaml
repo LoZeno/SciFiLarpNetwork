@@ -7,6 +7,7 @@
     xmlns:networks="using:SciFiLarpNetwork.Management.Views.Networks"
     xmlns:players="using:SciFiLarpNetwork.Management.Views.Players"
     xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
+    xmlns:events="using:SciFiLarpNetwork.Management.Views.LarpEvents"
     xmlns:hud="using:SciFiLarpNetwork.Management.Views.Hud"
     xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
@@ -181,6 +182,9 @@
               </Panel>
               <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
                 <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
+              </Panel>
+              <Panel Margin="28" IsVisible="{Binding IsEventsOpen}">
+                <events:LarpEventScreenView DataContext="{Binding Events}" />
               </Panel>
             </Grid>
             <Image
