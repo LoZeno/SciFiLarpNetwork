@@ -473,7 +473,7 @@
   "errors.alreadyRegistered": "The character is already registered for every selected day.",
   "errors.notRegistered": "The character is not registered for the selected days.",
   "errors.invalidExperienceChange": "Enter a whole number other than zero.",
-  "errors.experienceOutOfRange": "The change would take the experience points below 0 or above the largest allowed value.",
+  "errors.experienceOutOfRange": "The experience points would go below 0 or above the largest allowed value.",
   "errors.noParticipants": "No characters are registered, so there is nothing to print.",
   "events.closedExplanation": "This event is closed, so its details, days, registrations, and experience cannot change. Reopen it to make changes.",
   "events.closedExplanationReader": "This event is closed, so its details, days, registrations, and experience cannot change.",
@@ -526,5 +526,7 @@
   "events.dayEntryExperience": "{0} ({1} characters, {2} XP)",
   "events.invalidNumber": "Enter a whole number, 0 or more, or leave it blank.",
   "errors.invalidExperienceValue": "Experience points must be blank or a whole number of 0 or more.",
-  "errors.awardNotAllowed": "The selection includes experience that cannot be given. Reload and try again."
+  "errors.awardNotAllowed": "The selection includes experience that cannot be given. Reload and try again.",
+  "errors.dayExperienceGiven": "This day's experience was already given when the event closed, so the day cannot be removed and its experience cannot change.",
+  "errors.participantHasExperience": "This character has experience recorded at this event, so it must stay registered for at least one day."
 }

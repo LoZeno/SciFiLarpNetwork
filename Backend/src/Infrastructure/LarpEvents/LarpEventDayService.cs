@@ -62,6 +62,11 @@ internal sealed class LarpEventDayService(AttributedSessionFactory sessions, Tim
             return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
         }
 
+        if (changed.Experience != experience && current.WasDayExperienceGiven(dayId))
+        {
+            return Failure(LarpEventOutcome.DayExperienceGiven);
+        }
+
         if (current.Days.Any(day => day.DayId != dayId && day.Date == dayDate))
         {
             return Failure(LarpEventOutcome.DuplicateDate);
@@ -89,6 +94,11 @@ internal sealed class LarpEventDayService(AttributedSessionFactory sessions, Tim
         if (current.Participants.Any(participant => participant.DayIds.Contains(dayId)))
         {
             return Failure(LarpEventOutcome.DayHasParticipants);
+        }
+
+        if (current.WasDayExperienceGiven(dayId))
+        {
+            return Failure(LarpEventOutcome.DayExperienceGiven);
         }
 
         stream.AppendOne(new LarpEventDayRemoved(eventId, dayId, timeProvider.GetUtcNow()));

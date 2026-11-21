@@ -16,6 +16,8 @@ public static class LarpEventErrors
     public const string DuplicateDate = "errors.duplicateDate";
     public const string UnknownDay = "errors.unknownDay";
     public const string DayHasParticipants = "errors.dayHasParticipants";
+    public const string DayExperienceGiven = "errors.dayExperienceGiven";
+    public const string ParticipantHasExperience = "errors.participantHasExperience";
     public const string NoDaysSelected = "errors.noDaysSelected";
     public const string UnknownCharacter = "errors.unknownCharacter";
     public const string CharacterNotActive = "errors.characterNotActive";
@@ -41,6 +43,8 @@ public static class LarpEventErrors
             LarpEventOutcome.DuplicateDate => Create(StatusCodes.Status409Conflict, DuplicateDate),
             LarpEventOutcome.UnknownDay => Create(StatusCodes.Status400BadRequest, UnknownDay),
             LarpEventOutcome.DayHasParticipants => Create(StatusCodes.Status409Conflict, DayHasParticipants),
+            LarpEventOutcome.DayExperienceGiven => Create(StatusCodes.Status409Conflict, DayExperienceGiven),
+            LarpEventOutcome.ParticipantHasExperience => Create(StatusCodes.Status409Conflict, ParticipantHasExperience),
             LarpEventOutcome.NoDaysSelected => Create(StatusCodes.Status400BadRequest, NoDaysSelected),
             LarpEventOutcome.UnknownCharacter => Create(StatusCodes.Status400BadRequest, UnknownCharacter),
             LarpEventOutcome.CharacterNotActive => Create(StatusCodes.Status409Conflict, CharacterNotActive),

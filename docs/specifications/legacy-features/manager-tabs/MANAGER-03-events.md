@@ -24,14 +24,14 @@ Approved 2026-11-21. Characters are defined by [MANAGER-01](MANAGER-01-players-c
 ### Days
 
 - A day is a calendar date with optional experience points for that day: blank or a whole number of 0 or more. Dates are unique within an event. An event can have no days.
-- Administrators can add a day, change a day's date and experience points, and remove a day that has no registered characters. The day list shows each day's experience points when set.
+- Administrators can add a day, change a day's date and experience points, and remove a day that has no registered characters. Once a close has given a day's experience points to anyone, that day cannot be removed and its experience points cannot change; its date still can. The day list shows each day's experience points when set.
 
 ### Registrations
 
 - Characters are registered, not players. A character is registered for one or more days of an event.
 - Only Active characters can be registered. A registered character stays registered if their status changes later.
 - A character is registered on a day at most once. When registering a character already registered on other days of the event, the dialog shows those days and adds only the new ones; asking only for days already registered is rejected.
-- Administrators can choose one or more days or all days, and can unregister a character from one or more days while the event is Open.
+- Administrators can choose one or more days or all days, and can unregister a character from one or more days while the event is Open. A character with experience changes or closing awards recorded at the event must keep at least one day, so the event keeps showing that history.
 
 ### Experience changes
 
@@ -50,7 +50,7 @@ Approved 2026-11-21 as an amendment to this model.
 - The grid warns that experience points cannot be changed after closing, so any manual adjustment must be made with **Change experience** before closing.
 - **Close** asks to confirm that the selection is final. On confirmation, the event closes and, in the same command, each character gets the sum of the ticked base and day experience points. Each character's award is one entry in the event's experience history, marked as given on closing.
 - The close is rejected, and nothing changes, when the selection does not match the event (for example a day the character is not registered for), when an award would take a character's experience points above 2,147,483,647, or when the event changed since the grid was opened. After that last case the grid reloads with the latest data.
-- An event can be reopened after closing. On the next close, experience already given shows as **given** and cannot be ticked, so no experience is given twice.
+- An event can be reopened after closing. On the next close, experience already given shows as **given** and cannot be ticked, so no experience is given twice. A close request for an event that is already Closed is rejected and gives nothing.
 
 ### Lists and rights
 
@@ -76,6 +76,6 @@ Approved 2026-11-21 as an amendment to this model.
 ## Verification
 
 - xUnit tests cover the closing grid rules: base and day experience values, awards of the ticked cells, nothing given twice after a reopen, rejected selections, the stale grid, and the experience maximum.
-- xUnit tests cover the name and description rules, experience-change amounts and range, running numbers, edit and stale edit, close, reopen, archive and unarchive, list order and paging, day add, reschedule, and remove rules, registration and unregistration rules, experience changes and their free-point check, the event record of each change, and the conflict between an experience change and a character edit.
+- xUnit tests cover the name and description rules, experience-change amounts and range, running numbers, edit and stale edit, close, reopen, archive and unarchive, list order and paging, day add, change, and remove rules, registration and unregistration rules, experience changes and their free-point check, the event record of each change, and the conflict between an experience change and a character edit.
 - API tests verify discovery, the actions offered to readers and administrators on Open and Closed events, stable error codes, the administrator named on an experience change, and event cards printed with validity dates.
 - Management-client tests cover listing, day and participant views, the closed-event explanation, the event, day, registration, and experience dialogs, confirmation, error display, printing, and Italian labels.

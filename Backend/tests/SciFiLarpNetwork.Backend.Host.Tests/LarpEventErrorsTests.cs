@@ -19,6 +19,8 @@ public sealed class LarpEventErrorsTests
     [InlineData(LarpEventOutcome.DuplicateDate, 409, "errors.duplicateDate")]
     [InlineData(LarpEventOutcome.UnknownDay, 400, "errors.unknownDay")]
     [InlineData(LarpEventOutcome.DayHasParticipants, 409, "errors.dayHasParticipants")]
+    [InlineData(LarpEventOutcome.DayExperienceGiven, 409, "errors.dayExperienceGiven")]
+    [InlineData(LarpEventOutcome.ParticipantHasExperience, 409, "errors.participantHasExperience")]
     [InlineData(LarpEventOutcome.NoDaysSelected, 400, "errors.noDaysSelected")]
     [InlineData(LarpEventOutcome.UnknownCharacter, 400, "errors.unknownCharacter")]
     [InlineData(LarpEventOutcome.CharacterNotActive, 409, "errors.characterNotActive")]

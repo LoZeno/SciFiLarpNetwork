@@ -169,6 +169,17 @@ public sealed class LarpEventParticipantServiceTests(AdministratorAuthentication
     }
 
     [Fact]
+    public async Task CharacterWithExperienceAtTheEventKeepsAtLeastOneDay()
+    {
+        var (created, character) = await RegisteredCharacterAsync(experiencePoints: 10);
+        await Participants.ChangeExperienceAsync(created.EventId, character.CharacterId, 5, Token);
+
+        var result = await Participants.UnregisterAsync(created.EventId, character.CharacterId, LarpEventTestData.AllDays(created), Token);
+
+        Assert.Equal(LarpEventOutcome.ParticipantHasExperience, result.Outcome);
+    }
+
+    [Fact]
     public async Task UnregisteringFromAnUnregisteredDayIsRejected()
     {
         var created = await _data.CreateEventAsync(dayCount: 2);

@@ -41,6 +41,15 @@ public enum LarpEventOutcome
     /// <summary>A day with registered characters cannot be removed.</summary>
     DayHasParticipants,
 
+    /// <summary>A close already gave this day's experience, so the day cannot be removed or its experience changed.</summary>
+    DayExperienceGiven,
+
+    /// <summary>
+    /// The character has experience recorded at this event, so it cannot be unregistered from its last day; its
+    /// history would no longer be shown.
+    /// </summary>
+    ParticipantHasExperience,
+
     NoDaysSelected,
     UnknownCharacter,
 

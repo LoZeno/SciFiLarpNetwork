@@ -140,6 +140,67 @@ public sealed class LarpEventClosingTests(AdministratorAuthenticationFactory fac
     }
 
     [Fact]
+    public async Task GivenDayCannotBeRemovedAfterAReopen()
+    {
+        var (larpEvent, character) = await ScheduledEventAsync(baseExperience: null, dayExperience: [2, 3]);
+        var givenDay = larpEvent.Days[0].DayId;
+        await CloseAsync(larpEvent, new ClosingAward(character.CharacterId, false, [givenDay]));
+        await Events.ReopenEventAsync(larpEvent.EventId, Token);
+        await _data.Participants.UnregisterAsync(larpEvent.EventId, character.CharacterId, [givenDay], Token);
+
+        var result = await _data.Days.RemoveDayAsync(larpEvent.EventId, givenDay, Token);
+
+        Assert.Equal(LarpEventOutcome.DayExperienceGiven, result.Outcome);
+    }
+
+    [Fact]
+    public async Task GivenDayExperienceCannotChangeAfterAReopen()
+    {
+        var (larpEvent, character) = await ScheduledEventAsync(baseExperience: null, dayExperience: [2]);
+        await CloseAsync(larpEvent, new ClosingAward(character.CharacterId, false, LarpEventTestData.AllDays(larpEvent)));
+        await Events.ReopenEventAsync(larpEvent.EventId, Token);
+
+        var result = await _data.Days.UpdateDayAsync(larpEvent.EventId, larpEvent.Days[0].DayId, LarpEventTestData.FirstDay, 9, Token);
+
+        Assert.Equal(LarpEventOutcome.DayExperienceGiven, result.Outcome);
+    }
+
+    [Fact]
+    public async Task GivenDayCanStillMoveToAnotherDate()
+    {
+        var (larpEvent, character) = await ScheduledEventAsync(baseExperience: null, dayExperience: [2]);
+        await CloseAsync(larpEvent, new ClosingAward(character.CharacterId, false, LarpEventTestData.AllDays(larpEvent)));
+        await Events.ReopenEventAsync(larpEvent.EventId, Token);
+
+        var result = await _data.Days.UpdateDayAsync(larpEvent.EventId, larpEvent.Days[0].DayId, new DateOnly(2026, 7, 1), 2, Token);
+
+        Assert.Equal(LarpEventOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task CloseOfAnAlreadyClosedEventIsRejected()
+    {
+        var (larpEvent, character) = await ScheduledEventAsync(baseExperience: 5, dayExperience: [2]);
+        await CloseAsync(larpEvent);
+
+        var result = await CloseAsync(larpEvent, new ClosingAward(character.CharacterId, true, []));
+
+        Assert.Equal(LarpEventOutcome.EventClosed, result.Outcome);
+    }
+
+    [Fact]
+    public async Task AwardNamingACharacterTwiceIsRejected()
+    {
+        var (larpEvent, character) = await ScheduledEventAsync(baseExperience: 5, dayExperience: [2]);
+
+        var result = await CloseAsync(larpEvent,
+            new ClosingAward(character.CharacterId, true, []),
+            new ClosingAward(character.CharacterId, false, LarpEventTestData.AllDays(larpEvent)));
+
+        Assert.Equal(LarpEventOutcome.AwardNotAllowed, result.Outcome);
+    }
+
+    [Fact]
     public async Task DayWithoutExperienceCannotBeAwarded()
     {
         var (larpEvent, character) = await ScheduledEventAsync(baseExperience: 5, dayExperience: [null]);

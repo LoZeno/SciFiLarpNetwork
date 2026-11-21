@@ -62,7 +62,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     }
 
     [Fact]
-    public async Task RescheduledDayKeepsItsRegistrations()
+    public async Task ChangedDayKeepsItsRegistrations()
     {
         var created = await _data.CreateEventAsync(dayCount: 1);
         var character = await _data.CreateCharacterAsync();
@@ -85,7 +85,7 @@ public sealed class LarpEventDayServiceTests(AdministratorAuthenticationFactory 
     }
 
     [Fact]
-    public async Task UnknownDayCannotBeRescheduled()
+    public async Task UnknownDayCannotBeChanged()
     {
         var created = await _data.CreateEventAsync(dayCount: 1);
 

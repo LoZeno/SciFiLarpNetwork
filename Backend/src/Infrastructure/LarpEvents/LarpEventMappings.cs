@@ -34,6 +34,9 @@ internal static class LarpEventMappings
 
         public bool HasDay(Guid dayId) => larpEvent.Days.Any(day => day.DayId == dayId);
 
+        /// <summary>Whether a close already gave this day's experience to anyone, so it must not change or be removed.</summary>
+        public bool WasDayExperienceGiven(Guid dayId) => larpEvent.GivenAwards.Any(award => award.DayIds.Contains(dayId));
+
         public LarpEventGivenAward GivenAward(Guid characterId) =>
             larpEvent.GivenAwards.FirstOrDefault(award => award.CharacterId == characterId)
             ?? new LarpEventGivenAward(characterId, false, []);

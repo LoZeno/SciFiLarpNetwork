@@ -135,7 +135,7 @@ internal sealed class LarpEventService(AttributedSessionFactory sessions, TimePr
 
         if (current.Status == LarpEventStatus.Closed)
         {
-            return LarpEventResult<LarpEventSummary>.Success(current.ToSummary());
+            return LarpEventResult<LarpEventSummary>.Failure(LarpEventOutcome.EventClosed);
         }
 
         var (grantOutcome, grants) = ClosingGrants.From(current, awards);

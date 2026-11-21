@@ -473,7 +473,7 @@
   "errors.alreadyRegistered": "Il personaggio è già iscritto a tutti i giorni selezionati.",
   "errors.notRegistered": "Il personaggio non è iscritto ai giorni selezionati.",
   "errors.invalidExperienceChange": "Inserisci un numero intero diverso da zero.",
-  "errors.experienceOutOfRange": "La variazione porterebbe i punti esperienza sotto 0 o sopra il valore massimo consentito.",
+  "errors.experienceOutOfRange": "I punti esperienza andrebbero sotto 0 o sopra il valore massimo consentito.",
   "errors.noParticipants": "Nessun personaggio è iscritto, quindi non c'è niente da stampare.",
   "events.closedExplanation": "Questo evento è chiuso, quindi dettagli, giorni, iscrizioni ed esperienza non possono cambiare. Riaprilo per apportare modifiche.",
   "events.closedExplanationReader": "Questo evento è chiuso, quindi dettagli, giorni, iscrizioni ed esperienza non possono cambiare.",
@@ -526,5 +526,7 @@
   "events.dayEntryExperience": "{0} ({1} personaggi, {2} PE)",
   "events.invalidNumber": "Inserisci un numero intero, 0 o più, oppure lascia vuoto.",
   "errors.invalidExperienceValue": "I punti esperienza devono essere vuoti o un numero intero di 0 o più.",
-  "errors.awardNotAllowed": "La selezione include esperienza che non può essere assegnata. Ricarica e riprova."
+  "errors.awardNotAllowed": "La selezione include esperienza che non può essere assegnata. Ricarica e riprova.",
+  "errors.dayExperienceGiven": "L'esperienza di questo giorno è già stata assegnata alla chiusura dell'evento, quindi il giorno non può essere rimosso e la sua esperienza non può cambiare.",
+  "errors.participantHasExperience": "Questo personaggio ha esperienza registrata in questo evento, quindi deve restare iscritto ad almeno un giorno."
 }

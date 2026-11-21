@@ -116,6 +116,13 @@ internal sealed class LarpEventParticipantService(AttributedSessionFactory sessi
             return LarpEventResult<LarpEventSummary>.Failure(LarpEventOutcome.NotRegistered);
         }
 
+        // The event lists experience history only for registered characters, so leaving no day would hide it.
+        if (!participant.DayIds.Except(requested).Any() &&
+            current.ExperienceChanges.Any(change => change.CharacterId == characterId))
+        {
+            return LarpEventResult<LarpEventSummary>.Failure(LarpEventOutcome.ParticipantHasExperience);
+        }
+
         stream.AppendOne(new ParticipantUnregistered(eventId, characterId, requested, timeProvider.GetUtcNow()));
         var committed = await session.CommitEventAsync(LarpEventWrites.ConcurrentChange, cancellationToken);
         if (committed != LarpEventOutcome.Succeeded)
