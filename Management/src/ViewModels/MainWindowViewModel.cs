@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
@@ -31,6 +32,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private bool _isAuthenticated;
     private string _userName = string.Empty;
     private string _password = string.Empty;
+    private string _signedInAccount = string.Empty;
     private NavigationItem? _selectedNavigationItem;
     private SirenEntity? _selectedResource;
     private IManagementScreen? _currentScreen;
@@ -221,6 +223,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public string SignOutLabel => _localizer.Translate("management.signOut", Locale);
 
+    public string SignedInAccountLabel => string.Format(
+        CultureInfo.GetCultureInfo(Locale), _localizer.Translate("management.signedInAs", Locale), _signedInAccount);
+
     public string LanguageLabel => _localizer.Translate("common.language", Locale);
 
     public string NavigationHeading => _localizer.Translate("navigation.heading", Locale);
@@ -359,7 +364,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SetStatus("management.signingIn");
         try
         {
-            await _apiClient.SignInAsync(ApiBaseUrl, UserName, Password, Locale);
+            var session = await _apiClient.SignInAsync(ApiBaseUrl, UserName, Password, Locale);
+            _signedInAccount = session.UserName;
+            OnPropertyChanged(nameof(SignedInAccountLabel));
             Password = string.Empty;
             IsAuthenticated = true;
             SetStatus("management.signedIn");
@@ -629,6 +636,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(PasswordLabel));
         OnPropertyChanged(nameof(SignInLabel));
         OnPropertyChanged(nameof(SignOutLabel));
+        OnPropertyChanged(nameof(SignedInAccountLabel));
         OnPropertyChanged(nameof(LanguageLabel));
         OnPropertyChanged(nameof(LocaleIndex));
         OnPropertyChanged(nameof(NavigationHeading));

@@ -1,9 +1,22 @@
 <Application
     x:Class="SciFiLarpNetwork.Management.App"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://SciFiLarpNetwork.Management/Styles/HudResources.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#2EC5FF" RegionColor="#03070C" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <StyleInclude Source="avares://SciFiLarpNetwork.Management/Styles/ScrollBars.axaml" />
+    <StyleInclude Source="avares://SciFiLarpNetwork.Management/Styles/HudControls.axaml" />
   </Application.Styles>
 </Application>

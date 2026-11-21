@@ -2,6 +2,7 @@
     x:Class="SciFiLarpNetwork.Management.Views.Skills.TalentCatalogView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Skills"
     x:DataType="vm:TalentCatalogViewModel">
   <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,*" ColumnSpacing="24" RowSpacing="12">
@@ -15,9 +16,8 @@
     <DockPanel Grid.Row="1" Grid.Column="0">
       <TextBlock
           DockPanel.Dock="Top"
-          FontSize="20"
-          FontWeight="SemiBold"
-          Text="{Binding TalentsHeading}" />
+          Classes="heading"
+          Text="{Binding TalentsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
       <CheckBox
           DockPanel.Dock="Top"
           Content="{Binding ShowArchivedLabel}"
@@ -52,9 +52,8 @@
     <DockPanel Grid.Row="1" Grid.Column="1">
       <TextBlock
           DockPanel.Dock="Top"
-          FontSize="20"
-          FontWeight="SemiBold"
-          Text="{Binding SkillsHeading}" />
+          Classes="heading"
+          Text="{Binding SkillsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
       <CheckBox
           DockPanel.Dock="Top"
           Content="{Binding ShowArchivedLabel}"

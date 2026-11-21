@@ -332,6 +332,29 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SignInNamesTheSignedInAdministrator()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        viewModel.UserName = "operator";
+
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        Assert.Equal("Administrator: operator", viewModel.SignedInAccountLabel);
+    }
+
+    [Fact]
+    public async Task SignedInAdministratorFollowsTheLocale()
+    {
+        var viewModel = CreateViewModel(new StubApiClient(), new StubSettingsStore());
+        viewModel.UserName = "operator";
+        await viewModel.SignInCommand.ExecuteAsync();
+
+        viewModel.Locale = "it";
+
+        Assert.Equal("Amministratore: operator", viewModel.SignedInAccountLabel);
+    }
+
+    [Fact]
     public async Task CredentialBearingApiAddressIsNotSaved()
     {
         var settingsStore = new StubSettingsStore();

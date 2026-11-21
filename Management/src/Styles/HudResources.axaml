@@ -1,0 +1,84 @@
+<!--
+  The HUD palette (black-blue backdrop, cyan lines, green for success, orange for warnings) and the button look:
+  cut corners, a cyan edge, and a glow on hover. Merged into App.Resources, so these keys win over the Fluent ones.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:hud="using:SciFiLarpNetwork.Management.Views.Hud"
+                    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters">
+  <Color x:Key="HudVoid">#03070C</Color>
+  <Color x:Key="HudCyan">#2EC5FF</Color>
+
+  <SolidColorBrush x:Key="HudVoidBrush" Color="{StaticResource HudVoid}" />
+  <SolidColorBrush x:Key="HudPanelBrush" Color="#06141E" />
+  <SolidColorBrush x:Key="HudSidePanelBrush" Color="#071923" />
+  <SolidColorBrush x:Key="HudInsetBrush" Color="#020A10" />
+  <SolidColorBrush x:Key="HudButtonBrush" Color="#082232" />
+  <SolidColorBrush x:Key="HudHoverBrush" Color="#0B3B52" />
+  <SolidColorBrush x:Key="HudPressedBrush" Color="#135A7A" />
+  <SolidColorBrush x:Key="HudLineBrush" Color="{StaticResource HudCyan}" />
+  <SolidColorBrush x:Key="HudLineDimBrush" Color="#1D6F94" />
+  <SolidColorBrush x:Key="HudTextBrush" Color="#BFE9FF" />
+  <SolidColorBrush x:Key="HudTextBrightBrush" Color="#E6FAFF" />
+  <SolidColorBrush x:Key="HudHeadingBrush" Color="#7FE0FF" />
+  <SolidColorBrush x:Key="HudMutedBrush" Color="#7AA9BF" />
+  <SolidColorBrush x:Key="HudOkBrush" Color="#3DFFA8" />
+  <SolidColorBrush x:Key="HudWarnBrush" Color="#FF8A3D" />
+  <SolidColorBrush x:Key="HudDotBrush" Color="#16384B" />
+  <SolidColorBrush x:Key="HudStripeBrush" Color="#0AFFFFFF" />
+  <LinearGradientBrush x:Key="HudFieldEdgeBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+    <GradientStop Offset="0" Color="#1D6F94" />
+    <GradientStop Offset="0.86" Color="#1D6F94" />
+    <GradientStop Offset="0.86" Color="{StaticResource HudCyan}" />
+    <GradientStop Offset="1" Color="{StaticResource HudCyan}" />
+  </LinearGradientBrush>
+
+  <Color x:Key="ScrollBarThumbBackgroundColor">#1D6F94</Color>
+
+  <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
+    <Setter Property="Background" Value="{StaticResource HudButtonBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource HudHeadingBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource HudLineBrush}" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <hud:ChamferBorder
+            Name="PART_Frame"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            Chamfer="7"
+            Padding="{TemplateBinding Padding}">
+          <ContentPresenter
+              Name="PART_ContentPresenter"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+              Content="{TemplateBinding Content, Converter={x:Static conv:UpperCaseConverter.Instance}}"
+              ContentTemplate="{TemplateBinding ContentTemplate}"
+              Foreground="{TemplateBinding Foreground}"
+              TextElement.LetterSpacing="1.5" />
+        </hud:ChamferBorder>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ hud|ChamferBorder#PART_Frame">
+      <Setter Property="Background" Value="{StaticResource HudHoverBrush}" />
+      <Setter Property="Glow" Value="6" />
+    </Style>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{StaticResource HudTextBrightBrush}" />
+    </Style>
+    <Style Selector="^:pressed /template/ hud|ChamferBorder#PART_Frame">
+      <Setter Property="Background" Value="{StaticResource HudPressedBrush}" />
+      <Setter Property="Glow" Value="10" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ hud|ChamferBorder#PART_Frame">
+      <Setter Property="Glow" Value="6" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </ControlTheme>
+</ResourceDictionary>

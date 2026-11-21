@@ -2,6 +2,7 @@
     x:Class="SciFiLarpNetwork.Management.Views.Skills.SkillEditorWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Skills"
     x:DataType="vm:SkillEditorViewModel"
     Title="{Binding Title}"
@@ -42,7 +43,7 @@
     </StackPanel>
     <ScrollViewer>
       <StackPanel Margin="0,0,12,0" Spacing="10">
-        <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding Title}" />
+        <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
         <TextBlock Text="{Binding NameLabel}" />
         <TextBox
             AutomationProperties.Name="{Binding NameLabel}"
