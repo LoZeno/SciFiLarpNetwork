@@ -213,9 +213,57 @@ public sealed class MainWindowAnimationTests
 
         var sinceAction = Stopwatch.StartNew();
         viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
-        ShowFirstFrame(sinceAction);
+        ShowFirstFrame(sinceAction, HudAnimations.SlideOutDuration);
 
         Assert.True(WorkspaceOffset(window) < 0);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task SelectingAnEntryKeepsTheOldViewOnScreenWhileItLeaves()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(Named<Image>(window, "LeavingWorkspace").IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task TheOldViewSlidesOutToTheLeft()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        ShowFrameMidwayThroughTheSlideOut();
+
+        Assert.True(OffsetOf(Named<Image>(window, "LeavingWorkspace")) < -Named<Grid>(window, "Workspace").Bounds.Width / 4);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task TheNewViewWaitsOffThePanelWhileTheOldLeaves()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        ShowFrameMidwayThroughTheSlideOut();
+
+        Assert.Equal(-Named<Grid>(window, "Workspace").Bounds.Width, WorkspaceOffset(window));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task TheOldViewIsGoneOnceItHasLeft()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        LetAnimationsFinish();
+
+        Assert.False(Named<Image>(window, "LeavingWorkspace").IsVisible);
         window.Close();
     }
 
@@ -247,10 +295,26 @@ public sealed class MainWindowAnimationTests
     private static string[] ShownEntries(Window window) =>
         [.. Named<ListBox>(window, "NavigationList").Items.Cast<NavigationItem>().Select(item => item.Title)];
 
-    private static double WorkspaceOffset(Window window)
+    private static double WorkspaceOffset(Window window) => OffsetOf(Named<Grid>(window, "Workspace"));
+
+    private static double OffsetOf(Visual visual) => visual.TranslatePoint(default, (Visual)visual.GetVisualParent()!)!.Value.X;
+
+    /// <remarks>
+    /// Shows frames for a third of the 200 ms slide-out, timed from its start (after the snapshot of the old view is
+    /// taken), and skips the test when the runner was too slow to show one before the slide-out ended.
+    /// </remarks>
+    private static void ShowFrameMidwayThroughTheSlideOut()
     {
-        var workspace = Named<Grid>(window, "Workspace");
-        return workspace.TranslatePoint(default, (Visual)workspace.GetVisualParent()!)!.Value.X;
+        var sinceAction = Stopwatch.StartNew();
+        while (sinceAction.Elapsed < HudAnimations.SlideOutDuration / 3)
+        {
+            ShowOneFrame();
+            Thread.Sleep(10);
+        }
+
+        ShowOneFrame();
+        Assert.SkipWhen(sinceAction.Elapsed > HudAnimations.SlideOutDuration - TimeSpan.FromMilliseconds(30),
+            "The runner was too slow to see the old view while it slides out.");
     }
 
     private static void ShowOneFrame()
@@ -265,10 +329,10 @@ public sealed class MainWindowAnimationTests
     /// stalled runner could finish the shortest animation (220 ms) before this frame. The test is then skipped,
     /// because it can no longer see the animation's start, rather than failed.
     /// </remarks>
-    private static void ShowFirstFrame(Stopwatch sinceAction)
+    private static void ShowFirstFrame(Stopwatch sinceAction, TimeSpan? deadline = null)
     {
         ShowOneFrame();
-        Assert.SkipWhen(sinceAction.Elapsed > FirstFrameDeadline, "The runner was too slow to see the animation's first frame.");
+        Assert.SkipWhen(sinceAction.Elapsed > (deadline ?? FirstFrameDeadline), "The runner was too slow to see the animation's first frame.");
     }
 
     /// <remarks>The headless animation clock follows the wall clock, so this waits for real time to pass.</remarks>

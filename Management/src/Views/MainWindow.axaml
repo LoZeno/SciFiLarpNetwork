@@ -183,6 +183,13 @@
                 <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
               </Panel>
             </Grid>
+            <Image
+                Name="LeavingWorkspace"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                IsHitTestVisible="False"
+                IsVisible="False"
+                Stretch="None" />
           </Panel>
         </hud:ChamferBorder>
       </Grid>
