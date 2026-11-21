@@ -6,12 +6,6 @@ public interface ICharacterService
     Task<RosterPage<CharacterSummary>> SearchCharactersAsync(RosterQuery query,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Every character of the player, ordered by running number.</summary>
-    Task<IReadOnlyList<CharacterSummary>> GetCharactersOfPlayerAsync(
-        Guid playerId,
-        bool includeArchived,
-        CancellationToken cancellationToken = default);
-
     /// <summary>One page of the player's characters, ordered by running number.</summary>
     Task<RosterPage<CharacterSummary>> GetCharacterPageOfPlayerAsync(
         Guid playerId,

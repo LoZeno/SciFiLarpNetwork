@@ -37,7 +37,7 @@ public sealed class PlayersController(
     {
         var player = await playerService.GetPlayerAsync(playerId, cancellationToken)
                      ?? throw RosterErrors.ToApiException(RosterOutcome.NotFound);
-        return Ok(await PlayerResourceAsync(player, includeArchived, cancellationToken));
+        return Ok(Resources.Player(player, includeArchived));
     }
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Read)]
@@ -61,7 +61,7 @@ public sealed class PlayersController(
         CancellationToken cancellationToken)
     {
         var player = RosterErrors.Unwrap(await playerService.CreatePlayerAsync(request.ToDefinition(), cancellationToken));
-        return StatusCode(StatusCodes.Status201Created, Resources.Player(player, [], includeArchivedCharacters: false));
+        return StatusCode(StatusCodes.Status201Created, Resources.Player(player, includeArchivedCharacters: false));
     }
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
@@ -70,47 +70,42 @@ public sealed class PlayersController(
         Guid playerId,
         [FromBody] PlayerUpdateRequest request,
         CancellationToken cancellationToken) =>
-        Ok(await PlayerResourceAsync(
+        Ok(Resources.Player(
             RosterErrors.Unwrap(await playerService.UpdatePlayerAsync(playerId, request.Version, request.ToDefinition(),
                 cancellationToken)),
-            includeArchivedCharacters: false,
-            cancellationToken));
+            includeArchivedCharacters: false));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{playerId:guid}/deactivate")]
     public async Task<ActionResult<SirenEntity<PlayerSummary>>> DeactivatePlayer(Guid playerId,
         CancellationToken cancellationToken) =>
-        Ok(await PlayerResourceAsync(
+        Ok(Resources.Player(
             RosterErrors.Unwrap(await playerService.DeactivatePlayerAsync(playerId, cancellationToken)),
-            includeArchivedCharacters: false,
-            cancellationToken));
+            includeArchivedCharacters: false));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{playerId:guid}/activate")]
     public async Task<ActionResult<SirenEntity<PlayerSummary>>> ActivatePlayer(Guid playerId,
         CancellationToken cancellationToken) =>
-        Ok(await PlayerResourceAsync(
+        Ok(Resources.Player(
             RosterErrors.Unwrap(await playerService.ActivatePlayerAsync(playerId, cancellationToken)),
-            includeArchivedCharacters: false,
-            cancellationToken));
+            includeArchivedCharacters: false));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{playerId:guid}/archive")]
     public async Task<ActionResult<SirenEntity<PlayerSummary>>> ArchivePlayer(Guid playerId,
         CancellationToken cancellationToken) =>
-        Ok(await PlayerResourceAsync(
+        Ok(Resources.Player(
             RosterErrors.Unwrap(await playerService.ArchivePlayerAsync(playerId, cancellationToken)),
-            includeArchivedCharacters: false,
-            cancellationToken));
+            includeArchivedCharacters: false));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{playerId:guid}/unarchive")]
     public async Task<ActionResult<SirenEntity<PlayerSummary>>> UnarchivePlayer(Guid playerId,
         CancellationToken cancellationToken) =>
-        Ok(await PlayerResourceAsync(
+        Ok(Resources.Player(
             RosterErrors.Unwrap(await playerService.UnarchivePlayerAsync(playerId, cancellationToken)),
-            includeArchivedCharacters: false,
-            cancellationToken));
+            includeArchivedCharacters: false));
 
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{playerId:guid}/characters")]
@@ -123,15 +118,6 @@ public sealed class PlayersController(
             await characterService.CreateCharacterAsync(playerId, request.ToDefinition(), cancellationToken));
         return StatusCode(StatusCodes.Status201Created, Resources.Character(character));
     }
-
-    private async Task<SirenEntity<PlayerSummary>> PlayerResourceAsync(
-        PlayerSummary player,
-        bool includeArchivedCharacters,
-        CancellationToken cancellationToken) =>
-        Resources.Player(
-            player,
-            await characterService.GetCharactersOfPlayerAsync(player.PlayerId, includeArchivedCharacters, cancellationToken),
-            includeArchivedCharacters);
 
     private RosterResources Resources =>
         new(text, Request.PathBase, User.IsInRole(AdministratorRoles.Administrator));

@@ -141,7 +141,7 @@ public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factor
 
         Assert.Equal(
             [CharacterStatus.Retired, CharacterStatus.Dead],
-            (await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken))
+            (await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken)).Items
             .Select(character => character.Status));
     }
 
@@ -156,7 +156,7 @@ public sealed class PlayerServiceTests(AdministratorAuthenticationFactory factor
 
         Assert.Equal(
             [CharacterStatus.Retired],
-            (await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken))
+            (await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken)).Items
             .Select(character => character.Status));
     }
 

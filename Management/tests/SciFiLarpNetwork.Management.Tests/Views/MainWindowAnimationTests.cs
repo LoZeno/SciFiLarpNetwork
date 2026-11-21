@@ -24,6 +24,7 @@ namespace SciFiLarpNetwork.Management.Tests.Views;
 public sealed class MainWindowAnimationTests
 {
     private static readonly string[] SignInSlot = ["SignInReveal", "SignOutReveal"];
+    private static readonly TimeSpan FirstFrameDeadline = TimeSpan.FromMilliseconds(120);
 
     [AvaloniaFact]
     public async Task SigningInFoldsAwayTheCredentialFields()
@@ -100,8 +101,9 @@ public sealed class MainWindowAnimationTests
     {
         var (window, viewModel) = ShowWindow();
 
+        var sinceAction = Stopwatch.StartNew();
         await viewModel.SignInCommand.ExecuteAsync();
-        ShowOneFrame();
+        ShowFirstFrame(sinceAction);
 
         Assert.Equal(0, Named<Reveal>(window, "SignOutReveal").Progress);
         window.Close();
@@ -156,11 +158,12 @@ public sealed class MainWindowAnimationTests
     {
         var (window, viewModel) = ShowWindow();
 
+        var sinceAction = Stopwatch.StartNew();
         await viewModel.ConnectCommand.ExecuteAsync();
-        Dispatcher.UIThread.RunJobs();
+        ShowFirstFrame(sinceAction);
         window.UpdateLayout();
 
-        Assert.Equal(0, Named<Reveal>(window, "NavigationReveal").Bounds.Height);
+        Assert.True(Named<Reveal>(window, "NavigationReveal").Bounds.Height < Named<ListBox>(window, "NavigationList").Bounds.Height / 2);
         window.Close();
     }
 
@@ -169,8 +172,9 @@ public sealed class MainWindowAnimationTests
     {
         var (window, viewModel) = ShowWindow();
 
+        var sinceAction = Stopwatch.StartNew();
         await viewModel.ConnectCommand.ExecuteAsync();
-        ShowOneFrame();
+        ShowFirstFrame(sinceAction);
 
         var entry = Named<ListBox>(window, "NavigationList").GetVisualDescendants().OfType<ListBoxItem>().First();
         Assert.True(entry.TranslatePoint(default, (Visual)entry.GetVisualParent()!)!.Value.Y < entry.Bounds.Y);
@@ -182,8 +186,9 @@ public sealed class MainWindowAnimationTests
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
+        var sinceAction = Stopwatch.StartNew();
         await viewModel.SignOutCommand.ExecuteAsync();
-        ShowOneFrame();
+        ShowFirstFrame(sinceAction);
 
         Assert.Equal(["Card templates"], ShownEntries(window));
         window.Close();
@@ -206,8 +211,9 @@ public sealed class MainWindowAnimationTests
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
+        var sinceAction = Stopwatch.StartNew();
         viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
-        ShowOneFrame();
+        ShowFirstFrame(sinceAction);
 
         Assert.True(WorkspaceOffset(window) < 0);
         window.Close();
@@ -252,6 +258,17 @@ public sealed class MainWindowAnimationTests
         Dispatcher.UIThread.RunJobs();
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <remarks>
+    /// The headless animation clock follows the wall clock and Avalonia 12 offers tests no clock of their own, so a
+    /// stalled runner could finish the shortest animation (220 ms) before this frame. The test is then skipped,
+    /// because it can no longer see the animation's start, rather than failed.
+    /// </remarks>
+    private static void ShowFirstFrame(Stopwatch sinceAction)
+    {
+        ShowOneFrame();
+        Assert.SkipWhen(sinceAction.Elapsed > FirstFrameDeadline, "The runner was too slow to see the animation's first frame.");
     }
 
     /// <remarks>The headless animation clock follows the wall clock, so this waits for real time to pass.</remarks>

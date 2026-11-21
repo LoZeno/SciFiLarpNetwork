@@ -30,7 +30,7 @@
   "management.signOut": "Sign out",
   "management.signingIn": "Signing in to the local service…",
   "management.signedInAs": "Administrator: {0}",
-  "management.signedIn":"Administrator session established.",
+  "management.signedIn": "Administrator session established.",
   "management.signedOut": "Administrator session cleared.",
   "accessibility.closeDialog": "Close dialog",
   "accessibility.loading": "Loading",

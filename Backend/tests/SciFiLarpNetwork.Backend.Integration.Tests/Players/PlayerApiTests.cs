@@ -52,6 +52,19 @@ public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) :
     }
 
     [Fact]
+    public async Task PlayerResourceEmbedsNoCharacters()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var playerId = await CreatePlayerAsync(client, token, "Ann");
+        await CreateCharacterAsync(client, token, playerId, "Kira");
+
+        using var response = await GetAsync(client, token, $"{PlayersPath}/{playerId:D}");
+
+        Assert.False((await ReadAsync(response)).Root.TryGetProperty("entities", out _));
+    }
+
+    [Fact]
     public async Task PlayerCharactersPageListsThePlayersCharacters()
     {
         using var client = factory.CreateClient();

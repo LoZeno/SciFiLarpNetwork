@@ -125,15 +125,13 @@ internal sealed class RosterResources(IApplicationText text, string pathBase, bo
             Links = [.. PageLinks(PlayerCharactersPath(playerId), page, query), new SirenLink { Rel = ["up"], Href = PlayerPath(playerId) }]
         };
 
-    public SirenEntity<PlayerSummary> Player(PlayerSummary player, IReadOnlyList<CharacterSummary> characters,
-        bool includeArchivedCharacters)
+    public SirenEntity<PlayerSummary> Player(PlayerSummary player, bool includeArchivedCharacters)
     {
         var path = PlayerPath(player.PlayerId);
         return new SirenEntity<PlayerSummary>
         {
             Class = ["player"],
             Properties = player,
-            Entities = characters.Select(CharacterItem).ToArray(),
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = includeArchivedCharacters ? WithArchived(path) : path },

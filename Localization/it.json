@@ -30,7 +30,7 @@
   "management.signOut": "Esci",
   "management.signingIn": "Accesso al servizio locale…",
   "management.signedInAs": "Amministratore: {0}",
-  "management.signedIn":"Sessione amministratore stabilita.",
+  "management.signedIn": "Sessione amministratore stabilita.",
   "management.signedOut": "Sessione amministratore cancellata.",
   "accessibility.closeDialog": "Chiudi la finestra di dialogo",
   "accessibility.loading": "Caricamento",

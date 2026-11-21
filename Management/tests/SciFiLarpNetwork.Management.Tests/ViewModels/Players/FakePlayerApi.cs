@@ -405,10 +405,6 @@ internal sealed class FakePlayerApi : IManagementApiClient
         {
             Class = ["player"],
             Properties = PlayerProperties(player),
-            Entities = Characters
-                .Where(character => character.PlayerId == player.Id && (includeArchived || !character.IsArchived))
-                .Select(CharacterItem)
-                .ToArray(),
             Links =
             [
                 new SirenLink { Rel = ["self"], Href = path },

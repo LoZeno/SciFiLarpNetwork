@@ -228,7 +228,7 @@ public sealed class CharacterServiceTests(AdministratorAuthenticationFactory fac
         var player = await CreatePlayerAsync("Ann");
         await CreateCharacterAsync(player, "Kira");
         await Players.DeactivatePlayerAsync(player.PlayerId, TestContext.Current.CancellationToken);
-        var retired = (await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken))[0];
+        var retired = (await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken)).Items[0];
 
         var result = await Characters.UpdateCharacterAsync(retired.CharacterId, retired.Version,
             CharacterDefinitions.From(retired) with { Status = CharacterStatus.Active }, TestContext.Current.CancellationToken);
@@ -278,7 +278,7 @@ public sealed class CharacterServiceTests(AdministratorAuthenticationFactory fac
 
         await Characters.ArchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
 
-        Assert.Empty(await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken));
+        Assert.Empty((await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken)).Items);
     }
 
     [Fact]
@@ -344,7 +344,7 @@ public sealed class CharacterServiceTests(AdministratorAuthenticationFactory fac
 
         await Characters.UnarchiveCharacterAsync(retired.CharacterId, TestContext.Current.CancellationToken);
 
-        Assert.Single(await Characters.GetCharactersOfPlayerAsync(player.PlayerId, false, TestContext.Current.CancellationToken));
+        Assert.Single((await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, false, 1, TestContext.Current.CancellationToken)).Items);
     }
 
     [Fact]
@@ -610,8 +610,8 @@ public sealed class CharacterServiceTests(AdministratorAuthenticationFactory fac
         (await Players.CreatePlayerAsync(new PlayerDefinition(name, null, null, null, PlayerType.Player),
             TestContext.Current.CancellationToken)).Value!;
 
-    private Task<IReadOnlyList<CharacterSummary>> StoredCharactersOfAsync(PlayerSummary player) =>
-        Characters.GetCharactersOfPlayerAsync(player.PlayerId, includeArchived: true, TestContext.Current.CancellationToken);
+    private async Task<IReadOnlyList<CharacterSummary>> StoredCharactersOfAsync(PlayerSummary player) =>
+        (await Characters.GetCharacterPageOfPlayerAsync(player.PlayerId, includeArchived: true, 1, TestContext.Current.CancellationToken)).Items;
 
     private async Task<NetworkSummary> CreateNetworkAsync(string code) =>
         (await Networks.CreateNetworkAsync(code, new NetworkDefinition(code, null, NetworkTheme.Blue),
