@@ -119,6 +119,8 @@ public partial class MainWindow : Window
         if (leaving is not null)
         {
             await HudAnimations.SlideOutToLeftAsync(LeavingWorkspace, Workspace.Bounds.Width, swap.Token);
+            // A cancelled slide currently completes inside Cancel(), before the next swap shows its snapshot; this
+            // check keeps a later-completing cancelled slide from hiding that newer snapshot.
             if (!swap.IsCancellationRequested)
             {
                 HideLeavingWorkspace();

@@ -287,6 +287,40 @@ public sealed class MainWindowAnimationTests
     }
 
     [AvaloniaFact]
+    public async Task ASecondSelectionDuringTheSlideOutKeepsItsOwnLeavingView()
+    {
+        var (window, viewModel) = await ShowWindowWithTwoEntriesAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        ShowOneFrame();
+
+        var sinceSecond = Stopwatch.StartNew();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[1];
+        ShowOneFrame();
+        ShowOneFrame();
+        Assert.SkipWhen(sinceSecond.Elapsed > HudAnimations.SlideOutDuration - TimeSpan.FromMilliseconds(50),
+            "The runner was too slow to see the second leaving view before it slid away.");
+
+        Assert.True(Named<Image>(window, "LeavingWorkspace").IsVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task ASecondSelectionDuringTheSlideOutEndsWithTheNewViewInPlace()
+    {
+        var (window, viewModel) = await ShowWindowWithTwoEntriesAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+        ShowOneFrame();
+
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[1];
+        LetAnimationsFinish();
+
+        Assert.Equal(
+            new { LeavingShown = false, Offset = 0.0 },
+            new { LeavingShown = Named<Image>(window, "LeavingWorkspace").IsVisible, Offset = WorkspaceOffset(window) });
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task TheOldViewIsGoneOnceItHasLeft()
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
@@ -424,6 +458,14 @@ public sealed class MainWindowAnimationTests
         }
 
         ShowOneFrame();
+    }
+
+    private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowWindowWithTwoEntriesAsync()
+    {
+        var (window, viewModel) = await ShowSignedInWindowAsync();
+        viewModel.NavigationItems.Add(new NavigationItem("Character card template", FakeCardTemplateApi.TemplateHref));
+        LetAnimationsFinish();
+        return (window, viewModel);
     }
 
     private static async Task<(MainWindow Window, MainWindowViewModel ViewModel)> ShowSignedInWindowAsync()
