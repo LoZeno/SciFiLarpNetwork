@@ -59,7 +59,6 @@
               Content="{TemplateBinding Content, Converter={x:Static conv:UpperCaseConverter.Instance}}"
               ContentTemplate="{TemplateBinding ContentTemplate}"
               Foreground="{TemplateBinding Foreground}"
-              TextAlignment="Center"
               TextWrapping="Wrap"
               TextElement.LetterSpacing="1.5" />
         </hud:ChamferBorder>
