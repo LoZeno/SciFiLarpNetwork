@@ -33,7 +33,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
     {
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
 
@@ -45,7 +44,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
     {
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await factory.WaitForProjectionsAsync();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "short", TestContext.Current.CancellationToken);
 
@@ -57,8 +55,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
     {
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-
-        await factory.WaitForProjectionsAsync();
 
         var grant = await factory.LoadGrantDocumentAsync();
 
@@ -73,7 +69,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
 
-        await factory.WaitForProjectionsAsync();
         factory.ExpireCurrentGrant();
 
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
@@ -86,7 +81,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
     {
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await factory.WaitForProjectionsAsync();
 
         var results = await Task.WhenAll(
             service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken),
@@ -152,8 +146,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         response.EnsureSuccessStatusCode();
         var token = AuthenticationHeaderValue.Parse(response.Headers.GetValues("Authorization").Single()).Parameter!;
 
-        await factory.WaitForProjectionsAsync();
-
         var sessions = await factory.LoadSessionDocumentsAsync();
 
         Assert.Equal(
@@ -167,7 +159,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         await factory.BootstrapAdministratorAsync();
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
-        await factory.WaitForProjectionsAsync();
 
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
 
@@ -181,7 +172,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         var service = factory.Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
 
-        await factory.WaitForProjectionsAsync();
         factory.ExpireCurrentGrant();
 
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
@@ -316,7 +306,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         await factory.BootstrapAdministratorAsync();
         var token = await AdministratorAuthenticationFactory.SignInAsync(client, "local-admin-password-1");
 
-        await factory.WaitForProjectionsAsync();
         var accounts = await factory.LoadAccountDocumentsAsync();
         var adminId = accounts[0].Id;
 
@@ -356,7 +345,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
     public async Task PasswordIsStoredAsVerifiableHash()
     {
         await factory.BootstrapAdministratorAsync();
-        await factory.WaitForProjectionsAsync();
 
         var accounts = await factory.LoadAccountDocumentsAsync();
 
@@ -375,7 +363,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
         using var client = factory.CreateClient();
         var (token, readerId) = await factory.PrepareReaderWithTokenAsync(client);
 
-        await factory.WaitForProjectionsAsync();
         var adminAccounts = await factory.LoadAccountDocumentsAsync();
         var adminId = adminAccounts.FirstOrDefault(a => a.Role == AdministratorRoles.Administrator)?.Id
             ?? throw new InvalidOperationException("No admin account found");
@@ -384,7 +371,6 @@ public sealed class AdministratorAuthenticationTests(AdministratorAuthentication
             $"/local/api/v1/admin/accounts/{readerId:D}/role", token, new { role = AdministratorRoles.Administrator });
         response.EnsureSuccessStatusCode();
 
-        await factory.WaitForProjectionsAsync();
         var audits = await factory.LoadAuditDocumentsAsync();
         var roleChangeAudit = audits.FirstOrDefault(a => a.TargetAccountId == readerId && a.EventType == "AdministratorRoleChanged");
 
@@ -726,10 +712,11 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         await Services.ResetAllMartenDataAsync();
     }
 
-    public async Task WaitForProjectionsAsync()
+    // Only the grant and audit documents come from async projections; every other document is inline.
+    private async Task WaitForAsyncProjectionsAsync()
     {
         var store = Services.GetRequiredService<IDocumentStore>();
-        await store.WaitForNonStaleProjectionDataAsync(TimeSpan.FromSeconds(10));
+        await store.WaitForNonStaleProjectionDataAsync(TimeSpan.FromSeconds(30));
     }
 
     public async Task<IReadOnlyList<AdministratorAccountDocument>> LoadAccountDocumentsAsync()
@@ -746,12 +733,14 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
 
     public async Task<AdministratorGrantDocument?> LoadGrantDocumentAsync()
     {
+        await WaitForAsyncProjectionsAsync();
         await using var session = Services.GetRequiredService<IDocumentStore>().QuerySession();
         return await session.Query<AdministratorGrantDocument>().FirstOrDefaultAsync();
     }
 
     public async Task<IReadOnlyList<AdministratorAuditDocument>> LoadAuditDocumentsAsync()
     {
+        await WaitForAsyncProjectionsAsync();
         await using var session = Services.GetRequiredService<IDocumentStore>().QuerySession();
         return await session.Query<AdministratorAuditDocument>().ToListAsync();
     }
@@ -783,26 +772,22 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     {
         var service = Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueBootstrapCredentialAsync(TestContext.Current.CancellationToken);
-        await WaitForProjectionsAsync();
         var result = await service.BootstrapAsync(credential, "local-admin", "local-admin-password-1", TestContext.Current.CancellationToken);
         if (result != AdministratorOperationResult.Succeeded)
         {
             throw new InvalidOperationException($"Failed to bootstrap administrator: {result}");
         }
-        await WaitForProjectionsAsync();
     }
 
     public async Task<string> RecoverAdministratorAsync()
     {
         var service = Services.GetRequiredService<IAdministratorProvisioningService>();
         var credential = await service.IssueRecoveryCredentialAsync(TestContext.Current.CancellationToken);
-        await WaitForProjectionsAsync();
         var result = await service.RecoverAsync(credential, "local-admin", "replacement-password-1", TestContext.Current.CancellationToken);
         if (result != AdministratorOperationResult.Succeeded)
         {
             throw new InvalidOperationException($"Failed to recover administrator: {result}");
         }
-        await WaitForProjectionsAsync();
         return credential;
     }
 
