@@ -9,6 +9,7 @@
     xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
     xmlns:events="using:SciFiLarpNetwork.Management.Views.LarpEvents"
     xmlns:hud="using:SciFiLarpNetwork.Management.Views.Hud"
+    xmlns:layout="using:SciFiLarpNetwork.Management.Views.Layout"
     xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
     xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels"
     x:DataType="vm:MainWindowViewModel"
@@ -171,21 +172,31 @@
                   </ItemsControl>
                 </StackPanel>
               </ScrollViewer>
-              <Panel Margin="28" IsVisible="{Binding IsTalentCatalogOpen}">
-                <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
-              </Panel>
-              <Panel Margin="28" IsVisible="{Binding IsNetworkCatalogOpen}">
-                <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
-              </Panel>
-              <Panel Margin="28" IsVisible="{Binding IsPlayerRosterOpen}">
-                <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
-              </Panel>
-              <Panel Margin="28" IsVisible="{Binding IsCardTemplatesOpen}">
-                <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
-              </Panel>
-              <Panel Margin="28" IsVisible="{Binding IsEventsOpen}">
-                <events:LarpEventScreenView DataContext="{Binding Events}" />
-              </Panel>
+              <ScrollViewer Classes="screen" IsVisible="{Binding IsTalentCatalogOpen}">
+                <layout:FillViewport>
+                  <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
+                </layout:FillViewport>
+              </ScrollViewer>
+              <ScrollViewer Classes="screen" IsVisible="{Binding IsNetworkCatalogOpen}">
+                <layout:FillViewport>
+                  <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
+                </layout:FillViewport>
+              </ScrollViewer>
+              <ScrollViewer Classes="screen" IsVisible="{Binding IsPlayerRosterOpen}">
+                <layout:FillViewport>
+                  <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
+                </layout:FillViewport>
+              </ScrollViewer>
+              <ScrollViewer Classes="screen" IsVisible="{Binding IsCardTemplatesOpen}">
+                <layout:FillViewport>
+                  <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
+                </layout:FillViewport>
+              </ScrollViewer>
+              <ScrollViewer Classes="screen" IsVisible="{Binding IsEventsOpen}">
+                <layout:FillViewport>
+                  <events:LarpEventScreenView DataContext="{Binding Events}" />
+                </layout:FillViewport>
+              </ScrollViewer>
             </Grid>
             <Image
                 Name="LeavingWorkspace"

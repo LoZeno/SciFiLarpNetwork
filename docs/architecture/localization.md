@@ -14,6 +14,8 @@ Use namespaced keys such as `common.save`, `validation.required`, and `errors.un
 
 English is the default when no valid user preference or deployment default is configured. Resolve deployment defaults and persisted user preferences at the application boundary; anonymous preference persistence is client-local. Applying a changed locale must not discard unsaved user work. The exact preference synchronization mechanism is established with the authenticated application workflows.
 
+Words that agree with a noun in Italian (adjectives and participles such as "New", "Archived", "Show archived") get one key per noun in that noun's namespace, for example `players.new` ("Nuovo") and `networks.new` ("Nuova"). Never reuse another screen's key for such a word, even when the English text is the same. Verbs and other words that do not change with the noun (such as "Edit", "Archive", "Cancel") may be shared.
+
 Only application-owned UI, accessibility, validation, and error text belongs in translation resources. Never automatically translate user-authored Player, Character, Event, Message, News story, Personal file, Item, or other LARP content. Preserve its Unicode text as entered, including Italian diacritics.
 
 The shared resources establish the baseline strings and key contract before feature UI exists. Each application may add its own namespaced keys to the same locale files. The React client imports these shared JSON resources, uses English for an unset/invalid preference, and sends the selected locale through `Accept-Language`; runtime assets must remain local for offline venue operation. Backend and Avalonia integration follow their corresponding roadmap tasks.

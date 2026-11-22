@@ -59,7 +59,7 @@ public sealed class CharacterStatsViewModel : ScreenViewModel
 
     public string Help => Translate("stats.help");
 
-    public string ShowArchivedLabel => Translate("skills.showArchived");
+    public string ShowArchivedLabel => Translate("stats.showArchived");
 
     public string NewNameLabel => Translate("stats.newName");
 
@@ -185,7 +185,7 @@ public sealed class CharacterStatsViewModel : ScreenViewModel
     {
         var stat = SirenProperties.Read<CharacterStatProperties>(entity.Properties);
         var type = _typeTitles.GetValueOrDefault(stat.Type, stat.Type);
-        var archived = stat.IsArchived ? $" {Translate("skills.archivedTag")}" : string.Empty;
+        var archived = stat.IsArchived ? $" {Translate("stats.archivedTag")}" : string.Empty;
         return new CharacterStatListItem(
             stat.StatId,
             stat.Name,

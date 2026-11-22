@@ -22,16 +22,16 @@
           DockPanel.Dock="Top"
           Content="{Binding ShowArchivedLabel}"
           IsChecked="{Binding ShowArchivedTalents}" />
-      <StackPanel
+      <WrapPanel
           Margin="0,8,0,0"
           DockPanel.Dock="Bottom"
           IsVisible="{Binding CanWrite}"
-          Orientation="Horizontal"
-          Spacing="8">
+          ItemSpacing="8"
+          LineSpacing="8">
         <Button Command="{Binding NewTalentCommand}" Content="{Binding NewLabel}" />
         <Button Command="{Binding EditTalentCommand}" Content="{Binding EditLabel}" />
         <Button Command="{Binding ToggleTalentArchiveCommand}" Content="{Binding TalentArchiveLabel}" />
-      </StackPanel>
+      </WrapPanel>
       <TextBlock
           Margin="0,8"
           DockPanel.Dock="Top"
@@ -58,16 +58,16 @@
           DockPanel.Dock="Top"
           Content="{Binding ShowArchivedLabel}"
           IsChecked="{Binding ShowArchivedSkills}" />
-      <StackPanel
+      <WrapPanel
           Margin="0,8,0,0"
           DockPanel.Dock="Bottom"
           IsVisible="{Binding CanWrite}"
-          Orientation="Horizontal"
-          Spacing="8">
+          ItemSpacing="8"
+          LineSpacing="8">
         <Button Command="{Binding NewSkillCommand}" Content="{Binding NewLabel}" />
         <Button Command="{Binding EditSkillCommand}" Content="{Binding EditLabel}" />
         <Button Command="{Binding ToggleSkillArchiveCommand}" Content="{Binding SkillArchiveLabel}" />
-      </StackPanel>
+      </WrapPanel>
       <TextBlock
           Margin="0,8"
           DockPanel.Dock="Top"

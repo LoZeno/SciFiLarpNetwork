@@ -26,11 +26,11 @@
           <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchived}" />
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
-          <StackPanel Orientation="Horizontal" Spacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
             <Button Command="{Binding PreviousEventsCommand}" Content="{Binding PreviousLabel}" />
-            <TextBlock VerticalAlignment="Center" Text="{Binding EventPage}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding EventPage}" TextWrapping="Wrap" />
             <Button Command="{Binding NextEventsCommand}" Content="{Binding NextLabel}" />
-          </StackPanel>
+          </WrapPanel>
           <WrapPanel IsVisible="{Binding CanWrite}">
             <Button Margin="0,0,8,8" Command="{Binding NewEventCommand}" Content="{Binding NewLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding EditEventCommand}" Content="{Binding EditLabel}" />
