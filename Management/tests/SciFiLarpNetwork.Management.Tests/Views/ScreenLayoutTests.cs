@@ -57,7 +57,7 @@ public sealed class ScreenLayoutTests
 
         var overflowing = view.GetVisualDescendants().OfType<Control>()
             .Where(control => control.IsEffectivelyVisible && !IsScrolledContent(view, control) && !IsInsideTextField(control))
-            .Where(control => SticksOutOfItsParent(control) || IsCutOffText(control))
+            .Where(control => SticksOutOfItsParent(control) || IsCutOffText(control) || DrawsTextOutsideItself(control))
             .Select(Describe)
             .ToArray();
 
@@ -204,6 +204,16 @@ public sealed class ScreenLayoutTests
         control is TextBlock { TextWrapping: Avalonia.Media.TextWrapping.NoWrap, TextTrimming: var trimming } block
         && trimming == Avalonia.Media.TextTrimming.None
         && block.TextLayout.WidthIncludingTrailingWhitespace > block.Bounds.Width - block.Padding.Left - block.Padding.Right + Tolerance;
+
+    /// <summary>
+    /// A line of text placed partly outside its block, so the block's clip hides it: for example text centred in a
+    /// wider width than the block was finally given.
+    /// </summary>
+    private static bool DrawsTextOutsideItself(Control control) =>
+        control is TextBlock block
+        && block.TextLayout.TextLines.Any(line =>
+            line.Start < -Tolerance
+            || line.Start + line.Width > block.Bounds.Width - block.Padding.Left - block.Padding.Right + Tolerance);
 
     private static string Describe(Control control)
     {
