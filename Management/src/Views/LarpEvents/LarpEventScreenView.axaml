@@ -26,11 +26,11 @@
           <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchived}" />
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
-          <StackPanel Orientation="Horizontal" Spacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
             <Button Command="{Binding PreviousEventsCommand}" Content="{Binding PreviousLabel}" />
-            <TextBlock VerticalAlignment="Center" Text="{Binding EventPage}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding EventPage}" TextWrapping="Wrap" />
             <Button Command="{Binding NextEventsCommand}" Content="{Binding NextLabel}" />
-          </StackPanel>
+          </WrapPanel>
           <WrapPanel IsVisible="{Binding CanWrite}">
             <Button Margin="0,0,8,8" Command="{Binding NewEventCommand}" Content="{Binding NewLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding EditEventCommand}" Content="{Binding EditLabel}" />
@@ -87,13 +87,15 @@
         <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding ParticipantsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
         <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
           <TextBlock Classes="section" Text="{Binding ExperienceHistoryHeading}" />
-          <ItemsControl ItemsSource="{Binding ExperienceHistory}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="x:String">
-                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <ScrollViewer MaxHeight="100" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding ExperienceHistory}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
           <WrapPanel IsVisible="{Binding CanWrite}">
             <Button Margin="0,0,8,8" Command="{Binding RegisterCommand}" Content="{Binding RegisterLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding UnregisterCommand}" Content="{Binding UnregisterLabel}" />

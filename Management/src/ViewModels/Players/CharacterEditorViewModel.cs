@@ -107,7 +107,7 @@ public sealed class CharacterEditorViewModel : CatalogEditorViewModel
 
     public string StatsLabel => Translate("characters.stats");
 
-    public string ShowArchivedStatsLabel => Translate("skills.showArchived");
+    public string ShowArchivedStatsLabel => Translate("stats.showArchived");
 
     public string NewStatsLabel => Translate("characters.newStats");
 

@@ -5,12 +5,30 @@
   ListBoxItem ContentPresenter#PART_ContentPresenter).
 -->
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:layout="using:SciFiLarpNetwork.Management.Views.Layout">
   <Style Selector=":is(Window)">
     <Setter Property="Background" Value="{DynamicResource HudVoidBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource HudTextBrush}" />
   </Style>
 
+  <Style Selector="ScrollViewer.screen">
+    <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+  </Style>
+  <!-- The busiest screens (players and events, in Italian) fit from this size; smaller windows scroll the screen instead. -->
+  <Style Selector="ScrollViewer.screen > layout|FillViewport">
+    <Setter Property="Margin" Value="28" />
+    <Setter Property="MinWidth" Value="510" />
+    <Setter Property="MinHeight" Value="550" />
+  </Style>
+  <Style Selector="ScrollViewer.screen ListBox">
+    <Setter Property="MinHeight" Value="96" />
+  </Style>
+
+  <Style Selector="TextBlock.heading, TextBlock.section, TextBlock.label">
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
   <Style Selector="TextBlock.heading">
     <Setter Property="FontSize" Value="17" />
     <Setter Property="FontWeight" Value="Bold" />

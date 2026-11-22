@@ -136,7 +136,7 @@ public sealed class NetworkCatalogViewModel : ScreenViewModel
 
     public string NoDefaultWarning => Translate("networks.noDefaultWarning");
 
-    public string NewLabel => Translate("skills.new");
+    public string NewLabel => Translate("networks.new");
 
     public string EditLabel => Translate("skills.edit");
 

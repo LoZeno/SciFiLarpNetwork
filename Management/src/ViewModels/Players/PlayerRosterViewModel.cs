@@ -281,13 +281,17 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
     public string FindByQrLabel => Translate("players.findByQr");
 
-    public string ShowArchivedLabel => Translate("skills.showArchived");
+    public string ShowArchivedPlayersLabel => Translate("players.showArchived");
+
+    public string ShowArchivedCharactersLabel => Translate("characters.showArchived");
 
     public string PreviousLabel => Translate("players.previousPage");
 
     public string NextLabel => Translate("players.nextPage");
 
-    public string NewLabel => Translate("skills.new");
+    public string NewPlayerLabel => Translate("players.new");
+
+    public string NewCharacterLabel => Translate("characters.new");
 
     public string EditLabel => Translate("skills.edit");
 
@@ -333,7 +337,8 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
                  {
                      nameof(PlayersHeading), nameof(CharactersHeading), nameof(PlayerSearchLabel), nameof(CharacterSearchLabel),
                      nameof(QrIdentifierLabel), nameof(SearchLabel), nameof(ClearSearchLabel), nameof(FindByQrLabel),
-                     nameof(ShowArchivedLabel), nameof(PreviousLabel), nameof(NextLabel), nameof(NewLabel), nameof(EditLabel),
+                     nameof(ShowArchivedPlayersLabel), nameof(ShowArchivedCharactersLabel), nameof(PreviousLabel), nameof(NextLabel),
+                     nameof(NewPlayerLabel), nameof(NewCharacterLabel), nameof(EditLabel),
                      nameof(StatsLabel), nameof(RegenerateQrLabel), nameof(PreviewCardsLabel), nameof(ExportCardsLabel),
                      nameof(TogglePlayerActiveLabel),
                      nameof(TogglePlayerArchivedLabel), nameof(ToggleCharacterArchivedLabel)
@@ -833,7 +838,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
 
         if (player.IsArchived)
         {
-            tags.Add(Translate("skills.archivedTag"));
+            tags.Add(Translate("players.archivedTag"));
         }
 
         return new PlayerListItem(
@@ -856,7 +861,7 @@ public sealed class PlayerRosterViewModel : ScreenViewModel
         var tags = new List<string> { $"({statusTitles.GetValueOrDefault(character.Status, character.Status)})" };
         if (character.IsArchived)
         {
-            tags.Add(Translate("skills.archivedTag"));
+            tags.Add(Translate("characters.archivedTag"));
         }
 
         return new CharacterListItem(

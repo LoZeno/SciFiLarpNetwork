@@ -162,7 +162,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
             _selectedParticipant = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(ExperienceHistory));
+            UpdateExperienceHistory();
             NotifyCommandsChanged();
         }
     }
@@ -197,13 +197,13 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
     public string ParticipantsHeading => Translate("api.participants");
 
-    public string ShowArchivedLabel => Translate("skills.showArchived");
+    public string ShowArchivedLabel => Translate("events.showArchived");
 
     public string PreviousLabel => Translate("players.previousPage");
 
     public string NextLabel => Translate("players.nextPage");
 
-    public string NewLabel => Translate("skills.new");
+    public string NewLabel => Translate("events.new");
 
     public string EditLabel => Translate("skills.edit");
 
@@ -661,7 +661,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
         var tags = new List<string> { $"({statusTitle})" };
         if (larpEvent.IsArchived)
         {
-            tags.Add(Translate("skills.archivedTag"));
+            tags.Add(Translate("events.archivedTag"));
         }
 
         return new LarpEventListItem(

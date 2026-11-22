@@ -303,15 +303,30 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
                         dayIds = registration.Value,
                         dates = item.Days.Where(day => registration.Value.Contains(day.Id)).Select(day => day.Date).Order(),
                         experienceTotal = item.Experience.GetValueOrDefault(registration.Key),
-                        experienceChanges = item.Experience.TryGetValue(registration.Key, out var total)
-                            ? new[] { new { amount = total, changedBy = "local-admin", changedAtUtc = new DateTimeOffset(2026, 5, 2, 18, 0, 0, TimeSpan.Zero), isClosingAward = false } }
-                            : [],
+                        experienceChanges = ExperienceChanges(item, registration.Key),
                         baseExperienceGiven = item.BaseGiven.Contains(registration.Key),
                         givenDayIds = item.GivenDays.GetValueOrDefault(registration.Key) ?? []
                     })
                 })
                 .ToArray()
         };
+    }
+
+    private static object[] ExperienceChanges(FakeEvent item, Guid characterId)
+    {
+        var amounts = item.ExperienceHistory.TryGetValue(characterId, out var history)
+            ? history
+            : item.Experience.TryGetValue(characterId, out var total) ? [total] : [];
+        return
+        [
+            .. amounts.Select(amount => new
+            {
+                amount,
+                changedBy = "local-admin",
+                changedAtUtc = new DateTimeOffset(2026, 5, 2, 18, 0, 0, TimeSpan.Zero),
+                isClosingAward = false
+            })
+        ];
     }
 
     private SirenEntity CharacterCollection(string query)
@@ -403,5 +418,8 @@ internal sealed class FakeLarpEventApi : IManagementApiClient
         public Dictionary<Guid, List<Guid>> Registrations { get; } = [];
 
         public Dictionary<Guid, int> Experience { get; } = [];
+
+        /// <summary>Separate experience changes per character; overrides the single change built from <see cref="Experience"/>.</summary>
+        public Dictionary<Guid, List<int>> ExperienceHistory { get; } = [];
     }
 }

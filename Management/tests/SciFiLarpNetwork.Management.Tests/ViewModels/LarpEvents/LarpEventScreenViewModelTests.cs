@@ -361,6 +361,20 @@ public sealed class LarpEventScreenViewModelTests
         Assert.Equal("#1 Kira — Ann · 2026-05-01 · XP -2", screen.Participants[0].DisplayName);
     }
 
+    [Fact]
+    public async Task SelectingAParticipantShowsTheirExperienceHistory()
+    {
+        var api = new FakeLarpEventApi();
+        var fort = api.AddEvent("Fort", true, FirstDay);
+        fort.Registrations[FakeLarpEventApi.KiraId] = [fort.Days[0].Id];
+        fort.ExperienceHistory[FakeLarpEventApi.KiraId] = [1, 2, 3];
+        var screen = await OpenWithEventAsync(api, new FakeLarpEventDialogs());
+
+        screen.SelectedParticipant = screen.Participants[0];
+
+        Assert.Equal(3, screen.ExperienceHistory.Count);
+    }
+
     [Theory]
     [InlineData("0")]
     [InlineData("two")]
