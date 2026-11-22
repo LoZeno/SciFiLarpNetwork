@@ -172,31 +172,31 @@
                   </ItemsControl>
                 </StackPanel>
               </ScrollViewer>
-              <ScrollViewer Classes="screen" IsVisible="{Binding IsTalentCatalogOpen}">
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsTalentCatalogOpen}">
                 <layout:FillViewport>
                   <skills:TalentCatalogView DataContext="{Binding TalentCatalog}" />
                 </layout:FillViewport>
-              </ScrollViewer>
-              <ScrollViewer Classes="screen" IsVisible="{Binding IsNetworkCatalogOpen}">
+              </layout:ScreenScrollViewer>
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsNetworkCatalogOpen}">
                 <layout:FillViewport>
                   <networks:NetworkCatalogView DataContext="{Binding NetworkCatalog}" />
                 </layout:FillViewport>
-              </ScrollViewer>
-              <ScrollViewer Classes="screen" IsVisible="{Binding IsPlayerRosterOpen}">
+              </layout:ScreenScrollViewer>
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsPlayerRosterOpen}">
                 <layout:FillViewport>
                   <players:PlayerRosterView DataContext="{Binding PlayerRoster}" />
                 </layout:FillViewport>
-              </ScrollViewer>
-              <ScrollViewer Classes="screen" IsVisible="{Binding IsCardTemplatesOpen}">
+              </layout:ScreenScrollViewer>
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsCardTemplatesOpen}">
                 <layout:FillViewport>
                   <templates:CardTemplateScreenView DataContext="{Binding CardTemplates}" />
                 </layout:FillViewport>
-              </ScrollViewer>
-              <ScrollViewer Classes="screen" IsVisible="{Binding IsEventsOpen}">
+              </layout:ScreenScrollViewer>
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsEventsOpen}">
                 <layout:FillViewport>
                   <events:LarpEventScreenView DataContext="{Binding Events}" />
                 </layout:FillViewport>
-              </ScrollViewer>
+              </layout:ScreenScrollViewer>
             </Grid>
             <Image
                 Name="LeavingWorkspace"
