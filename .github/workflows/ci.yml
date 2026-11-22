@@ -10,8 +10,38 @@ permissions:
   contents: read
 
 jobs:
-  dotnet-tests:
-    name: .NET tests
+  dotnet-unit-tests:
+    name: .NET unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Test every project except the integration tests
+        run: |
+          status=0
+          for project in $(git ls-files '*/tests/*.csproj' | grep -v 'Integration.Tests'); do
+            dotnet test --project "$project" --configuration Release || status=1
+          done
+          exit $status
+      - name: Upload unit test coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-unit-coverage
+          path: |
+            Backend/tests/**/TestResults/coverage/*.cobertura.*.xml
+            Backend/tests/**/TestResults/coverage/*.json
+            Management/tests/**/TestResults/coverage/*.cobertura.*.xml
+            Management/tests/**/TestResults/coverage/*.json
+          if-no-files-found: error
+
+  dotnet-integration-tests:
+    name: .NET integration tests
     runs-on: ubuntu-latest
     env:
       ConnectionStrings__EventStore: Host=localhost;Port=5432;Database=scifilarnetwork_tests;Username=postgres;Password=postgres
@@ -34,15 +64,45 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+      - name: Test the integration project
+        run: dotnet test --project Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests --configuration Release
+      - name: Upload integration test coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-integration-coverage
+          path: |
+            Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests/TestResults/coverage/*.cobertura.*.xml
+            Backend/tests/SciFiLarpNetwork.Backend.Integration.Tests/TestResults/coverage/*.json
+          if-no-files-found: error
+
+  # The 80% gate applies to the combined coverage of both test jobs, so it runs once both have uploaded theirs.
+  dotnet-coverage:
+    name: .NET coverage
+    needs: [dotnet-unit-tests, dotnet-integration-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
       - name: Restore .NET tools
         run: dotnet tool restore
-      - name: Test solution
-        run: dotnet test SciFiLarpNetwork.slnx --configuration Release
+      - name: Download unit test coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: dotnet-unit-coverage
+          path: coverage-input/unit
+      - name: Download integration test coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: dotnet-integration-coverage
+          path: coverage-input/integration
       - name: Merge .NET coverage reports and enforce 80% line coverage
-        if: always()
         run: |
           dotnet reportgenerator \
-            "-reports:Backend/tests/**/TestResults/coverage/*.cobertura.*.xml;Management/tests/**/TestResults/coverage/*.cobertura.*.xml" \
+            "-reports:coverage-input/**/*.cobertura.*.xml" \
             "-targetdir:coverage/dotnet" \
             "-reporttypes:Cobertura;HtmlSummary;MarkdownSummaryGithub;TextSummary" \
             "minimumCoverageThresholds:lineCoverage=80"
@@ -54,12 +114,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: dotnet-coverage
-          path: |
-            Backend/tests/**/TestResults/coverage/*.cobertura.*.xml
-            Backend/tests/**/TestResults/coverage/*.json
-            Management/tests/**/TestResults/coverage/*.cobertura.*.xml
-            Management/tests/**/TestResults/coverage/*.json
-            coverage/dotnet/
+          path: coverage/dotnet/
           if-no-files-found: error
 
   # Card PDFs come from the Typst build bundled per runtime, so each supported RID is exercised on its own runner.

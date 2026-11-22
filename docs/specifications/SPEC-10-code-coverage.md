@@ -32,7 +32,9 @@ The gates are separate so that well-covered code in one language cannot hide poo
 
 ### CI
 
-- The `.NET tests` job runs the .NET tests, then the ReportGenerator merge and gate, adds the combined summary to the job summary, and uploads the per-project and combined reports as the `dotnet-coverage` artifact.
+- The `.NET unit tests` job runs every .NET test project except the integration tests and uploads their per-project reports as the `dotnet-unit-coverage` artifact.
+- The `.NET integration tests` job runs the integration tests against PostgreSQL and uploads their per-project reports as the `dotnet-integration-coverage` artifact.
+- The `.NET coverage` job runs after both, even when one fails. It downloads both artifacts, runs the ReportGenerator merge and gate, adds the combined summary to the job summary, and uploads the combined reports as the `dotnet-coverage` artifact.
 - The `Frontend checks` job runs `npm run check`, which includes the TypeScript gate, and uploads `Frontend/coverage/` as the `frontend-coverage` artifact.
 
 The local commands for both gates are in [testing strategy](../architecture/testing-strategy.md#coverage-gates).
