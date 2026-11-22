@@ -16,11 +16,11 @@
     <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
     <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
   </Style>
-  <!-- The busiest screen (players, in Italian) fits from this size; smaller windows scroll the screen instead. -->
+  <!-- The busiest screens (players and events, in Italian) fit from this size; smaller windows scroll the screen instead. -->
   <Style Selector="ScrollViewer.screen > layout|FillViewport">
     <Setter Property="Margin" Value="28" />
     <Setter Property="MinWidth" Value="510" />
-    <Setter Property="MinHeight" Value="540" />
+    <Setter Property="MinHeight" Value="550" />
   </Style>
   <Style Selector="ScrollViewer.screen ListBox">
     <Setter Property="MinHeight" Value="96" />

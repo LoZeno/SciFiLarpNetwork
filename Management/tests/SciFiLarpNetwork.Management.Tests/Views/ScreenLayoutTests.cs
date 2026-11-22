@@ -18,14 +18,15 @@ using SciFiLarpNetwork.Management.Views;
 namespace SciFiLarpNetwork.Management.Tests.Views;
 
 /// <summary>
-/// Opens every screen in every language, at the default and the smallest window size, and checks that no control
-/// sticks out of the control that holds it. Screens come from <see cref="NavigationScreen"/>, so a new screen fails
+/// Opens every screen in every language, at each of <see cref="WindowSizes"/>, and checks that no control sticks out of
+/// the control that holds it. Screens come from <see cref="NavigationScreen"/>, so a new screen fails
 /// here until it has a fake API below.
 /// </summary>
 public sealed class ScreenLayoutTests
 {
     private const double Tolerance = 0.5;
 
+    /// <summary>The default window, a 1568x1087 pixel window at 175% scaling, and the smallest window allowed.</summary>
     private static readonly (double Width, double Height)[] WindowSizes = [(1080, 720), (896, 621), (720, 480)];
 
     private static readonly string[] Locales = ["en", "it"];
@@ -150,7 +151,9 @@ public sealed class ScreenLayoutTests
     private static FakeLarpEventApi EventsApi()
     {
         var api = new FakeLarpEventApi();
-        api.AddEvent("Fort", true, new DateOnly(2026, 12, 9), new DateOnly(2026, 12, 10));
+        var fort = api.AddEvent("Fort", true, new DateOnly(2026, 12, 9), new DateOnly(2026, 12, 10));
+        fort.Registrations[FakeLarpEventApi.KiraId] = [.. fort.Days.Select(day => day.Id)];
+        fort.ExperienceHistory[FakeLarpEventApi.KiraId] = [.. Enumerable.Repeat(1, 30)];
         return api;
     }
 

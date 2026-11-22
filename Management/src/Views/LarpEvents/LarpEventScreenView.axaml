@@ -87,13 +87,15 @@
         <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding ParticipantsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
         <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
           <TextBlock Classes="section" Text="{Binding ExperienceHistoryHeading}" />
-          <ItemsControl ItemsSource="{Binding ExperienceHistory}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="x:String">
-                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <ScrollViewer MaxHeight="100" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding ExperienceHistory}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
           <WrapPanel IsVisible="{Binding CanWrite}">
             <Button Margin="0,0,8,8" Command="{Binding RegisterCommand}" Content="{Binding RegisterLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding UnregisterCommand}" Content="{Binding UnregisterLabel}" />

@@ -162,7 +162,7 @@ public sealed class LarpEventScreenViewModel : ScreenViewModel
 
             _selectedParticipant = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(ExperienceHistory));
+            UpdateExperienceHistory();
             NotifyCommandsChanged();
         }
     }
