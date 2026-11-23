@@ -129,6 +129,98 @@ public sealed class MessageLiveUpdateTests
     }
 
     [Fact]
+    public async Task ConnectionLostForGoodIsExplained()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+
+        await api.LoseConnectionAsync(stillRetrying: false);
+
+        Assert.Equal("Live updates are not available, so new messages appear only when the list is loaded again.", screen.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ConnectionLostForGoodIsReleased()
+    {
+        var api = new FakeMessageApi();
+        await OpenAsync(api);
+
+        await api.LoseConnectionAsync(stillRetrying: false);
+
+        Assert.Null(api.ListeningTo);
+    }
+
+    [Fact]
+    public async Task NextLoadListensAgainAfterTheConnectionWasLostForGood()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+        await api.LoseConnectionAsync(stillRetrying: false);
+
+        await screen.LoadAsync();
+
+        Assert.Equal(new { Count = 2, Href = (string?)FakeMessageApi.LiveHref }, new { Count = api.ListenCount, Href = api.ListeningTo });
+    }
+
+    [Fact]
+    public async Task InterruptedConnectionIsExplainedWhileItReconnects()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+
+        await api.LoseConnectionAsync(stillRetrying: true);
+
+        Assert.Equal("Live updates are interrupted. Reconnecting…", screen.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ReconnectingClearsTheInterruption()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+        await api.LoseConnectionAsync(stillRetrying: true);
+
+        await api.ReconnectAsync();
+
+        Assert.Null(screen.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ReconnectingKeepsAnUnrelatedStatus()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api, new FakeMessageDialogs
+        {
+            OnMessageEditor = editor => MessageScreenViewModelTests.WriteAsync(editor, "Kira", ["Odo"])
+        });
+        await screen.NewMessageCommand.ExecuteAsync();
+
+        await api.ReconnectAsync();
+
+        Assert.Equal("Action completed.", screen.StatusMessage);
+    }
+
+    [Fact]
+    public async Task AnnouncementDuringAPageChangeDoesNotUndoIt()
+    {
+        var api = new FakeMessageApi();
+        for (var index = 0; index < 51; index++)
+        {
+            api.AddMessage($"Message {index}", Kira, Odo);
+        }
+
+        var screen = await OpenAsync(api);
+        api.HoldListLoads = true;
+        var pageChange = screen.NextMessagesCommand.ExecuteAsync();
+        await api.AnnounceAsync(api.AddMessage("Newest", Kira, Odo));
+
+        api.ReleaseHeldLoads();
+        await pageChange;
+
+        Assert.Equal("Page 2 of 2 (52 in total)", screen.MessagePage);
+    }
+
+    [Fact]
     public async Task UnavailableLiveUpdatesAreExplainedAndTheListStillLoads()
     {
         var api = new FakeMessageApi { ListenFailure = new HttpRequestException("Upgrade refused.") };
@@ -148,9 +240,9 @@ public sealed class MessageLiveUpdateTests
         screen.SelectedFoundCharacter = screen.FoundCharacters[0];
     }
 
-    private static async Task<MessageScreenViewModel> OpenAsync(FakeMessageApi api)
+    private static async Task<MessageScreenViewModel> OpenAsync(FakeMessageApi api, FakeMessageDialogs? dialogs = null)
     {
-        var screen = new MessageScreenViewModel(api, new JsonLocalizer(), new FakeMessageDialogs(), "http://localhost/api", "en",
+        var screen = new MessageScreenViewModel(api, new JsonLocalizer(), dialogs ?? new FakeMessageDialogs(), "http://localhost/api", "en",
             FakeMessageApi.MessagesHref);
         await screen.LoadAsync();
         return screen;

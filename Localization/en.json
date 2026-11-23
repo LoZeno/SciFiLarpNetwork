@@ -586,5 +586,6 @@
   "messages.setSender": "Set as sender",
   "messages.addRecipient": "Add recipient",
   "messages.removeRecipient": "Remove recipient",
-  "messages.liveUpdatesUnavailable": "Live updates are not available, so new messages appear only when the list is loaded again."
+  "messages.liveUpdatesUnavailable": "Live updates are not available, so new messages appear only when the list is loaded again.",
+  "messages.liveUpdatesInterrupted": "Live updates are interrupted. Reconnecting…"
 }

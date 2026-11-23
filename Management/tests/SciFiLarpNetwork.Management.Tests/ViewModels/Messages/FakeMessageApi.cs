@@ -44,30 +44,52 @@ internal sealed class FakeMessageApi : IManagementApiClient
     /// <summary>The live updates address the screen listens to; <see langword="null"/> when it is not listening.</summary>
     public string? ListeningTo { get; private set; }
 
+    /// <summary>How many times the screen started listening.</summary>
+    public int ListenCount { get; private set; }
+
     /// <summary>When set, listening to live updates fails with it.</summary>
     public Exception? ListenFailure { get; init; }
 
-    private Func<MessageSentNotice, Task>? _onMessageSent;
-    private Func<Task>? _onReconnected;
+    private MessageLiveHandlers? _handlers;
+
+    /// <summary>While set, list loads wait until <see cref="ReleaseHeldLoads"/>, so a test can overlap them.</summary>
+    public bool HoldListLoads { get; set; }
+
+    private readonly List<(string Query, TaskCompletionSource<SirenEntity> Answer)> _heldLoads = [];
+
+    /// <summary>Stops holding list loads, then answers the held ones in the order they were made.</summary>
+    public void ReleaseHeldLoads()
+    {
+        HoldListLoads = false;
+        foreach (var (query, answer) in _heldLoads.ToArray())
+        {
+            answer.SetResult(Collection(query));
+        }
+
+        _heldLoads.Clear();
+    }
 
     /// <summary>Plays the server announcing a sent message to the listening screen.</summary>
     public Task AnnounceAsync(FakeMessage message) =>
-        _onMessageSent?.Invoke(new MessageSentNotice(message.Id, message.RecipientIds)) ?? Task.CompletedTask;
+        _handlers?.OnMessageSent(new MessageSentNotice(message.Id, message.RecipientIds)) ?? Task.CompletedTask;
 
     /// <summary>Plays the live connection coming back after a network failure.</summary>
-    public Task ReconnectAsync() => _onReconnected?.Invoke() ?? Task.CompletedTask;
+    public Task ReconnectAsync() => _handlers?.OnReconnected() ?? Task.CompletedTask;
 
-    public Task<IAsyncDisposable> ListenForMessagesAsync(string apiBaseUrl, string href, Func<MessageSentNotice, Task> onMessageSent,
-        Func<Task> onReconnected, CancellationToken cancellationToken = default)
+    /// <summary>Plays the live connection dropping: still retrying, or stopped for good.</summary>
+    public Task LoseConnectionAsync(bool stillRetrying) => _handlers?.OnConnectionLost(stillRetrying) ?? Task.CompletedTask;
+
+    public Task<IAsyncDisposable> ListenForMessagesAsync(string apiBaseUrl, string href, MessageLiveHandlers handlers,
+        CancellationToken cancellationToken = default)
     {
         if (ListenFailure is { } failure)
         {
             return Task.FromException<IAsyncDisposable>(failure);
         }
 
+        ListenCount++;
         ListeningTo = href;
-        _onMessageSent = onMessageSent;
-        _onReconnected = onReconnected;
+        _handlers = handlers;
         return Task.FromResult<IAsyncDisposable>(new Listening(this));
     }
 
@@ -88,6 +110,13 @@ internal sealed class FakeMessageApi : IManagementApiClient
         if (path == MessagesHref)
         {
             ListLoads.Add(href);
+            if (HoldListLoads)
+            {
+                var answer = new TaskCompletionSource<SirenEntity>();
+                _heldLoads.Add((query, answer));
+                return answer.Task;
+            }
+
             return Task.FromResult(Collection(query));
         }
 
@@ -344,8 +373,7 @@ internal sealed class FakeMessageApi : IManagementApiClient
         public ValueTask DisposeAsync()
         {
             api.ListeningTo = null;
-            api._onMessageSent = null;
-            api._onReconnected = null;
+            api._handlers = null;
             return ValueTask.CompletedTask;
         }
     }

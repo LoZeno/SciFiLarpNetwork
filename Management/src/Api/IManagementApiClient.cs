@@ -75,15 +75,13 @@ public interface IManagementApiClient
 
     /// <summary>
     /// Listens to the live message updates advertised at <paramref name="href"/>, within the configured API origin and
-    /// path, with the signed-in session. <paramref name="onMessageSent"/> runs for each sent message and
-    /// <paramref name="onReconnected"/> after the connection comes back, when notices may have been missed. Disposing
-    /// the result closes the connection. Clients without live updates listen to nothing.
+    /// path, with the signed-in session, and reports them to <paramref name="handlers"/>. Disposing the result closes
+    /// the connection without reporting it as lost. Clients without live updates listen to nothing.
     /// </summary>
     Task<IAsyncDisposable> ListenForMessagesAsync(
         string apiBaseUrl,
         string href,
-        Func<MessageSentNotice, Task> onMessageSent,
-        Func<Task> onReconnected,
+        MessageLiveHandlers handlers,
         CancellationToken cancellationToken = default) =>
         Task.FromResult<IAsyncDisposable>(NoListening.Instance);
 

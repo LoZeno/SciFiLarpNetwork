@@ -248,13 +248,13 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
 
     /// <remarks>
     /// The session token is sent in the <c>Authorization</c> header, never in the address, and is read again on every
-    /// reconnect, so a renewed session is used. The connection reconnects on its own after a network failure.
+    /// reconnect, so a renewed session is used. <see cref="MessageReconnectPolicy"/> reconnects after a network failure
+    /// for as long as the connection is open.
     /// </remarks>
     public async Task<IAsyncDisposable> ListenForMessagesAsync(
         string apiBaseUrl,
         string href,
-        Func<MessageSentNotice, Task> onMessageSent,
-        Func<Task> onReconnected,
+        MessageLiveHandlers handlers,
         CancellationToken cancellationToken = default)
     {
         var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
@@ -271,21 +271,24 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
 
         var connection = new HubConnectionBuilder()
             .WithUrl(target, options => options.AccessTokenProvider = () => Task.FromResult<string?>(_sessionToken))
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect(new MessageReconnectPolicy())
             .Build();
-        connection.On("messageSent", onMessageSent);
-        connection.Reconnected += _ => onReconnected();
+        var listening = new LiveConnection(connection);
+        connection.On("messageSent", handlers.OnMessageSent);
+        connection.Reconnecting += _ => handlers.OnConnectionLost(true);
+        connection.Reconnected += _ => handlers.OnReconnected();
+        connection.Closed += _ => listening.IsClosing ? Task.CompletedTask : handlers.OnConnectionLost(false);
         try
         {
             await connection.StartAsync(cancellationToken);
         }
         catch
         {
-            await connection.DisposeAsync();
+            await listening.DisposeAsync();
             throw;
         }
 
-        return connection;
+        return listening;
     }
 
     private HttpRequestMessage CreateActionRequest(string apiBaseUrl, SirenAction action, JsonElement? body, string locale)
@@ -520,4 +523,15 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         return new ManagementSession(userName.GetString()!, role.GetString()!, expiresAt);
     }
 
+    /// <summary>A live connection that, when the screen closes it, does not report itself as lost.</summary>
+    private sealed class LiveConnection(HubConnection connection) : IAsyncDisposable
+    {
+        public bool IsClosing { get; private set; }
+
+        public ValueTask DisposeAsync()
+        {
+            IsClosing = true;
+            return connection.DisposeAsync();
+        }
+    }
 }

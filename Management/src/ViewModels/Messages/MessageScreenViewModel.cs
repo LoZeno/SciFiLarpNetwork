@@ -30,6 +30,9 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
     private IAsyncDisposable? _liveUpdates;
     private bool _isListening;
     private bool _isDisposed;
+    private bool _showsInterruption;
+    private bool _liveReloadPending;
+    private int _userListLoads;
     private SirenEntity? _messages;
     private SirenEntity? _message;
     private SirenEntity? _sent;
@@ -290,9 +293,33 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
 
     /// <summary>
     /// Loads a page of the list: <paramref name="href"/> when following a page link, otherwise the first page of every
-    /// message or of the filter character's incoming messages.
+    /// message or of the filter character's incoming messages. Only the newest load is shown, so a live reload asked
+    /// for while the user's own load runs waits for it; otherwise its older page or filter could replace the user's.
     /// </summary>
-    private async Task LoadMessagesCoreAsync(string? href)
+    private async Task LoadMessagesCoreAsync(string? href, bool isLiveReload = false)
+    {
+        if (isLiveReload)
+        {
+            await LoadPageAsync(href);
+            return;
+        }
+
+        _userListLoads++;
+        try
+        {
+            await LoadPageAsync(href);
+        }
+        finally
+        {
+            if (--_userListLoads == 0 && _liveReloadPending)
+            {
+                _liveReloadPending = false;
+                _liveReloadCommand.Execute(null);
+            }
+        }
+    }
+
+    private async Task LoadPageAsync(string? href)
     {
         var generation = ++_listLoadGeneration;
         var collection = await GetAsync(href ?? _messagesHref);
@@ -340,7 +367,8 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
         _uiContext = SynchronizationContext.Current;
         try
         {
-            var liveUpdates = await ApiClient.ListenForMessagesAsync(ApiBaseUrl, href, OnMessageSentAsync, OnReconnectedAsync);
+            var liveUpdates = await ApiClient.ListenForMessagesAsync(ApiBaseUrl, href,
+                new MessageLiveHandlers(OnMessageSentAsync, OnReconnectedAsync, OnConnectionLostAsync));
             if (_isDisposed)
             {
                 await CloseAsync(liveUpdates);
@@ -362,29 +390,70 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
     {
         if (FilterCharacter is not { } character || notice.RecipientIds.Contains(character.CharacterId))
         {
-            ReloadOnScreen();
+            OnScreen(() => _liveReloadCommand.Execute(null));
         }
 
         return Task.CompletedTask;
     }
 
-    /// <summary>Notices sent while the connection was down are lost, so the shown page is loaded again.</summary>
+    /// <summary>
+    /// Notices sent while the connection was down are lost, so the shown page is loaded again; the interruption note,
+    /// if it is still shown, goes away.
+    /// </summary>
     private Task OnReconnectedAsync()
     {
-        ReloadOnScreen();
+        OnScreen(() =>
+        {
+            if (_showsInterruption)
+            {
+                _showsInterruption = false;
+                StatusMessage = null;
+            }
+
+            _liveReloadCommand.Execute(null);
+        });
         return Task.CompletedTask;
     }
 
-    /// <summary>Live updates arrive on a background thread; the list changes on the thread that opened the screen.</summary>
-    private void ReloadOnScreen()
+    /// <summary>
+    /// Says that live updates stopped. While the connection is still retrying the note says so; once it has stopped
+    /// for good the connection is released, so the next load of the screen listens again.
+    /// </summary>
+    private Task OnConnectionLostAsync(bool stillRetrying)
+    {
+        OnScreen(() =>
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _showsInterruption = stillRetrying;
+            StatusMessage = Translate(stillRetrying ? "messages.liveUpdatesInterrupted" : "messages.liveUpdatesUnavailable");
+            if (stillRetrying)
+            {
+                return;
+            }
+
+            _isListening = false;
+            if (Interlocked.Exchange(ref _liveUpdates, null) is { } liveUpdates)
+            {
+                _ = CloseAsync(liveUpdates);
+            }
+        });
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Live updates arrive on a background thread; the screen changes on the thread that opened it.</summary>
+    private void OnScreen(Action change)
     {
         if (_uiContext is { } context)
         {
-            context.Post(_ => _liveReloadCommand.Execute(null), null);
+            context.Post(_ => change(), null);
         }
         else
         {
-            _liveReloadCommand.Execute(null);
+            change();
         }
     }
 
@@ -399,9 +468,15 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
             return;
         }
 
+        if (_userListLoads > 0)
+        {
+            _liveReloadPending = true;
+            return;
+        }
+
         try
         {
-            await LoadMessagesCoreAsync(shown);
+            await LoadMessagesCoreAsync(shown, isLiveReload: true);
         }
         catch (Exception failure) when (IsExpectedFailure(failure))
         {
