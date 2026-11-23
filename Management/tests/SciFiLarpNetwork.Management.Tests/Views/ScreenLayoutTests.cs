@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
@@ -105,7 +106,7 @@ public sealed class ScreenLayoutTests
     {
         var viewModel = new MainWindowViewModel(api, new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(),
-            new FakeLarpEventDialogs(), new ManagementSettings(Locale: locale));
+            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new ManagementSettings(Locale: locale));
         var window = new MainWindow(viewModel) { Width = width, Height = height };
         window.Show();
         await viewModel.ConnectCommand.ExecuteAsync();
@@ -123,6 +124,7 @@ public sealed class ScreenLayoutTests
         NavigationScreen.PlayerRoster => PlayerRosterApi(),
         NavigationScreen.CardTemplates => new FakeCardTemplateApi(),
         NavigationScreen.Events => EventsApi(),
+        NavigationScreen.Messages => MessagesApi(),
         _ => throw new ArgumentOutOfRangeException(nameof(screen), screen, "Add a fake API for this screen.")
     };
 
@@ -153,6 +155,22 @@ public sealed class ScreenLayoutTests
         var fort = api.AddEvent("Fort", true, new DateOnly(2026, 12, 9), new DateOnly(2026, 12, 10));
         fort.Registrations[FakeLarpEventApi.KiraId] = [.. fort.Days.Select(day => day.Id)];
         fort.ExperienceHistory[FakeLarpEventApi.KiraId] = [.. Enumerable.Repeat(1, 30)];
+        return api;
+    }
+
+    /// <summary>A reply with a long title, every character as recipient, and a long text, so every detail is shown.</summary>
+    private static FakeMessageApi MessagesApi()
+    {
+        var api = new FakeMessageApi();
+        foreach (var number in Enumerable.Range(4, 40))
+        {
+            api.Characters[Guid.NewGuid()] = (number, $"Character with a rather long name {number}");
+        }
+
+        var source = api.AddMessage("Supply run", FakeMessageApi.KiraId, FakeMessageApi.OdoId);
+        api.Messages.Add(new FakeMessage(Guid.NewGuid(), FakeMessageApi.OdoId, [.. api.Characters.Keys, Guid.NewGuid()],
+            $"Re: {new string('t', 120)}", string.Join("\n", Enumerable.Range(0, 200).Select(line => $"Line {line} of a long message text.")),
+            source.SentAtUtc.AddHours(1), source.Id));
         return api;
     }
 

@@ -81,7 +81,15 @@ public static class ApiErrorMessages
         "errors.cardRenderingFailed",
         "errors.invalidCardTemplate",
         "errors.cardTemplateTooLarge",
-        "errors.cardTemplateNotSaved"
+        "errors.cardTemplateNotSaved",
+        "errors.invalidMessageId",
+        "errors.invalidMessageTitle",
+        "errors.invalidMessageBody",
+        "errors.noRecipients",
+        "errors.tooManyRecipients",
+        "errors.archivedCharacters",
+        "errors.unknownReplySource",
+        "errors.messageIdInUse"
     ];
 
     extension(IManagementLocalizer localizer)

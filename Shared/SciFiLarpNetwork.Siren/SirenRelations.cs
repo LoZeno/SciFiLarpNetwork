@@ -24,6 +24,8 @@ public static class SirenRelations
     public const string Events = "urn:scifilarnetwork:rels:events";
     public const string Event = "urn:scifilarnetwork:rels:event";
     public const string Participants = "urn:scifilarnetwork:rels:participants";
+    public const string Messages = "urn:scifilarnetwork:rels:messages";
+    public const string ReplySource = "urn:scifilarnetwork:rels:reply-source";
     public const string First = "first";
     public const string Previous = "prev";
     public const string Next = "next";
