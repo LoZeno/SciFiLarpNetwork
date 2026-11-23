@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
+using SciFiLarpNetwork.Management.Api.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
 
 namespace SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
@@ -11,6 +12,7 @@ internal sealed class FakeMessageApi : IManagementApiClient
 {
     public const string MessagesHref = "/api/v1/messages";
     public const string CharactersHref = "/api/v1/characters";
+    public const string LiveHref = "/api/v1/messages/live";
     public static readonly Guid KiraId = new("11111111-1111-1111-1111-111111111111");
     public static readonly Guid OdoId = new("22222222-2222-2222-2222-222222222222");
     public static readonly Guid JadeId = new("33333333-3333-3333-3333-333333333333");
@@ -36,6 +38,39 @@ internal sealed class FakeMessageApi : IManagementApiClient
     /// <summary>Every message details address the screen opened, in order.</summary>
     public List<string> Openings { get; } = [];
 
+    /// <summary>Every list address the screen loaded, in order.</summary>
+    public List<string> ListLoads { get; } = [];
+
+    /// <summary>The live updates address the screen listens to; <see langword="null"/> when it is not listening.</summary>
+    public string? ListeningTo { get; private set; }
+
+    /// <summary>When set, listening to live updates fails with it.</summary>
+    public Exception? ListenFailure { get; init; }
+
+    private Func<MessageSentNotice, Task>? _onMessageSent;
+    private Func<Task>? _onReconnected;
+
+    /// <summary>Plays the server announcing a sent message to the listening screen.</summary>
+    public Task AnnounceAsync(FakeMessage message) =>
+        _onMessageSent?.Invoke(new MessageSentNotice(message.Id, message.RecipientIds)) ?? Task.CompletedTask;
+
+    /// <summary>Plays the live connection coming back after a network failure.</summary>
+    public Task ReconnectAsync() => _onReconnected?.Invoke() ?? Task.CompletedTask;
+
+    public Task<IAsyncDisposable> ListenForMessagesAsync(string apiBaseUrl, string href, Func<MessageSentNotice, Task> onMessageSent,
+        Func<Task> onReconnected, CancellationToken cancellationToken = default)
+    {
+        if (ListenFailure is { } failure)
+        {
+            return Task.FromException<IAsyncDisposable>(failure);
+        }
+
+        ListeningTo = href;
+        _onMessageSent = onMessageSent;
+        _onReconnected = onReconnected;
+        return Task.FromResult<IAsyncDisposable>(new Listening(this));
+    }
+
     /// <summary>One-shot failures for the next submission of the named action.</summary>
     public Dictionary<string, Exception> Failures { get; } = [];
 
@@ -52,6 +87,7 @@ internal sealed class FakeMessageApi : IManagementApiClient
         var (path, query) = Split(href);
         if (path == MessagesHref)
         {
+            ListLoads.Add(href);
             return Task.FromResult(Collection(query));
         }
 
@@ -137,7 +173,8 @@ internal sealed class FakeMessageApi : IManagementApiClient
         var links = new List<SirenLink>
         {
             new() { Rel = ["self"], Href = PageHref(characterId, page) },
-            new() { Rel = [SirenRelations.Characters], Href = CharactersHref }
+            new() { Rel = [SirenRelations.Characters], Href = CharactersHref },
+            new() { Rel = [SirenRelations.LiveUpdates], Href = LiveHref }
         };
         if (page > 1)
         {
@@ -301,4 +338,15 @@ internal sealed class FakeMessageApi : IManagementApiClient
     }
 
     private static JsonElement Json(object value) => JsonSerializer.SerializeToElement(value, JsonOptions);
+
+    private sealed class Listening(FakeMessageApi api) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync()
+        {
+            api.ListeningTo = null;
+            api._onMessageSent = null;
+            api._onReconnected = null;
+            return ValueTask.CompletedTask;
+        }
+    }
 }

@@ -288,6 +288,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (_currentScreen is not null)
             {
                 _currentScreen.SessionExpired -= OnCatalogSessionExpired;
+
+                // A screen that holds a connection, such as live message updates, closes it when it is left.
+                (_currentScreen as IDisposable)?.Dispose();
             }
 
             _currentScreen = value;

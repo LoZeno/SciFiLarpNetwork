@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR.Client;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api.Messages;
 
 namespace SciFiLarpNetwork.Management.Api;
 
@@ -242,6 +244,48 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         }
 
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
+    /// <remarks>
+    /// The session token is sent in the <c>Authorization</c> header, never in the address, and is read again on every
+    /// reconnect, so a renewed session is used. The connection reconnects on its own after a network failure.
+    /// </remarks>
+    public async Task<IAsyncDisposable> ListenForMessagesAsync(
+        string apiBaseUrl,
+        string href,
+        Func<MessageSentNotice, Task> onMessageSent,
+        Func<Task> onReconnected,
+        CancellationToken cancellationToken = default)
+    {
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, href, out var target))
+        {
+            throw new InvalidOperationException("The Siren target is outside the configured API origin or path.");
+        }
+
+        RequireSecureSessionTarget(target);
+        if (_sessionToken is null || !IsSessionTarget(target))
+        {
+            throw new InvalidOperationException("No administrator session is active for this API.");
+        }
+
+        var connection = new HubConnectionBuilder()
+            .WithUrl(target, options => options.AccessTokenProvider = () => Task.FromResult<string?>(_sessionToken))
+            .WithAutomaticReconnect()
+            .Build();
+        connection.On("messageSent", onMessageSent);
+        connection.Reconnected += _ => onReconnected();
+        try
+        {
+            await connection.StartAsync(cancellationToken);
+        }
+        catch
+        {
+            await connection.DisposeAsync();
+            throw;
+        }
+
+        return connection;
     }
 
     private HttpRequestMessage CreateActionRequest(string apiBaseUrl, SirenAction action, JsonElement? body, string locale)

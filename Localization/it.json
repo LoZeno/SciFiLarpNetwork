@@ -585,5 +585,6 @@
   "messages.senderRequired": "Scegli un mittente.",
   "messages.setSender": "Imposta come mittente",
   "messages.addRecipient": "Aggiungi destinatario",
-  "messages.removeRecipient": "Rimuovi destinatario"
+  "messages.removeRecipient": "Rimuovi destinatario",
+  "messages.liveUpdatesUnavailable": "Gli aggiornamenti in tempo reale non sono disponibili: i nuovi messaggi compaiono solo quando l'elenco viene ricaricato."
 }

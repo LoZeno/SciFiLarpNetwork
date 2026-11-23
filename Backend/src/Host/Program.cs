@@ -12,8 +12,10 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.OpenApi;
 using SciFiLarpNetwork.Backend.Api;
 using SciFiLarpNetwork.Backend.Api.ErrorResponses;
+using SciFiLarpNetwork.Backend.Api.Messages;
 using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
+using SciFiLarpNetwork.Backend.Application.Messages;
 using SciFiLarpNetwork.Backend.Infrastructure;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Localization.Text;
@@ -64,6 +66,8 @@ builder.Services.AddSingleton<IApiErrorResponseFactory, ApiErrorResponseFactory>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IEventActorContext, HttpEventActorContext>();
 builder.Services.AddEventStore(builder.Configuration);
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IMessageNotifications, SignalRMessageNotifications>();
 builder.Services.AddCardPrinting(builder.Configuration);
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -136,6 +140,7 @@ app.UseStatusCodePages(async statusCodeContext =>
 
 app.MapOpenApi().AllowAnonymous();
 app.MapControllers();
+app.MapHub<MessageHub>(MessageHub.Path, options => options.CloseOnAuthenticationExpiration = true);
 app.MapHealthChecks(
     "/health/ready",
     new HealthCheckOptions

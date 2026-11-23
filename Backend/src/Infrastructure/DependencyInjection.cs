@@ -54,6 +54,8 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.TryAddSingleton(TimeProvider.System);
+        // The message subscription logs failed live updates; AddLogging only adds what the host has not registered.
+        services.AddLogging();
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<AttributedSessionFactory>();
         services.AddSingleton<IAdministratorProvisioningService, AdministratorProvisioningService>();
@@ -75,6 +77,7 @@ public static class DependencyInjection
         services.AddSingleton<ILarpEventParticipantService, LarpEventParticipantService>();
         services.AddSingleton<ILarpEventCardService, LarpEventCardService>();
         services.AddSingleton<IMessageService, MessageService>();
+        services.TryAddSingleton<IMessageNotifications, NoMessageNotifications>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -235,9 +238,12 @@ public static class DependencyInjection
             options.Events.AddEventType<MessageOpened>();
 
             // Sending reads this write model (a repeated submission, the reply source), and the list and details
-            // show a message right after it is sent.
+            // show a message right after it is sent. Live updates rely on it too: the document commits with the event,
+            // so a client that reloads when MessageSentSubscription announces the event always finds the message.
             options.Projections.Add<MessageProjection>(ProjectionLifecycle.Inline);
-        }).AddAsyncDaemon(DaemonMode.Solo);
+        })
+        .AddSubscriptionWithServices<MessageSentSubscription>(ServiceLifetime.Singleton)
+        .AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();
         services.AddHealthChecks()

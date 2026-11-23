@@ -104,7 +104,8 @@ internal sealed class MessageResources(IApplicationText text, string pathBase, b
             new() { Rel = ["self"], Href = PageHref(query) },
             new() { Rel = [SirenRelations.First], Href = PageHref(query with { PageNumber = 1 }) },
             new() { Rel = [SirenRelations.Last], Href = PageHref(query with { PageNumber = page.PageCount }) },
-            new() { Rel = [SirenRelations.Characters], Href = CharactersPath }
+            new() { Rel = [SirenRelations.Characters], Href = CharactersPath },
+            new() { Rel = [SirenRelations.LiveUpdates], Href = $"{pathBase}{MessageHub.Path}" }
         };
         if (page.PageNumber > 1)
         {

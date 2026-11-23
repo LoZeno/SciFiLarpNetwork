@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
@@ -13,9 +14,10 @@ namespace SciFiLarpNetwork.Management.ViewModels.Messages;
 /// <summary>
 /// The messages screen: a paged message list, of every message or of one character's incoming messages, and the
 /// selected message's details. Opening a message is recorded by the API. Sending follows the actions the API
-/// advertises, which it offers only to administrators.
+/// advertises, which it offers only to administrators. While the screen is open it listens to the API's live updates
+/// and reloads the page it shows when a sent message belongs on it; closing the screen stops listening.
 /// </summary>
-public sealed class MessageScreenViewModel : ScreenViewModel
+public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
 {
     private const string ReplyPrefix = "Re: ";
     private readonly IMessageDialogService _dialogs;
@@ -23,6 +25,11 @@ public sealed class MessageScreenViewModel : ScreenViewModel
     private readonly AsyncCommand _reloadCommand;
     private readonly AsyncCommand _openMessageCommand;
     private readonly AsyncCommand _filterCommand;
+    private readonly AsyncCommand _liveReloadCommand;
+    private SynchronizationContext? _uiContext;
+    private IAsyncDisposable? _liveUpdates;
+    private bool _isListening;
+    private bool _isDisposed;
     private SirenEntity? _messages;
     private SirenEntity? _message;
     private SirenEntity? _sent;
@@ -50,6 +57,7 @@ public sealed class MessageScreenViewModel : ScreenViewModel
         _reloadCommand = new AsyncCommand(LoadAsync, HandleUnexpectedFailure);
         _openMessageCommand = new AsyncCommand(() => RunAsync(() => OpenAsync(SelectedMessage?.Href)), HandleUnexpectedFailure);
         _filterCommand = new AsyncCommand(() => RunAsync(() => LoadMessagesCoreAsync(null)), HandleUnexpectedFailure);
+        _liveReloadCommand = new AsyncCommand(ReloadShownPageAsync, HandleUnexpectedFailure);
         PreviousMessagesCommand = new AsyncCommand(
             () => RunAsync(() => LoadMessagesCoreAsync(_messages?.FindLinkHref(SirenRelations.Previous))),
             HandleUnexpectedFailure,
@@ -236,7 +244,21 @@ public sealed class MessageScreenViewModel : ScreenViewModel
 
     public bool HasDetailsPlaceholder => DetailsPlaceholder is not null;
 
-    public override Task LoadAsync() => RunAsync(() => LoadMessagesCoreAsync(null));
+    public override Task LoadAsync() => RunAsync(async () =>
+    {
+        await LoadMessagesCoreAsync(null);
+        await StartListeningAsync();
+    });
+
+    /// <summary>Stops listening to live updates. The connection closes in the background.</summary>
+    public void Dispose()
+    {
+        _isDisposed = true;
+        if (Interlocked.Exchange(ref _liveUpdates, null) is { } liveUpdates)
+        {
+            _ = CloseAsync(liveUpdates);
+        }
+    }
 
     private protected override void OnLocaleChanged()
     {
@@ -301,6 +323,102 @@ public sealed class MessageScreenViewModel : ScreenViewModel
         OnPropertyChanged(nameof(MessagesPlaceholder));
         OnPropertyChanged(nameof(HasMessagesPlaceholder));
         NotifyCommandsChanged();
+    }
+
+    /// <summary>
+    /// Starts listening once, when the list advertises live updates. Without them the screen still works and shows a
+    /// note that new messages appear only when the list is loaded again.
+    /// </summary>
+    private async Task StartListeningAsync()
+    {
+        if (_isListening || _isDisposed || _messages?.FindLinkHref(SirenRelations.LiveUpdates) is not { } href)
+        {
+            return;
+        }
+
+        _isListening = true;
+        _uiContext = SynchronizationContext.Current;
+        try
+        {
+            var liveUpdates = await ApiClient.ListenForMessagesAsync(ApiBaseUrl, href, OnMessageSentAsync, OnReconnectedAsync);
+            if (_isDisposed)
+            {
+                await CloseAsync(liveUpdates);
+                return;
+            }
+
+            _liveUpdates = liveUpdates;
+        }
+        catch (Exception failure) when (failure is not OperationCanceledException)
+        {
+            Trace.TraceWarning("Live message updates are unavailable: {0}", failure);
+            _isListening = false;
+            StatusMessage = Translate("messages.liveUpdatesUnavailable");
+        }
+    }
+
+    /// <summary>Reloads the shown page when the message belongs on it: every message, or the listed character's incoming ones.</summary>
+    private Task OnMessageSentAsync(MessageSentNotice notice)
+    {
+        if (FilterCharacter is not { } character || notice.RecipientIds.Contains(character.CharacterId))
+        {
+            ReloadOnScreen();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Notices sent while the connection was down are lost, so the shown page is loaded again.</summary>
+    private Task OnReconnectedAsync()
+    {
+        ReloadOnScreen();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Live updates arrive on a background thread; the list changes on the thread that opened the screen.</summary>
+    private void ReloadOnScreen()
+    {
+        if (_uiContext is { } context)
+        {
+            context.Post(_ => _liveReloadCommand.Execute(null), null);
+        }
+        else
+        {
+            _liveReloadCommand.Execute(null);
+        }
+    }
+
+    /// <summary>
+    /// Loads the page the user is on again, with its filter, keeping the selected message and its details. It does not
+    /// mark the screen busy or clear its status, so a live update does not interrupt the user.
+    /// </summary>
+    private async Task ReloadShownPageAsync()
+    {
+        if (_isDisposed || _messages?.FindLinkHref("self") is not { } shown)
+        {
+            return;
+        }
+
+        try
+        {
+            await LoadMessagesCoreAsync(shown);
+        }
+        catch (Exception failure) when (IsExpectedFailure(failure))
+        {
+            StatusMessage = Report(failure);
+        }
+    }
+
+    private static async Task CloseAsync(IAsyncDisposable liveUpdates)
+    {
+        try
+        {
+            await liveUpdates.DisposeAsync();
+        }
+        catch (Exception failure)
+        {
+            Trace.TraceWarning("Closing the live message updates failed: {0}", failure);
+        }
     }
 
     /// <summary>Opens a message's details, which the API records as an opening.</summary>

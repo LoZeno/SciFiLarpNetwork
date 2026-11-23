@@ -36,6 +36,20 @@ public sealed class MainWindowMessageTests
             new { IsOpen = viewModel.IsMessagesOpen, IsSummaryVisible = viewModel.IsResourceSummaryVisible, Count = viewModel.Messages?.Messages.Count });
     }
 
+    [Fact]
+    public async Task SigningOutStopsTheLiveUpdates()
+    {
+        var api = new FakeMessageApi();
+        var viewModel = CreateViewModel(api);
+        await viewModel.SignInCommand.ExecuteAsync();
+        await viewModel.ConnectCommand.ExecuteAsync();
+        viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
+
+        await viewModel.SignOutCommand.ExecuteAsync();
+
+        Assert.Null(api.ListeningTo);
+    }
+
     private static MainWindowViewModel CreateViewModel(FakeMessageApi api) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new ManagementSettings());
