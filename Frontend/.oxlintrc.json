@@ -62,6 +62,7 @@
     "no-unused-private-class-members": "error",
     "no-unused-vars": "error",
     "no-useless-backreference": "error",
+    "no-useless-assignment": "error",
     "no-useless-catch": "error",
     "no-useless-escape": "error",
     "no-with": "error",
@@ -113,6 +114,12 @@
         "prefer-const": "error",
         "prefer-rest-params": "error",
         "prefer-spread": "error"
+      }
+    },
+    {
+      "files": ["**/*.js", "**/*.mjs", "**/*.cjs"],
+      "rules": {
+        "no-undef": "error"
       }
     }
   ]
