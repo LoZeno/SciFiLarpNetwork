@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -26,46 +25,46 @@ namespace SciFiLarpNetwork.Management.Tests.Views;
 /// </summary>
 public sealed class GlobalScrollBarStyleTests
 {
-    [AvaloniaFact]
-    public async Task NetworkListScrollBarCoversNoNetwork()
+    [Fact]
+    public Task NetworkListScrollBarCoversNoNetwork() => AvaloniaUi.Run(async () =>
     {
         var (window, scroller) = await ShowNetworkListAsync();
 
         Assert.Empty(ControlsUnder(window, scroller, VerticalBar(scroller)));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task NetworkListScrollBarKeepsAGap()
+    [Fact]
+    public Task NetworkListScrollBarKeepsAGap() => AvaloniaUi.Run(async () =>
     {
         var (window, scroller) = await ShowNetworkListAsync();
         var content = BoundsIn(window, (Visual)scroller.Content!);
 
         Assert.True(BoundsIn(window, VerticalBar(scroller)).Left - content.Right >= 4);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task NetworkListScrollBarHasNoArrowButtons()
+    [Fact]
+    public Task NetworkListScrollBarHasNoArrowButtons() => AvaloniaUi.Run(async () =>
     {
         var (window, scroller) = await ShowNetworkListAsync();
 
         Assert.False(HasArrowButtons(VerticalBar(scroller)));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task NetworkListScrollBarIsThin()
+    [Fact]
+    public Task NetworkListScrollBarIsThin() => AvaloniaUi.Run(async () =>
     {
         var (window, scroller) = await ShowNetworkListAsync();
 
         Assert.Equal(new { Visible = true, Thickness = 6.0 },
             new { Visible = VerticalBar(scroller).IsEffectivelyVisible, Thickness = Thickness(VerticalBar(scroller)) });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ComboBoxDropDownScrollBarIsThinAndBeside()
+    [Fact]
+    public Task ComboBoxDropDownScrollBarIsThinAndBeside() => AvaloniaUi.Run(() =>
     {
         var comboBox = new ComboBox { ItemsSource = Enumerable.Range(1, 60).Select(item => $"Item {item}").ToArray() };
         var window = new Window { Width = 300, Height = 300, Content = comboBox };
@@ -78,38 +77,38 @@ public sealed class GlobalScrollBarStyleTests
         Assert.Equal(new { AllowAutoHide = false, Thickness = 6.0, Arrows = false },
             new { scroller.AllowAutoHide, Thickness = Thickness(VerticalBar(scroller)), Arrows = HasArrowButtons(VerticalBar(scroller)) });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void HorizontalScrollBarIsThin()
+    [Fact]
+    public Task HorizontalScrollBarIsThin() => AvaloniaUi.Run(() =>
     {
         var (window, scroller) = ShowWideContent();
 
         Assert.Equal(6.0, Thickness(HorizontalBar(scroller)));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void HorizontalScrollBarKeepsAGapBelowTheContent()
+    [Fact]
+    public Task HorizontalScrollBarKeepsAGapBelowTheContent() => AvaloniaUi.Run(() =>
     {
         var (window, scroller) = ShowWideContent();
         var content = BoundsIn(window, scroller.Presenter!);
 
         Assert.True(BoundsIn(window, HorizontalBar(scroller)).Top - content.Bottom >= 4);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void HorizontalScrollBarHasNoArrowButtons()
+    [Fact]
+    public Task HorizontalScrollBarHasNoArrowButtons() => AvaloniaUi.Run(() =>
     {
         var (window, scroller) = ShowWideContent();
 
         Assert.False(HasArrowButtons(HorizontalBar(scroller)));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task CardTemplatesScreenOpensInTheMainWindow()
+    [Fact]
+    public Task CardTemplatesScreenOpensInTheMainWindow() => AvaloniaUi.Run(async () =>
     {
         var viewModel = new MainWindowViewModel(new FakeCardTemplateApi(), new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(),
@@ -123,7 +122,7 @@ public sealed class GlobalScrollBarStyleTests
 
         Assert.True(window.GetVisualDescendants().OfType<CardTemplateScreenView>().Single().IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
     private static async Task<(Window Window, ScrollViewer Scroller)> ShowNetworkListAsync()
     {

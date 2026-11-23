@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
-using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Api;
@@ -48,9 +47,9 @@ public sealed class ScreenLayoutTests
         return cases;
     }
 
-    [AvaloniaTheory]
+    [Theory]
     [MemberData(nameof(Cases))]
-    public async Task NoControlSticksOutOfItsContainer(NavigationScreen screen, string locale, double width, double height)
+    public Task NoControlSticksOutOfItsContainer(NavigationScreen screen, string locale, double width, double height) => AvaloniaUi.Run(async () =>
     {
         var window = await ShowScreenAsync(screen, locale, width, height);
         var view = ScreenView(window);
@@ -63,20 +62,20 @@ public sealed class ScreenLayoutTests
 
         window.Close();
         Assert.Empty(overflowing);
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SmallWindowScrollsTheScreen()
+    [Fact]
+    public Task SmallWindowScrollsTheScreen() => AvaloniaUi.Run(async () =>
     {
         var window = await ShowScreenAsync(NavigationScreen.PlayerRoster, "it", 720, 480);
         var scroller = ScreenScroller(window);
 
         window.Close();
         Assert.True(Scrolls(scroller));
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task LongListScrollsByItselfWhenTheScreenFits()
+    [Fact]
+    public Task LongListScrollsByItselfWhenTheScreenFits() => AvaloniaUi.Run(async () =>
     {
         var api = new FakePlayerApi();
         foreach (var number in Enumerable.Range(1, 40))
@@ -92,7 +91,7 @@ public sealed class ScreenLayoutTests
         Assert.Equal(
             new { ScreenScrolls = false, ListScrolls = true },
             new { ScreenScrolls = Scrolls(ScreenScroller(window)), ListScrolls = Scrolls(listScroller) });
-    }
+    });
 
     private static ScrollViewer ScreenScroller(MainWindow window) => ScreenView(window).FindAncestorOfType<ScrollViewer>()!;
 

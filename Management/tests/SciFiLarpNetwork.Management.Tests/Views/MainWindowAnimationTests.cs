@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
-using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -28,8 +27,8 @@ public sealed class MainWindowAnimationTests
     private static readonly string[] SignInSlot = ["SignInReveal", "SignOutReveal"];
     private static readonly TimeSpan FirstFrameDeadline = TimeSpan.FromMilliseconds(120);
 
-    [AvaloniaFact]
-    public async Task SigningInFoldsAwayTheCredentialFields()
+    [Fact]
+    public Task SigningInFoldsAwayTheCredentialFields() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -38,10 +37,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.False(Named<Reveal>(window, "CredentialsReveal").Child!.IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningInShowsTheAccountName()
+    [Fact]
+    public Task SigningInShowsTheAccountName() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
         viewModel.UserName = "LoZeno";
@@ -51,10 +50,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(["Administrator: LoZeno"], ShownTexts(Named<Reveal>(window, "AccountReveal")));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningInSwapsTheSignInButtonForSignOut()
+    [Fact]
+    public Task SigningInSwapsTheSignInButtonForSignOut() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -63,19 +62,19 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(["Sign out"], ShownButtons(window));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ConnectIsHiddenBeforeSigningIn()
+    [Fact]
+    public Task ConnectIsHiddenBeforeSigningIn() => AvaloniaUi.Run(() =>
     {
         var (window, _) = ShowWindow();
 
         Assert.False(Named<Reveal>(window, "ConnectReveal").Child!.IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningInUnfoldsConnect()
+    [Fact]
+    public Task SigningInUnfoldsConnect() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -84,10 +83,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(Named<Reveal>(window, "ConnectReveal").Bounds.Height > 0);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningOutFoldsConnectAway()
+    [Fact]
+    public Task SigningOutFoldsConnectAway() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -96,10 +95,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.False(Named<Reveal>(window, "ConnectReveal").Child!.IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SignOutButtonWaitsWhileSignInSqueezesAway()
+    [Fact]
+    public Task SignOutButtonWaitsWhileSignInSqueezesAway() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -109,10 +108,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(0, Named<Reveal>(window, "SignOutReveal").Progress);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningOutBringsBackTheCredentialFields()
+    [Fact]
+    public Task SigningOutBringsBackTheCredentialFields() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -127,10 +126,10 @@ public sealed class MainWindowAnimationTests
                 Account = Named<Reveal>(window, "AccountReveal").Child!.IsVisible
             });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningOutSwapsSignOutBackForSignIn()
+    [Fact]
+    public Task SigningOutSwapsSignOutBackForSignIn() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -139,10 +138,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(["Sign in"], ShownButtons(window));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ConnectingDropsTheEntriesOpen()
+    [Fact]
+    public Task ConnectingDropsTheEntriesOpen() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -153,10 +152,10 @@ public sealed class MainWindowAnimationTests
             new { Height = true, Entries = "Card templates" },
             new { Height = Named<Reveal>(window, "NavigationReveal").Bounds.Height > 0, Entries = string.Join(", ", ShownEntries(window)) });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ConnectingStartsWithTheEntriesClosed()
+    [Fact]
+    public Task ConnectingStartsWithTheEntriesClosed() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -167,10 +166,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(Named<Reveal>(window, "NavigationReveal").Bounds.Height < Named<ListBox>(window, "NavigationList").Bounds.Height / 2);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ConnectingDropsEachEntryInFromAbove()
+    [Fact]
+    public Task ConnectingDropsEachEntryInFromAbove() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = ShowWindow();
 
@@ -181,10 +180,10 @@ public sealed class MainWindowAnimationTests
         var entry = Named<ListBox>(window, "NavigationList").GetVisualDescendants().OfType<ListBoxItem>().First();
         Assert.True(entry.TranslatePoint(default, (Visual)entry.GetVisualParent()!)!.Value.Y < entry.Bounds.Y);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningOutKeepsTheEntriesWhileTheListFoldsUp()
+    [Fact]
+    public Task SigningOutKeepsTheEntriesWhileTheListFoldsUp() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -194,10 +193,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(["Card templates"], ShownEntries(window));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SigningOutEmptiesTheListOnceItHasFolded()
+    [Fact]
+    public Task SigningOutEmptiesTheListOnceItHasFolded() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -206,10 +205,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Empty(ShownEntries(window));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SelectingAnEntryStartsTheWorkspaceLeftOfThePanel()
+    [Fact]
+    public Task SelectingAnEntryStartsTheWorkspaceLeftOfThePanel() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -219,10 +218,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(WorkspaceOffset(window) < 0);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SelectingAnEntryKeepsTheOldViewOnScreenWhileItLeaves()
+    [Fact]
+    public Task SelectingAnEntryKeepsTheOldViewOnScreenWhileItLeaves() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -231,10 +230,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(Named<Image>(window, "LeavingWorkspace").IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task TheOldViewSlidesOutToTheLeft()
+    [Fact]
+    public Task TheOldViewSlidesOutToTheLeft() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -243,10 +242,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(OffsetOf(Named<Image>(window, "LeavingWorkspace")) < -Named<Grid>(window, "Workspace").Bounds.Width / 4);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task TheNewViewWaitsOffThePanelWhileTheOldLeaves()
+    [Fact]
+    public Task TheNewViewWaitsOffThePanelWhileTheOldLeaves() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -255,10 +254,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(-Named<Grid>(window, "Workspace").Bounds.Width, WorkspaceOffset(window));
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task TheLeavingViewLooksLikeTheScreenOnAScaledScreen()
+    [Fact]
+    public Task TheLeavingViewLooksLikeTheScreenOnAScaledScreen() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
         window.SetRenderScaling(1.75);
@@ -270,10 +269,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(TextMismatch(screen, AsDrawn(Named<Image>(window, "LeavingWorkspace"), window.RenderScaling), WorkspacePixelOrigin(window)) < 0.5);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task TheOldViewIsDrawnAtTheWorkspaceSizeOnAScaledScreen()
+    [Fact]
+    public Task TheOldViewIsDrawnAtTheWorkspaceSizeOnAScaledScreen() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
         window.SetRenderScaling(1.75);
@@ -285,10 +284,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(Named<Grid>(window, "Workspace").Bounds.Size, Named<Image>(window, "LeavingWorkspace").Bounds.Size);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ASecondSelectionDuringTheSlideOutKeepsItsOwnLeavingView()
+    [Fact]
+    public Task ASecondSelectionDuringTheSlideOutKeepsItsOwnLeavingView() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowWindowWithTwoEntriesAsync();
         viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
@@ -303,10 +302,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.True(Named<Image>(window, "LeavingWorkspace").IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ASecondSelectionDuringTheSlideOutEndsWithTheNewViewInPlace()
+    [Fact]
+    public Task ASecondSelectionDuringTheSlideOutEndsWithTheNewViewInPlace() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowWindowWithTwoEntriesAsync();
         viewModel.SelectedNavigationItem = viewModel.NavigationItems[0];
@@ -319,10 +318,10 @@ public sealed class MainWindowAnimationTests
             new { LeavingShown = false, Offset = 0.0 },
             new { LeavingShown = Named<Image>(window, "LeavingWorkspace").IsVisible, Offset = WorkspaceOffset(window) });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task TheOldViewIsGoneOnceItHasLeft()
+    [Fact]
+    public Task TheOldViewIsGoneOnceItHasLeft() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -331,10 +330,10 @@ public sealed class MainWindowAnimationTests
 
         Assert.False(Named<Image>(window, "LeavingWorkspace").IsVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SelectingAnEntrySlidesTheWorkspaceIntoPlace()
+    [Fact]
+    public Task SelectingAnEntrySlidesTheWorkspaceIntoPlace() => AvaloniaUi.Run(async () =>
     {
         var (window, viewModel) = await ShowSignedInWindowAsync();
 
@@ -343,7 +342,7 @@ public sealed class MainWindowAnimationTests
 
         Assert.Equal(0, WorkspaceOffset(window));
         window.Close();
-    }
+    });
 
     private static T Named<T>(Window window, string name)
         where T : Control =>

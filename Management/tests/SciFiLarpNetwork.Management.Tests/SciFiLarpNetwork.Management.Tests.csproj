@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ProTest.Avalonia.Headless.XUnit.v4" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
     <PackageReference Include="coverlet.MTP" Version="10.1.1">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="SciFiLarpNetwork.Management.Tests.Application" />
   </ItemGroup>
 
 </Project>
