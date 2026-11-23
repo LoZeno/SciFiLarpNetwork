@@ -1,6 +1,7 @@
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Net;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
@@ -99,7 +100,7 @@ public sealed class MainWindowTalentCatalogTests
 
     private static MainWindowViewModel CreateViewModel(FakeCatalogApi api) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new ManagementSettings());
+            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {

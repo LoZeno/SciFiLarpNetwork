@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR.Client;
 using SciFiLarpNetwork.Common.ApiLinkPolicy;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api.Messages;
 
 namespace SciFiLarpNetwork.Management.Api;
 
@@ -244,6 +246,51 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
+    /// <remarks>
+    /// The session token is sent in the <c>Authorization</c> header, never in the address, and is read again on every
+    /// reconnect, so a renewed session is used. <see cref="MessageReconnectPolicy"/> reconnects after a network failure
+    /// for as long as the connection is open.
+    /// </remarks>
+    public async Task<IAsyncDisposable> ListenForMessagesAsync(
+        string apiBaseUrl,
+        string href,
+        MessageLiveHandlers handlers,
+        CancellationToken cancellationToken = default)
+    {
+        var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
+        if (!ApiLinkPolicy.TryResolve(apiRoot, href, out var target))
+        {
+            throw new InvalidOperationException("The Siren target is outside the configured API origin or path.");
+        }
+
+        RequireSecureSessionTarget(target);
+        if (_sessionToken is null || !IsSessionTarget(target))
+        {
+            throw new InvalidOperationException("No administrator session is active for this API.");
+        }
+
+        var connection = new HubConnectionBuilder()
+            .WithUrl(target, options => options.AccessTokenProvider = () => Task.FromResult<string?>(_sessionToken))
+            .WithAutomaticReconnect(new MessageReconnectPolicy())
+            .Build();
+        var listening = new LiveConnection(connection);
+        connection.On("messageSent", handlers.OnMessageSent);
+        connection.Reconnecting += _ => handlers.OnConnectionLost(true);
+        connection.Reconnected += _ => handlers.OnReconnected();
+        connection.Closed += _ => listening.IsClosing ? Task.CompletedTask : handlers.OnConnectionLost(false);
+        try
+        {
+            await connection.StartAsync(cancellationToken);
+        }
+        catch
+        {
+            await listening.DisposeAsync();
+            throw;
+        }
+
+        return listening;
+    }
+
     private HttpRequestMessage CreateActionRequest(string apiBaseUrl, SirenAction action, JsonElement? body, string locale)
     {
         var apiRoot = ApiLinkPolicy.CreateApiRoot(apiBaseUrl);
@@ -476,4 +523,15 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         return new ManagementSession(userName.GetString()!, role.GetString()!, expiresAt);
     }
 
+    /// <summary>A live connection that, when the screen closes it, does not report itself as lost.</summary>
+    private sealed class LiveConnection(HubConnection connection) : IAsyncDisposable
+    {
+        public bool IsClosing { get; private set; }
+
+        public ValueTask DisposeAsync()
+        {
+            IsClosing = true;
+            return connection.DisposeAsync();
+        }
+    }
 }

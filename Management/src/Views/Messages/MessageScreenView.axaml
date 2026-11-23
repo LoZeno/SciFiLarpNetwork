@@ -1,0 +1,125 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.Messages.MessageScreenView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:events="using:SciFiLarpNetwork.Management.ViewModels.LarpEvents"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Messages"
+    x:DataType="vm:MessageScreenViewModel">
+  <DockPanel>
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasLiveUpdatesNote}"
+        Text="{Binding LiveUpdatesNote}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+      <DockPanel Grid.Column="0">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock Classes="heading" Text="{Binding MessagesHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding FilterSearchLabel}"
+                PlaceholderText="{Binding FilterSearchLabel}"
+                Text="{Binding FilterSearchText, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding FindCharactersCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding FindCharactersCommand}" Content="{Binding FindLabel}" />
+          </Grid>
+          <TextBlock IsVisible="{Binding HasFilterSearchMessage}" Text="{Binding FilterSearchMessage}" TextWrapping="Wrap" />
+          <ComboBox
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding FilterSearchLabel}"
+              IsVisible="{Binding HasFoundCharacters}"
+              ItemsSource="{Binding FoundCharacters}"
+              SelectedItem="{Binding SelectedFoundCharacter, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="events:CharacterChoice">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding FilterText}" TextWrapping="Wrap" />
+            <Button Grid.Column="1" Command="{Binding ShowAllMessagesCommand}" Content="{Binding ShowAllLabel}" />
+          </Grid>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Command="{Binding PreviousMessagesCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding MessagePage}" TextWrapping="Wrap" />
+            <Button Command="{Binding NextMessagesCommand}" Content="{Binding NextLabel}" />
+          </WrapPanel>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding NewMessageCommand}" Content="{Binding NewLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ReplyCommand}" Content="{Binding ReplyLabel}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasMessagesPlaceholder}"
+            Text="{Binding MessagesPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding MessagesHeading}"
+            ItemsSource="{Binding Messages}"
+            SelectedItem="{Binding SelectedMessage, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:MessageListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding DetailsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasDetailsPlaceholder}"
+            Text="{Binding DetailsPlaceholder}"
+            TextWrapping="Wrap" />
+        <!-- A message can list 200 recipients and hold 10,000 characters: the recipients and the text scroll by themselves. -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0" Spacing="6" IsVisible="{Binding HasDetails}">
+          <SelectableTextBlock Classes="section" Text="{Binding DetailTitle}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailSender}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailSentAt}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailSentBy}" TextWrapping="Wrap" />
+          <StackPanel Spacing="6" IsVisible="{Binding HasReplyTo}">
+            <TextBlock Text="{Binding DetailReplyTo}" TextWrapping="Wrap" />
+            <Button Command="{Binding OpenReplySourceCommand}" Content="{Binding OpenReplySourceLabel}" />
+          </StackPanel>
+          <TextBlock Classes="section" Text="{Binding RecipientsHeading}" TextWrapping="Wrap" />
+          <ScrollViewer MaxHeight="96" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl AutomationProperties.Name="{Binding RecipientsHeading}" ItemsSource="{Binding DetailRecipients}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </StackPanel>
+        <TextBox
+            Margin="0,8,0,0"
+            AcceptsReturn="True"
+            AutomationProperties.Name="{Binding DetailTitle}"
+            IsReadOnly="True"
+            IsVisible="{Binding HasDetails}"
+            Text="{Binding DetailBody, Mode=OneWay}"
+            TextWrapping="Wrap" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

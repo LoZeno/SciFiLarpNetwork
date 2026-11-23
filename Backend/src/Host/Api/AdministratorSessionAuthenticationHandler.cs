@@ -47,6 +47,8 @@ public sealed class AdministratorSessionAuthenticationHandler(
         };
         var identity = new ClaimsIdentity(claims, SchemeName);
         var principal = new ClaimsPrincipal(identity);
-        return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
+        // The expiry lets long-lived connections, such as live updates, close when the session ends.
+        var properties = new AuthenticationProperties { ExpiresUtc = session.ExpiresAtUtc };
+        return AuthenticateResult.Success(new AuthenticationTicket(principal, properties, SchemeName));
     }
 }

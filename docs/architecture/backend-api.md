@@ -30,6 +30,7 @@ DOTNET_ENVIRONMENT=Development dotnet run --project Backend/src/Host/SciFiLarpNe
 - Successful Siren resources and API errors use `application/vnd.siren+json`. Clients should send that media type in `Accept`.
 - `Accept-Language` selects English (`en`) or Italian (`it`); unsupported or missing languages fall back to English.
 - The [Siren API profile](siren-api-profile.md) defines relations, classes, actions, localization, and error contracts.
+- `/api/v1/messages/live` is a SignalR hub for live message-list updates; clients find it through the messages collection's `urn:scifilarnetwork:rels:live-updates` link. Sent messages are announced by a Marten subscription in the async daemon, after the message's inline projection has been committed.
 
 ## Configuration and network exposure
 

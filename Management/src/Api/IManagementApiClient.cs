@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SciFiLarpNetwork.Common.Siren;
+using SciFiLarpNetwork.Management.Api.Messages;
 
 namespace SciFiLarpNetwork.Management.Api;
 
@@ -71,4 +72,23 @@ public interface IManagementApiClient
         string mediaType,
         string locale,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Listens to the live message updates advertised at <paramref name="href"/>, within the configured API origin and
+    /// path, with the signed-in session, and reports them to <paramref name="handlers"/>. Disposing the result closes
+    /// the connection without reporting it as lost. Clients without live updates listen to nothing.
+    /// </summary>
+    Task<IAsyncDisposable> ListenForMessagesAsync(
+        string apiBaseUrl,
+        string href,
+        MessageLiveHandlers handlers,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IAsyncDisposable>(NoListening.Instance);
+
+    private sealed class NoListening : IAsyncDisposable
+    {
+        public static readonly NoListening Instance = new();
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 }

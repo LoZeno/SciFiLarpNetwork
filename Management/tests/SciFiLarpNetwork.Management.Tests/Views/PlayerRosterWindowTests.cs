@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Skills;
@@ -31,6 +32,7 @@ public sealed class PlayerRosterWindowTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
+            new FakeMessageDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

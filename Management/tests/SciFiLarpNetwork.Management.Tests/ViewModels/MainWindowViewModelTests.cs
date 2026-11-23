@@ -2,6 +2,7 @@ using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Net;
 using System.Text.Json;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Players;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
@@ -646,7 +647,7 @@ public sealed class MainWindowViewModelTests
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
         new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), settings ?? new ManagementSettings());
+            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()

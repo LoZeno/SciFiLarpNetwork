@@ -12,6 +12,7 @@ using SciFiLarpNetwork.Backend.Application.CardTemplates;
 using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Application.LarpEvents;
+using SciFiLarpNetwork.Backend.Application.Messages;
 using SciFiLarpNetwork.Backend.Application.Networks;
 using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Application.Skills;
@@ -21,6 +22,7 @@ using SciFiLarpNetwork.Backend.Domain.Events.CardTemplateEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.MessageEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.RunningNumberEvents;
@@ -32,6 +34,7 @@ using SciFiLarpNetwork.Backend.Infrastructure.CardTemplates;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.Messages;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
@@ -51,6 +54,8 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.TryAddSingleton(TimeProvider.System);
+        // The message subscription logs failed live updates; AddLogging only adds what the host has not registered.
+        services.AddLogging();
         services.AddSingleton<IPasswordHasher<object>, PasswordHasher<object>>();
         services.AddSingleton<AttributedSessionFactory>();
         services.AddSingleton<IAdministratorProvisioningService, AdministratorProvisioningService>();
@@ -71,6 +76,8 @@ public static class DependencyInjection
         services.AddSingleton<ILarpEventDayService, LarpEventDayService>();
         services.AddSingleton<ILarpEventParticipantService, LarpEventParticipantService>();
         services.AddSingleton<ILarpEventCardService, LarpEventCardService>();
+        services.AddSingleton<IMessageService, MessageService>();
+        services.TryAddSingleton<IMessageNotifications, NoMessageNotifications>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -226,7 +233,17 @@ public static class DependencyInjection
 
             options.Schema.For<LarpEventDocument>()
                 .UniqueIndex(UniqueIndexType.Computed, larpEvent => larpEvent.Number);
-        }).AddAsyncDaemon(DaemonMode.Solo);
+
+            options.Events.AddEventType<MessageSent>();
+            options.Events.AddEventType<MessageOpened>();
+
+            // Sending reads this write model (a repeated submission, the reply source), and the list and details
+            // show a message right after it is sent. Live updates rely on it too: the document commits with the event,
+            // so a client that reloads when MessageSentSubscription announces the event always finds the message.
+            options.Projections.Add<MessageProjection>(ProjectionLifecycle.Inline);
+        })
+        .AddSubscriptionWithServices<MessageSentSubscription>(ServiceLifetime.Singleton)
+        .AddAsyncDaemon(DaemonMode.Solo);
 
         services.TryAddSingleton<IEventActorContext, BackgroundEventActorContext>();
         services.AddHealthChecks()
