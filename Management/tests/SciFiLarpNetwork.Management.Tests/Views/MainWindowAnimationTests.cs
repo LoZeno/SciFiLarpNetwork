@@ -1,4 +1,3 @@
-using SciFiLarpNetwork.Management.Tests.Application;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;

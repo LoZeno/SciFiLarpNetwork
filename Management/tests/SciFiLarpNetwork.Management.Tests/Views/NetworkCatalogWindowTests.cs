@@ -1,4 +1,3 @@
-using SciFiLarpNetwork.Management.Tests.Application;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Globalization;

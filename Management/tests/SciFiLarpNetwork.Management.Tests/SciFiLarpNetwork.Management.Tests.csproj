@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="SciFiLarpNetwork.Management.Tests.Application" />
   </ItemGroup>
 
 </Project>

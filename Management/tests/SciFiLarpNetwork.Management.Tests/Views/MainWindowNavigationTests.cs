@@ -1,4 +1,3 @@
-using SciFiLarpNetwork.Management.Tests.Application;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
