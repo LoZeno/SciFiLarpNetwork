@@ -27,6 +27,7 @@ public static class NetworkErrors
             NetworkOutcome.NetworkDisabled => Create(StatusCodes.Status409Conflict, NetworkDisabled),
             NetworkOutcome.DefaultNetworkCannotBeDisabled => Create(StatusCodes.Status409Conflict, DefaultNetworkCannotBeDisabled),
             NetworkOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidName),
+            NetworkOutcome.InvalidDescription => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidDescription),
             NetworkOutcome.InvalidCode => Create(StatusCodes.Status400BadRequest, InvalidCode),
             NetworkOutcome.InvalidTheme => Create(StatusCodes.Status400BadRequest, InvalidTheme),
             NetworkOutcome.InvalidImage => Create(StatusCodes.Status400BadRequest, InvalidImage),

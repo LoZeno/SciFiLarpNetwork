@@ -1,3 +1,5 @@
+using SciFiLarpNetwork.Backend.Domain.Texts;
+
 namespace SciFiLarpNetwork.Backend.Domain.Messages;
 
 /// <summary>Rules for a message's title, body, and recipient list.</summary>
@@ -17,5 +19,5 @@ public static class MessageTexts
     /// kept, but U+0000 is refused, because PostgreSQL <c>jsonb</c> cannot store it.
     /// </summary>
     public static bool IsValidBody(string? body) =>
-        !string.IsNullOrWhiteSpace(body) && body.Length <= MaximumBodyLength && !body.Contains('\0', StringComparison.Ordinal);
+        !string.IsNullOrWhiteSpace(body) && body.Length <= MaximumBodyLength && FreeText.IsStorable(body);
 }

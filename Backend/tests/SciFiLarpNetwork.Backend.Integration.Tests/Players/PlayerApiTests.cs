@@ -182,6 +182,18 @@ public sealed class PlayerApiTests(AdministratorAuthenticationFactory factory) :
     }
 
     [Fact]
+    public async Task NotesWithANullCharacterReturnItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await SendAsync(client, token, HttpMethod.Post, PlayersPath,
+            new { displayName = "Ann", notes = "a\0b", type = "player" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidNotes"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task StalePlayerEditReturnsTheStaleVersionCode()
     {
         using var client = factory.CreateClient();

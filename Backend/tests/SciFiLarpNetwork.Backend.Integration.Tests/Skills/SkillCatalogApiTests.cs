@@ -208,6 +208,30 @@ public sealed class SkillCatalogApiTests(AdministratorAuthenticationFactory fact
     }
 
     [Fact]
+    public async Task SkillDescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, SkillsPath, token, new { name = "Hacking I", description = "a\0b", cost = 1 });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task TalentDescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, TalentsPath, token, new { name = "Medicine", description = "a\0b" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task PrerequisiteLoopReturnsItsStableCode()
     {
         using var client = factory.CreateClient();

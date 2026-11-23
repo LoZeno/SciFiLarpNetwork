@@ -120,6 +120,18 @@ public sealed class NetworkApiTests(AdministratorAuthenticationFactory factory) 
         Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidCode"), await ErrorAsync(response));
     }
 
+    [Fact]
+    public async Task DescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, NetworksPath, token, new { code = "rim", name = "Outer Rim", description = "a\0b", theme = "blue" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
     [Theory]
     [MemberData(nameof(InvalidThemes))]
     public async Task UnknownOrNumericThemesAreRejected(object theme)

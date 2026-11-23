@@ -31,9 +31,9 @@ internal sealed class TalentService(AttributedSessionFactory sessions, TimeProvi
 
     public async Task<CatalogResult<TalentSummary>> CreateTalentAsync(TalentDefinition definition, CancellationToken cancellationToken = default)
     {
-        if (!CatalogNames.IsValid(definition.Name))
+        if (TalentDefinitionValidator.Validate(definition) is var invalid and not CatalogOutcome.Succeeded)
         {
-            return CatalogResult<TalentSummary>.Failure(CatalogOutcome.InvalidName);
+            return CatalogResult<TalentSummary>.Failure(invalid);
         }
 
         await using var session = sessions.OpenSession();
@@ -56,9 +56,9 @@ internal sealed class TalentService(AttributedSessionFactory sessions, TimeProvi
         TalentDefinition definition,
         CancellationToken cancellationToken = default)
     {
-        if (!CatalogNames.IsValid(definition.Name))
+        if (TalentDefinitionValidator.Validate(definition) is var invalid and not CatalogOutcome.Succeeded)
         {
-            return CatalogResult<TalentSummary>.Failure(CatalogOutcome.InvalidName);
+            return CatalogResult<TalentSummary>.Failure(invalid);
         }
 
         await using var session = sessions.OpenSession();

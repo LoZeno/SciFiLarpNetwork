@@ -8,7 +8,6 @@ namespace SciFiLarpNetwork.Backend.Api.LarpEvents;
 /// <summary>Maps event command outcomes to stable Siren error codes. Each code is also its localization key.</summary>
 public static class LarpEventErrors
 {
-    public const string InvalidDescription = "errors.invalidDescription";
     public const string InvalidExperienceValue = "errors.invalidExperienceValue";
     public const string AwardNotAllowed = "errors.awardNotAllowed";
     public const string EventClosed = "errors.eventClosed";
@@ -34,7 +33,7 @@ public static class LarpEventErrors
             LarpEventOutcome.StaleVersion => Create(StatusCodes.Status409Conflict, CatalogErrors.StaleVersion),
             LarpEventOutcome.ConcurrentChange => Create(StatusCodes.Status409Conflict, CatalogErrors.ConcurrentChange),
             LarpEventOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidName),
-            LarpEventOutcome.InvalidDescription => Create(StatusCodes.Status400BadRequest, InvalidDescription),
+            LarpEventOutcome.InvalidDescription => Create(StatusCodes.Status400BadRequest, CatalogErrors.InvalidDescription),
             LarpEventOutcome.InvalidExperienceValue => Create(StatusCodes.Status400BadRequest, InvalidExperienceValue),
             LarpEventOutcome.AwardNotAllowed => Create(StatusCodes.Status409Conflict, AwardNotAllowed),
             LarpEventOutcome.EventClosed => Create(StatusCodes.Status409Conflict, EventClosed),

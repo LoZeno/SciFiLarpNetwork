@@ -7,6 +7,7 @@ public enum NetworkOutcome
     StaleVersion,
     InvalidName,
     NameAlreadyUsed,
+    InvalidDescription,
     InvalidCode,
     CodeAlreadyUsed,
     InvalidTheme,

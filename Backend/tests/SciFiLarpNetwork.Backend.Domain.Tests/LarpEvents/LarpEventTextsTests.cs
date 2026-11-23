@@ -19,6 +19,14 @@ public sealed class LarpEventTextsTests
     public void DescriptionLongerThan2000CharactersIsInvalid() =>
         Assert.False(LarpEventTexts.IsValidDescription(new string('d', 2001)));
 
+    [Fact]
+    public void DescriptionWithLineBreaksAndTabsIsValid() =>
+        Assert.True(LarpEventTexts.IsValidDescription("Day one:\r\n\tArrival"));
+
+    [Fact]
+    public void DescriptionWithANullCharacterIsInvalid() =>
+        Assert.False(LarpEventTexts.IsValidDescription("a\0b"));
+
     [Theory]
     [InlineData(null, null)]
     [InlineData(" ", null)]
