@@ -30,7 +30,7 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
     private IAsyncDisposable? _liveUpdates;
     private bool _isListening;
     private bool _isDisposed;
-    private bool _showsInterruption;
+    private string? _liveUpdatesNoteKey;
     private bool _liveReloadPending;
     private int _userListLoads;
     private SirenEntity? _messages;
@@ -103,6 +103,14 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
     public ObservableCollection<CharacterChoice> FoundCharacters { get; } = [];
 
     public bool HasFoundCharacters => FoundCharacters.Count > 0;
+
+    /// <summary>
+    /// Whether live updates are interrupted or unavailable. It has its own line, apart from <see cref="StatusMessage"/>,
+    /// so the user's own actions do not hide it and a reconnect clears nothing else.
+    /// </summary>
+    public string? LiveUpdatesNote => _liveUpdatesNoteKey is { } key ? Translate(key) : null;
+
+    public bool HasLiveUpdatesNote => _liveUpdatesNoteKey is not null;
 
     public string MessagePage { get; private set; } = string.Empty;
 
@@ -269,7 +277,7 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
                  {
                      nameof(MessagesHeading), nameof(DetailsHeading), nameof(FilterSearchLabel), nameof(FindLabel),
                      nameof(ShowAllLabel), nameof(PreviousLabel), nameof(NextLabel), nameof(NewLabel), nameof(ReplyLabel),
-                     nameof(OpenReplySourceLabel), nameof(FilterText)
+                     nameof(OpenReplySourceLabel), nameof(FilterText), nameof(LiveUpdatesNote)
                  })
         {
             OnPropertyChanged(name);
@@ -376,12 +384,13 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
             }
 
             _liveUpdates = liveUpdates;
+            ShowLiveUpdatesNote(null);
         }
         catch (Exception failure) when (failure is not OperationCanceledException)
         {
             Trace.TraceWarning("Live message updates are unavailable: {0}", failure);
             _isListening = false;
-            StatusMessage = Translate("messages.liveUpdatesUnavailable");
+            ShowLiveUpdatesNote("messages.liveUpdatesUnavailable");
         }
     }
 
@@ -404,10 +413,9 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
     {
         OnScreen(() =>
         {
-            if (_showsInterruption)
+            if (_liveUpdatesNoteKey == "messages.liveUpdatesInterrupted")
             {
-                _showsInterruption = false;
-                StatusMessage = null;
+                ShowLiveUpdatesNote(null);
             }
 
             _liveReloadCommand.Execute(null);
@@ -428,8 +436,7 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
                 return;
             }
 
-            _showsInterruption = stillRetrying;
-            StatusMessage = Translate(stillRetrying ? "messages.liveUpdatesInterrupted" : "messages.liveUpdatesUnavailable");
+            ShowLiveUpdatesNote(stillRetrying ? "messages.liveUpdatesInterrupted" : "messages.liveUpdatesUnavailable");
             if (stillRetrying)
             {
                 return;
@@ -442,6 +449,13 @@ public sealed class MessageScreenViewModel : ScreenViewModel, IDisposable
             }
         });
         return Task.CompletedTask;
+    }
+
+    private void ShowLiveUpdatesNote(string? key)
+    {
+        _liveUpdatesNoteKey = key;
+        OnPropertyChanged(nameof(LiveUpdatesNote));
+        OnPropertyChanged(nameof(HasLiveUpdatesNote));
     }
 
     /// <summary>Live updates arrive on a background thread; the screen changes on the thread that opened it.</summary>

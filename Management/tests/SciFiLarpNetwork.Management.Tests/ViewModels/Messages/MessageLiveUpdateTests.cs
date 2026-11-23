@@ -136,7 +136,7 @@ public sealed class MessageLiveUpdateTests
 
         await api.LoseConnectionAsync(stillRetrying: false);
 
-        Assert.Equal("Live updates are not available, so new messages appear only when the list is loaded again.", screen.StatusMessage);
+        Assert.Equal("Live updates are not available, so new messages appear only when the list is loaded again.", screen.LiveUpdatesNote);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public sealed class MessageLiveUpdateTests
 
         await api.LoseConnectionAsync(stillRetrying: true);
 
-        Assert.Equal("Live updates are interrupted. Reconnecting…", screen.StatusMessage);
+        Assert.Equal("Live updates are interrupted. Reconnecting…", screen.LiveUpdatesNote);
     }
 
     [Fact]
@@ -182,22 +182,76 @@ public sealed class MessageLiveUpdateTests
 
         await api.ReconnectAsync();
 
-        Assert.Null(screen.StatusMessage);
+        Assert.Null(screen.LiveUpdatesNote);
     }
 
     [Fact]
-    public async Task ReconnectingKeepsAnUnrelatedStatus()
+    public async Task ActionDuringAnInterruptionKeepsItsStatusWhenTheConnectionComesBack()
     {
         var api = new FakeMessageApi();
         var screen = await OpenAsync(api, new FakeMessageDialogs
         {
             OnMessageEditor = editor => MessageScreenViewModelTests.WriteAsync(editor, "Kira", ["Odo"])
         });
+        await api.LoseConnectionAsync(stillRetrying: true);
         await screen.NewMessageCommand.ExecuteAsync();
 
         await api.ReconnectAsync();
 
         Assert.Equal("Action completed.", screen.StatusMessage);
+    }
+
+    [Fact]
+    public async Task ActionDuringAnInterruptionKeepsTheInterruptionShown()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api, new FakeMessageDialogs
+        {
+            OnMessageEditor = editor => MessageScreenViewModelTests.WriteAsync(editor, "Kira", ["Odo"])
+        });
+        await api.LoseConnectionAsync(stillRetrying: true);
+
+        await screen.NewMessageCommand.ExecuteAsync();
+
+        Assert.Equal("Live updates are interrupted. Reconnecting…", screen.LiveUpdatesNote);
+    }
+
+    [Fact]
+    public async Task ListeningAgainClearsTheUnavailableNote()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+        await api.LoseConnectionAsync(stillRetrying: false);
+
+        await screen.LoadAsync();
+
+        Assert.Null(screen.LiveUpdatesNote);
+    }
+
+    [Fact]
+    public async Task LiveUpdatesNoteFollowsTheLanguage()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+        await api.LoseConnectionAsync(stillRetrying: true);
+
+        screen.Locale = "it";
+
+        Assert.Equal("Aggiornamenti in tempo reale interrotti. Nuovo collegamento in corso…", screen.LiveUpdatesNote);
+    }
+
+    [Fact]
+    public async Task SwitchingLanguageTellsTheViewTheNoteChanged()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api);
+        await api.LoseConnectionAsync(stillRetrying: true);
+        var changed = new List<string?>();
+        screen.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        screen.Locale = "it";
+
+        Assert.Contains(nameof(screen.LiveUpdatesNote), changed);
     }
 
     [Fact]
@@ -229,8 +283,8 @@ public sealed class MessageLiveUpdateTests
         var screen = await OpenAsync(api);
 
         Assert.Equal(
-            new { Status = (string?)"Live updates are not available, so new messages appear only when the list is loaded again.", Count = 1 },
-            new { Status = screen.StatusMessage, screen.Messages.Count });
+            new { Note = (string?)"Live updates are not available, so new messages appear only when the list is loaded again.", Count = 1 },
+            new { Note = screen.LiveUpdatesNote, screen.Messages.Count });
     }
 
     private static async Task FilterAsync(MessageScreenViewModel screen, string name)

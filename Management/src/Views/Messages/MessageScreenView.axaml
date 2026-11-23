@@ -13,6 +13,12 @@
         IsVisible="{Binding HasStatusMessage}"
         Text="{Binding StatusMessage}"
         TextWrapping="Wrap" />
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasLiveUpdatesNote}"
+        Text="{Binding LiveUpdatesNote}"
+        TextWrapping="Wrap" />
     <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
       <DockPanel Grid.Column="0">
         <StackPanel DockPanel.Dock="Top" Spacing="8">
