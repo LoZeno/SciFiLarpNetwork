@@ -250,6 +250,17 @@ public sealed class MessageScreenViewModelTests
     }
 
     [Fact]
+    public async Task SendingDoesNotCountAsAnOpening()
+    {
+        var api = new FakeMessageApi();
+        var screen = await OpenAsync(api, new FakeMessageDialogs { OnMessageEditor = editor => WriteAsync(editor, "Kira", ["Odo"]) });
+
+        await screen.NewMessageCommand.ExecuteAsync();
+
+        Assert.Empty(api.Openings);
+    }
+
+    [Fact]
     public async Task NewMessageFromAFilteredListStartsWithThatCharacterAsRecipient()
     {
         var api = new FakeMessageApi();
@@ -347,6 +358,20 @@ public sealed class MessageScreenViewModelTests
     }
 
     [Fact]
+    public async Task ReplyTitleIsCutToTheTitleLimit()
+    {
+        var api = new FakeMessageApi();
+        api.AddMessage(new string('t', 126), Kira, Odo);
+        var dialogs = new FakeMessageDialogs();
+        var screen = await OpenAsync(api, dialogs);
+        screen.SelectedMessage = screen.Messages[0];
+
+        await screen.ReplyCommand.ExecuteAsync();
+
+        Assert.Equal($"Re: {new string('t', 124)}", dialogs.LastEditor!.MessageTitle);
+    }
+
+    [Fact]
     public async Task ReplyToAReplyKeepsASinglePrefix()
     {
         var api = new FakeMessageApi();
@@ -387,6 +412,65 @@ public sealed class MessageScreenViewModelTests
         await screen.OpenReplySourceCommand.ExecuteAsync();
 
         Assert.Equal(new { ReplyTo = "In reply to: Supply run", Title = "Supply run" }, new { ReplyTo = replyTo, Title = screen.DetailTitle });
+    }
+
+    [Fact]
+    public async Task SwitchingLanguageRelabelsTheOpenMessageWithoutOpeningItAgain()
+    {
+        var api = new FakeMessageApi();
+        api.ArchivedCharacters.Add(Odo);
+        api.AddMessage("Supply run", Kira, Odo, Guid.NewGuid());
+        var screen = await OpenAsync(api);
+        screen.SelectedMessage = screen.Messages[0];
+
+        screen.Locale = "it";
+
+        Assert.Equal(
+            new
+            {
+                Sender = "Da: #1 Kira",
+                Heading = "Destinatari (2)",
+                Recipients = "#2 Odo (Archiviato), Personaggio sconosciuto",
+                Openings = 1
+            },
+            new
+            {
+                Sender = screen.DetailSender,
+                Heading = screen.RecipientsHeading,
+                Recipients = string.Join(", ", screen.DetailRecipients),
+                Openings = api.Openings.Count
+            });
+    }
+
+    [Fact]
+    public async Task SwitchingLanguageTellsTheViewEveryDetailChanged()
+    {
+        var api = new FakeMessageApi();
+        api.AddMessage("Supply run", Kira, Odo);
+        var screen = await OpenAsync(api);
+        screen.SelectedMessage = screen.Messages[0];
+        var changed = new HashSet<string?>();
+        screen.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        screen.Locale = "it";
+
+        Assert.Superset(
+            new HashSet<string?>
+            {
+                nameof(screen.DetailSender), nameof(screen.DetailSentAt), nameof(screen.DetailSentBy), nameof(screen.DetailReplyTo),
+                nameof(screen.RecipientsHeading), nameof(screen.DetailRecipients), nameof(screen.DetailsPlaceholder)
+            },
+            changed);
+    }
+
+    [Fact]
+    public async Task SwitchingLanguageRelabelsTheDetailsPlaceholder()
+    {
+        var screen = await OpenAsync(new FakeMessageApi());
+
+        screen.Locale = "it";
+
+        Assert.Equal("Seleziona un messaggio per leggerlo.", screen.DetailsPlaceholder);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ Approved 2026-11-23. Characters are defined by [MANAGER-01](MANAGER-01-players-c
 - The sender is a character. Administrators choose it; an in-game sender without a player uses a non-player character.
 - Recipients are characters. A recipient listed twice is kept once, and a message holds at most 200 recipients. The sender can also be a recipient.
 - The sender and every recipient must be existing characters that are not archived. Their status does not matter: Active, Retired, and Dead characters can send and receive.
-- Titles are required, 1–128 characters after trimming. Bodies are required, up to 10,000 characters, and must not be only whitespace; the body is stored exactly as typed, including line breaks. Both are user content and are not translated.
+- Titles are required, 1–128 characters after trimming. Bodies are required, up to 10,000 characters, must not be only whitespace, and must not contain the null character (U+0000), which the database cannot store; the body is stored exactly as typed, including line breaks and tabs. Both are user content and are not translated.
 - The sending administrator and the time are recorded with the message.
 
 ### Replies
@@ -33,7 +33,7 @@ Approved 2026-11-23. Characters are defined by [MANAGER-01](MANAGER-01-players-c
 - Messages are listed in pages of 50, newest first. The list shows the sender, the number of recipients, the title, and the time; it never shows the body.
 - The list shows all messages, or the incoming messages of one chosen character.
 - Characters are shown with their running number and current name. Archived characters are marked; a character that cannot be found is shown as unknown, and the message still opens.
-- Readers and administrators can list messages and open one to see its sender, every recipient, title, body, time, sending administrator, and source message. Every opening of a message's details is recorded with the account and time. Only administrators can send messages and replies.
+- Readers and administrators can list messages and open one to see its sender, every recipient, title, body, time, sending administrator, and source message. Every opening of a message's details is recorded with the account and time. Sending is not an opening: the sending administrator sees the sent message without it being recorded, so the record lists only deliberate inspections. Only administrators can send messages and replies.
 
 ## Acceptance criteria
 

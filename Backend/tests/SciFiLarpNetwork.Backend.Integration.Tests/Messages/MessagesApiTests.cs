@@ -135,6 +135,18 @@ public sealed class MessagesApiTests(AdministratorAuthenticationFactory factory)
     }
 
     [Fact]
+    public async Task BodyWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var characterId = await CreateCharacterAsync(client, token);
+
+        using var response = await PostAsync(client, token, MessagesPath, Message(characterId) with { body = "a\0b" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidMessageBody"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task UnknownRecipientIsListedInTheError()
     {
         using var client = factory.CreateClient();

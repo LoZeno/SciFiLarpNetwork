@@ -12,7 +12,10 @@ public static class MessageTexts
         !string.IsNullOrWhiteSpace(title) && title.Trim() is var trimmed &&
         trimmed.Length <= MaximumTitleLength && !trimmed.Any(char.IsControl);
 
-    /// <summary>A body is stored exactly as typed: up to 10,000 characters, and not only whitespace.</summary>
+    /// <summary>
+    /// A body is stored exactly as typed: up to 10,000 characters, and not only whitespace. Line breaks and tabs are
+    /// kept, but U+0000 is refused, because PostgreSQL <c>jsonb</c> cannot store it.
+    /// </summary>
     public static bool IsValidBody(string? body) =>
-        !string.IsNullOrWhiteSpace(body) && body.Length <= MaximumBodyLength;
+        !string.IsNullOrWhiteSpace(body) && body.Length <= MaximumBodyLength && !body.Contains('\0', StringComparison.Ordinal);
 }

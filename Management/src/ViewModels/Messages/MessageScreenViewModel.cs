@@ -250,6 +250,7 @@ public sealed class MessageScreenViewModel : ScreenViewModel
             OnPropertyChanged(name);
         }
 
+        RefreshDetails();
         _reloadCommand.Execute(null);
     }
 
@@ -312,8 +313,23 @@ public sealed class MessageScreenViewModel : ScreenViewModel
             return;
         }
 
+        ShowDetails(resource);
+    }
+
+    private void ShowDetails(SirenEntity? resource)
+    {
         _message = resource;
         _details = resource is null ? null : SirenProperties.Read<MessageDetailsProperties>(resource.Properties);
+        RefreshDetails();
+        NotifyCommandsChanged();
+    }
+
+    /// <summary>
+    /// Rebuilds the details texts from the message already shown. A language switch uses this instead of fetching the
+    /// message again, which the API would record as another opening.
+    /// </summary>
+    private void RefreshDetails()
+    {
         DetailRecipients = _details?.Recipients.Select(Describe).ToArray() ?? [];
         foreach (var name in new[]
                  {
@@ -324,8 +340,6 @@ public sealed class MessageScreenViewModel : ScreenViewModel
         {
             OnPropertyChanged(name);
         }
-
-        NotifyCommandsChanged();
     }
 
     private async Task FindCharactersAsync()
@@ -388,9 +402,10 @@ public sealed class MessageScreenViewModel : ScreenViewModel
                          ?? (source.Recipients.Count > 0 ? source.Recipients[0] : null);
         editor.Sender = fromListed is null ? null : MessageCharacterNames.Choice(fromListed, Translate);
         editor.AddRecipient(MessageCharacterNames.Choice(source.Sender, Translate));
-        editor.MessageTitle = source.Title.StartsWith(ReplyPrefix, StringComparison.OrdinalIgnoreCase)
+        var title = source.Title.StartsWith(ReplyPrefix, StringComparison.OrdinalIgnoreCase)
             ? source.Title
             : $"{ReplyPrefix}{source.Title}";
+        editor.MessageTitle = title.Length > editor.MaximumTitleLength ? title[..editor.MaximumTitleLength] : title;
         await _dialogs.ShowMessageEditorAsync(editor);
         await ReloadAfterSendAsync(editor);
     }
@@ -408,10 +423,13 @@ public sealed class MessageScreenViewModel : ScreenViewModel
             editor => SubmitEditorAsync(editor, async () => _sent = await SubmitAsync(action, editor.CreateBody()), null));
     }
 
-    /// <summary>After a send, reloads the list and opens the message that was sent.</summary>
+    /// <summary>
+    /// After a send, reloads the list and shows the message that was sent. The send's answer already holds its
+    /// details, so it is shown without opening it: the record of openings lists only deliberate inspections.
+    /// </summary>
     private async Task ReloadAfterSendAsync(MessageEditorViewModel editor)
     {
-        if (!editor.IsSaved || _sent?.FindLinkHref("self") is not { } sent)
+        if (!editor.IsSaved || _sent is not { } sent)
         {
             return;
         }
@@ -420,7 +438,8 @@ public sealed class MessageScreenViewModel : ScreenViewModel
         await LoadMessagesCoreAsync(null);
         _selectedMessage = Messages.FirstOrDefault(item => item.MessageId == editor.MessageId);
         OnPropertyChanged(nameof(SelectedMessage));
-        await OpenAsync(sent);
+        ++_detailLoadGeneration;
+        ShowDetails(sent);
         StatusMessage = Translate("actions.completed");
     }
 

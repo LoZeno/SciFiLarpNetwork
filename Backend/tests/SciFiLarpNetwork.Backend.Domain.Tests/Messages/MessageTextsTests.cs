@@ -32,6 +32,14 @@ public sealed class MessageTextsTests
         Assert.True(MessageTexts.IsValidBody("Meet at the dock.\r\n\r\n  — K."));
 
     [Fact]
+    public void BodyWithANullCharacterIsInvalid() =>
+        Assert.False(MessageTexts.IsValidBody("Meet at\0 the dock."));
+
+    [Fact]
+    public void BodyWithATabIsValid() =>
+        Assert.True(MessageTexts.IsValidBody("Crates:\t12"));
+
+    [Fact]
     public void BodyOf10000CharactersIsValid() =>
         Assert.True(MessageTexts.IsValidBody(new string('b', 10000)));
 
