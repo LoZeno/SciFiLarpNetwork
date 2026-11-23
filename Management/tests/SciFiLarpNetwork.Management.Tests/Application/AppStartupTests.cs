@@ -1,5 +1,4 @@
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.ViewModels;
@@ -9,8 +8,8 @@ namespace SciFiLarpNetwork.Management.Tests.Application;
 
 public sealed class AppStartupTests
 {
-    [AvaloniaFact]
-    public void CreateMainWindowLoadsPersistedSettings()
+    [Fact]
+    public Task CreateMainWindowLoadsPersistedSettings() => AvaloniaUi.Run(() =>
     {
         using var directory = new TemporaryDirectory();
         using var httpClient = new HttpClient();
@@ -37,10 +36,10 @@ public sealed class AppStartupTests
                 new ManagementSettings("http://localhost:6000/api", "it"),
                 "Al momento non sono disponibili destinazioni."),
             actual);
-    }
+    });
 
-    [AvaloniaFact]
-    public void CreateMainWindowReportsMalformedSettingsAndUsesDefaults()
+    [Fact]
+    public Task CreateMainWindowReportsMalformedSettingsAndUsesDefaults() => AvaloniaUi.Run(() =>
     {
         using var directory = new TemporaryDirectory();
         using var httpClient = new HttpClient();
@@ -63,10 +62,10 @@ public sealed class AppStartupTests
                 new ManagementSettings(),
                 "Management settings could not be loaded. Defaults are being used."),
             actual);
-    }
+    });
 
-    [AvaloniaFact]
-    public void CreateMainWindowReportsUnreadableSettingsAndUsesDefaults()
+    [Fact]
+    public Task CreateMainWindowReportsUnreadableSettingsAndUsesDefaults() => AvaloniaUi.Run(() =>
     {
         using var directory = new TemporaryDirectory();
         using var httpClient = new HttpClient();
@@ -79,10 +78,10 @@ public sealed class AppStartupTests
         window.Close();
 
         Assert.Equal("Management settings could not be loaded. Defaults are being used.", statusMessage);
-    }
+    });
 
-    [AvaloniaFact]
-    public void FrameworkInitializationAssignsMainWindowToDesktopLifetime()
+    [Fact]
+    public Task FrameworkInitializationAssignsMainWindowToDesktopLifetime() => AvaloniaUi.Run(() =>
     {
         using var lifetime = new ClassicDesktopStyleApplicationLifetime();
         var app = new App { ApplicationLifetime = lifetime };
@@ -91,7 +90,7 @@ public sealed class AppStartupTests
 
         Assert.IsType<MainWindow>(lifetime.MainWindow);
         lifetime.MainWindow.Close();
-    }
+    });
 
     private sealed record MainWindowStartupSnapshot(
         Type WindowType,

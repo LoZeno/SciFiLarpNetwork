@@ -1,9 +1,9 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -22,8 +22,8 @@ namespace SciFiLarpNetwork.Management.Tests.Views;
 
 public sealed class NetworkCatalogWindowTests
 {
-    [AvaloniaFact]
-    public async Task NewNetworkOpensTheNetworkDialogOverTheOwner()
+    [Fact]
+    public Task NewNetworkOpensTheNetworkDialogOverTheOwner() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var catalog = CreateCatalog(new WindowNetworkDialogService(() => owner));
@@ -37,10 +37,10 @@ public sealed class NetworkCatalogWindowTests
         await running;
 
         Assert.Equal(new { Type = typeof(NetworkEditorWindow), Title = (string?)"New network" }, new { Type = dialog.GetType(), Title = title });
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SavingTheNetworkDialogClosesIt()
+    [Fact]
+    public Task SavingTheNetworkDialogClosesIt() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var catalog = CreateCatalog(new WindowNetworkDialogService(() => owner));
@@ -56,10 +56,10 @@ public sealed class NetworkCatalogWindowTests
         await running;
 
         Assert.Empty(owner.OwnedWindows);
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task NetworkConfirmationUsesTheConfirmationWindow()
+    [Fact]
+    public Task NetworkConfirmationUsesTheConfirmationWindow() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var asking = new WindowNetworkDialogService(() => owner)
@@ -71,27 +71,27 @@ public sealed class NetworkCatalogWindowTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(new { Type = typeof(ConfirmationWindow), Confirmed = false }, new { Type = dialog.GetType(), Confirmed = await asking });
-    }
+    });
 
-    [AvaloniaFact]
-    public void ImageConverterDecodesAPng()
+    [Fact]
+    public Task ImageConverterDecodesAPng() => AvaloniaUi.Run(() =>
     {
         var bitmap = ImageBytesConverter.Instance.Convert(TinyPng(), typeof(object), null, CultureInfo.InvariantCulture);
 
         Assert.Equal(new PixelSize(1, 1), ((Bitmap)bitmap!).PixelSize);
-    }
+    });
 
-    [AvaloniaTheory]
+    [Theory]
     [InlineData(null)]
     [InlineData(new byte[0])]
     [InlineData(new byte[] { 1, 2, 3 })]
-    public void ImageConverterShowsNothingForMissingOrBrokenImages(byte[]? content)
+    public Task ImageConverterShowsNothingForMissingOrBrokenImages(byte[]? content) => AvaloniaUi.Run(() =>
     {
         Assert.Null(ImageBytesConverter.Instance.Convert(content, typeof(object), null, CultureInfo.InvariantCulture));
-    }
+    });
 
-    [AvaloniaFact]
-    public void ImageConverterShowsNothingForAPngThatDeclaresAHugeSize()
+    [Fact]
+    public Task ImageConverterShowsNothingForAPngThatDeclaresAHugeSize() => AvaloniaUi.Run(() =>
     {
         byte[] hostile =
         [
@@ -100,17 +100,17 @@ public sealed class NetworkCatalogWindowTests
         ];
 
         Assert.Null(ImageBytesConverter.Instance.Convert(hostile, typeof(object), null, CultureInfo.InvariantCulture));
-    }
+    });
 
-    [AvaloniaFact]
-    public void ImageConverterCannotConvertBack()
+    [Fact]
+    public Task ImageConverterCannotConvertBack() => AvaloniaUi.Run(() =>
     {
         Assert.Throws<NotSupportedException>(() =>
             ImageBytesConverter.Instance.ConvertBack(null, typeof(byte[]), null, CultureInfo.InvariantCulture));
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task MainWindowShowsTheNetworksScreenWhenItsEntryIsSelected()
+    [Fact]
+    public Task MainWindowShowsTheNetworksScreenWhenItsEntryIsSelected() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeNetworkApi();
         api.AddNetwork("rim", "Outer Rim");
@@ -133,10 +133,10 @@ public sealed class NetworkCatalogWindowTests
 
         Assert.True(window.GetVisualDescendants().OfType<NetworkCatalogView>().Single().IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void NetworkEditorWindowShowsThePreviewImage()
+    [Fact]
+    public Task NetworkEditorWindowShowsThePreviewImage() => AvaloniaUi.Run(() =>
     {
         var window = OpenEditorWindowWithImage(TinyPng());
 
@@ -144,7 +144,7 @@ public sealed class NetworkCatalogWindowTests
 
         Assert.Equal(new PixelSize(1, 1), ((Bitmap)image.Source!).PixelSize);
         window.Close();
-    }
+    });
 
     private static NetworkEditorWindow OpenEditorWindowWithImage(byte[] content)
     {

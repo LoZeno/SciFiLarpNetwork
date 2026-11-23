@@ -1,5 +1,5 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Localization;
@@ -20,8 +20,8 @@ public sealed class LarpEventWindowTests
 {
     private static readonly DateOnly FirstDay = new(2026, 5, 1);
 
-    [AvaloniaFact]
-    public async Task MainWindowShowsTheEventsScreenWhenItsEntryIsSelected()
+    [Fact]
+    public Task MainWindowShowsTheEventsScreenWhenItsEntryIsSelected() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
@@ -35,10 +35,10 @@ public sealed class LarpEventWindowTests
 
         Assert.True(window.GetVisualDescendants().OfType<LarpEventScreenView>().Single().IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ClosedEventShowsItsExplanation()
+    [Fact]
+    public Task ClosedEventShowsItsExplanation() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", isOpen: false, FirstDay);
@@ -55,10 +55,10 @@ public sealed class LarpEventWindowTests
         Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(),
             text => text.IsEffectivelyVisible && text.Text == screen.ClosedExplanation);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task RegistrationWindowListsTheEventDays()
+    [Fact]
+    public Task RegistrationWindowListsTheEventDays() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay, FirstDay.AddDays(1));
@@ -83,10 +83,10 @@ public sealed class LarpEventWindowTests
             ["2026-05-01", "2026-05-02"],
             shown!.GetVisualDescendants().OfType<CheckBox>().Select(box => box.Content as string));
         shown?.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task DayWindowShowsTheDayBeingEdited()
+    [Fact]
+    public Task DayWindowShowsTheDayBeingEdited() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
@@ -110,10 +110,10 @@ public sealed class LarpEventWindowTests
 
         Assert.Equal(new DateTime(2026, 5, 1), shown!.GetVisualDescendants().OfType<CalendarDatePicker>().Single().SelectedDate);
         shown?.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task EventWindowShowsTheEventBeingEdited()
+    [Fact]
+    public Task EventWindowShowsTheEventBeingEdited() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         api.AddEvent("Fort", true, FirstDay);
@@ -136,10 +136,10 @@ public sealed class LarpEventWindowTests
 
         Assert.Contains(shown!.GetVisualDescendants().OfType<TextBox>(), box => box.Text == "Fort");
         shown?.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task ExperienceWindowSummarizesTheParticipant()
+    [Fact]
+    public Task ExperienceWindowSummarizesTheParticipant() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         var fort = api.AddEvent("Fort", true, FirstDay);
@@ -164,10 +164,10 @@ public sealed class LarpEventWindowTests
 
         Assert.Contains(shown!.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == "Kira has 10 XP; 0 given at this event.");
         shown?.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task CloseWindowShowsABaseAndADayCheckboxPerCharacter()
+    [Fact]
+    public Task CloseWindowShowsABaseAndADayCheckboxPerCharacter() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeLarpEventApi();
         var fort = api.AddEvent("Fort", true, FirstDay);
@@ -193,7 +193,7 @@ public sealed class LarpEventWindowTests
 
         Assert.Equal(2, shown!.GetVisualDescendants().OfType<CheckBox>().Count(box => box.IsEffectivelyVisible && box.IsChecked == true));
         shown?.Close();
-    }
+    });
 
     private static MainWindowViewModel CreateViewModel(FakeLarpEventApi api, FakeLarpEventDialogs dialogs) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),

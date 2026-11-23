@@ -1,15 +1,15 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Headless.XUnit;
 using SciFiLarpNetwork.Management.Views.Layout;
 
 namespace SciFiLarpNetwork.Management.Tests.Views;
 
 public sealed class FillViewportTests
 {
-    [AvaloniaFact]
-    public void PaddingInsetsTheContent()
+    [Fact]
+    public Task PaddingInsetsTheContent() => AvaloniaUi.Run(() =>
     {
         var content = new Border();
         var window = new Window
@@ -23,14 +23,14 @@ public sealed class FillViewportTests
 
         window.Close();
         Assert.Equal(new Rect(10, 10, 380, 280), content.Bounds);
-    }
+    });
 
     /// <summary>
     /// Laying the content out again at another size after the window decided what to draw leaves text drawn for the
     /// old size, so the content is only ever measured at the size it is shown at.
     /// </summary>
-    [AvaloniaFact]
-    public void ContentIsOnlyMeasuredAtTheSizeItIsShownAt()
+    [Fact]
+    public Task ContentIsOnlyMeasuredAtTheSizeItIsShownAt() => AvaloniaUi.Run(() =>
     {
         var content = new MeasureRecorder();
         var window = new Window
@@ -44,10 +44,10 @@ public sealed class FillViewportTests
 
         window.Close();
         Assert.Equal([new Size(400, 300)], content.Constraints.Distinct());
-    }
+    });
 
-    [AvaloniaFact]
-    public void ResizedWindowMeasuresTheContentOnlyAtTheNewSize()
+    [Fact]
+    public Task ResizedWindowMeasuresTheContentOnlyAtTheNewSize() => AvaloniaUi.Run(() =>
     {
         var content = new MeasureRecorder();
         var window = new Window
@@ -66,7 +66,7 @@ public sealed class FillViewportTests
 
         window.Close();
         Assert.Equal([new Size(600, 500)], content.Constraints.Distinct());
-    }
+    });
 
     private sealed class MeasureRecorder : Control
     {

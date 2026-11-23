@@ -1,8 +1,8 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
-using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -22,17 +22,17 @@ public sealed class MainWindowNavigationTests
 {
     private const int EntryCount = 20;
 
-    [AvaloniaFact]
-    public void NavigationListIsInsideAVerticalScrollArea()
+    [Fact]
+    public Task NavigationListIsInsideAVerticalScrollArea() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
 
         Assert.Equal(ScrollBarVisibility.Auto, navigation.FindAncestorOfType<ScrollViewer>()?.VerticalScrollBarVisibility);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ShortWindowCanScrollToTheLastEntry()
+    [Fact]
+    public Task ShortWindowCanScrollToTheLastEntry() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var last = navigation.GetVisualDescendants().OfType<ListBoxItem>().Last();
@@ -43,29 +43,29 @@ public sealed class MainWindowNavigationTests
 
         Assert.InRange(last.TranslatePoint(new Point(0, last.Bounds.Height), window)!.Value.Y, 0, window.ClientSize.Height);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void PanelControlsStillFillThePanelWidth()
+    [Fact]
+    public Task PanelControlsStillFillThePanelWidth() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var panel = navigation.FindAncestorOfType<StackPanel>()!;
 
         Assert.Equal(panel.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ShortWindowShowsTheScrollBar()
+    [Fact]
+    public Task ShortWindowShowsTheScrollBar() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
 
         Assert.True(VerticalScrollBar(navigation).IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ScrollBarCoversNoControl()
+    [Fact]
+    public Task ScrollBarCoversNoControl() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var bar = BoundsIn(window, VerticalScrollBar(navigation));
@@ -78,20 +78,20 @@ public sealed class MainWindowNavigationTests
 
         Assert.Empty(covered);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ScrollBarKeepsAGapFromTheControls()
+    [Fact]
+    public Task ScrollBarKeepsAGapFromTheControls() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var panel = BoundsIn(window, navigation.FindAncestorOfType<StackPanel>()!);
 
         Assert.True(BoundsIn(window, VerticalScrollBar(navigation)).Left - panel.Right >= 4);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ScrollBarHasNoArrowButtons()
+    [Fact]
+    public Task ScrollBarHasNoArrowButtons() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
 
@@ -100,20 +100,20 @@ public sealed class MainWindowNavigationTests
 
         Assert.Empty(arrows);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ScrollBarThumbIsThinWithRoundEnds()
+    [Fact]
+    public Task ScrollBarThumbIsThinWithRoundEnds() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var thumb = VerticalScrollBar(navigation).GetVisualDescendants().OfType<Thumb>().Single();
 
         Assert.Equal(new { Width = 6.0, Radius = new CornerRadius(3) }, new { thumb.Bounds.Width, Radius = thumb.CornerRadius });
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void DraggingTheThumbScrollsTheNavigation()
+    [Fact]
+    public Task DraggingTheThumbScrollsTheNavigation() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
@@ -127,10 +127,10 @@ public sealed class MainWindowNavigationTests
 
         Assert.True(scroller.Offset.Y > 0);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void MouseWheelScrollsTheNavigation()
+    [Fact]
+    public Task MouseWheelScrollsTheNavigation() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowShortWindow();
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
@@ -141,10 +141,10 @@ public sealed class MainWindowNavigationTests
 
         Assert.True(scroller.Offset.Y > 0);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public void ControlsUseTheWholePanelWhenEverythingFits()
+    [Fact]
+    public Task ControlsUseTheWholePanelWhenEverythingFits() => AvaloniaUi.Run(() =>
     {
         var (window, navigation) = ShowWindow(height: 2000);
         var scroller = navigation.FindAncestorOfType<ScrollViewer>()!;
@@ -152,7 +152,7 @@ public sealed class MainWindowNavigationTests
 
         Assert.Equal(scroller.Bounds.Width, panel.Children.OfType<TextBox>().First().Bounds.Width);
         window.Close();
-    }
+    });
 
     private static ScrollBar VerticalScrollBar(ListBox navigation)
     {

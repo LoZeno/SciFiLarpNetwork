@@ -2,7 +2,6 @@ using SciFiLarpNetwork.Management.Views.CardTemplates;
 using SciFiLarpNetwork.Management.Views.LarpEvents;
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Headless.XUnit;
 using SciFiLarpNetwork.Management.Views.Players;
 using SciFiLarpNetwork.Common.Siren;
 using SciFiLarpNetwork.Management.Api;
@@ -18,8 +17,8 @@ namespace SciFiLarpNetwork.Management.Tests.Application;
 
 public sealed class DesktopApplicationBootstrapperTests
 {
-    [AvaloniaFact]
-    public void ConfigureWithDesktopLifetimeCreatesAndAssignsMainWindow()
+    [Fact]
+    public Task ConfigureWithDesktopLifetimeCreatesAndAssignsMainWindow() => AvaloniaUi.Run(() =>
     {
         var viewModel = new MainWindowViewModel(
             new TestApiClient(),
@@ -38,10 +37,10 @@ public sealed class DesktopApplicationBootstrapperTests
         bootstrapper.Configure(lifetime);
 
         Assert.Same(window, lifetime.MainWindow);
-    }
+    });
 
-    [AvaloniaFact]
-    public void ConfigureWithoutDesktopLifetimeDoesNotCreateMainWindow()
+    [Fact]
+    public Task ConfigureWithoutDesktopLifetimeDoesNotCreateMainWindow() => AvaloniaUi.Run(() =>
     {
         var factoryCalled = false;
         var bootstrapper = new DesktopApplicationBootstrapper(() =>
@@ -51,7 +50,7 @@ public sealed class DesktopApplicationBootstrapperTests
         });
         bootstrapper.Configure(null);
         Assert.False(factoryCalled);
-    }
+    });
 
     private sealed class TestApiClient : IManagementApiClient
     {

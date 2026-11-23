@@ -1,7 +1,7 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -19,8 +19,8 @@ namespace SciFiLarpNetwork.Management.Tests.Views;
 
 public sealed class TalentCatalogWindowTests
 {
-    [AvaloniaFact]
-    public async Task NewSkillOpensTheSkillDialogOverTheOwner()
+    [Fact]
+    public Task NewSkillOpensTheSkillDialogOverTheOwner() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var catalog = CreateCatalog(new WindowCatalogDialogService(() => owner));
@@ -34,10 +34,10 @@ public sealed class TalentCatalogWindowTests
         await running;
 
         Assert.Equal(new { Type = typeof(SkillEditorWindow), Title = (string?)"New skill" }, new { Type = dialog.GetType(), Title = title });
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task CancellingTheTalentDialogClosesIt()
+    [Fact]
+    public Task CancellingTheTalentDialogClosesIt() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var editor = new TalentEditorViewModel(new JsonLocalizer(), "en", "skills.newTalent", _ => Task.FromResult(true));
@@ -49,10 +49,10 @@ public sealed class TalentCatalogWindowTests
 
         Assert.True(showing.IsCompleted);
         await showing;
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SavingTheSkillDialogClosesIt()
+    [Fact]
+    public Task SavingTheSkillDialogClosesIt() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var catalog = CreateCatalog(new WindowCatalogDialogService(() => owner));
@@ -67,12 +67,12 @@ public sealed class TalentCatalogWindowTests
         await running;
 
         Assert.Empty(owner.OwnedWindows);
-    }
+    });
 
-    [AvaloniaTheory]
+    [Theory]
     [InlineData("Archive", true)]
     [InlineData("Cancel", false)]
-    public async Task ConfirmationReturnsTheChosenButton(string buttonText, bool expected)
+    public Task ConfirmationReturnsTheChosenButton(string buttonText, bool expected) => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();
         var asking = new WindowCatalogDialogService(() => owner)
@@ -85,10 +85,10 @@ public sealed class TalentCatalogWindowTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Equal(expected, await asking);
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task MainWindowShowsTheTalentsScreenWhenItsEntryIsSelected()
+    [Fact]
+    public Task MainWindowShowsTheTalentsScreenWhenItsEntryIsSelected() => AvaloniaUi.Run(async () =>
     {
         var api = new FakeCatalogApi();
         api.AddTalent("Medicine");
@@ -111,7 +111,7 @@ public sealed class TalentCatalogWindowTests
 
         Assert.True(window.GetVisualDescendants().OfType<TalentCatalogView>().Single().IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
     private static Window ShowOwner()
     {

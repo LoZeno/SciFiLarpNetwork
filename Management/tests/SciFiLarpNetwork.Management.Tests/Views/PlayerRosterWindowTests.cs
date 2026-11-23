@@ -1,7 +1,7 @@
+using SciFiLarpNetwork.Management.Tests.Application;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SciFiLarpNetwork.Management.Localization;
@@ -18,8 +18,8 @@ namespace SciFiLarpNetwork.Management.Tests.Views;
 
 public sealed class PlayerRosterWindowTests
 {
-    [AvaloniaFact]
-    public async Task MainWindowShowsThePlayersScreenWhenItsEntryIsSelected()
+    [Fact]
+    public Task MainWindowShowsThePlayersScreenWhenItsEntryIsSelected() => AvaloniaUi.Run(async () =>
     {
         var api = new FakePlayerApi();
         api.AddPlayer("Ann");
@@ -42,10 +42,10 @@ public sealed class PlayerRosterWindowTests
 
         Assert.True(window.GetVisualDescendants().OfType<PlayerRosterView>().Single().IsEffectivelyVisible);
         window.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task CharacterDialogHidesTheStatusForANewCharacter()
+    [Fact]
+    public Task CharacterDialogHidesTheStatusForANewCharacter() => AvaloniaUi.Run(async () =>
     {
         var api = new FakePlayerApi();
         api.AddPlayer("Ann");
@@ -70,10 +70,10 @@ public sealed class PlayerRosterWindowTests
         var statusLabel = shown!.GetVisualDescendants().OfType<TextBlock>().Single(block => block.Text == "Status");
         Assert.False(statusLabel.IsEffectivelyVisible);
         shown!.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task StatsWindowShowsTheStats()
+    [Fact]
+    public Task StatsWindowShowsTheStats() => AvaloniaUi.Run(async () =>
     {
         var api = new FakePlayerApi();
         api.AddStat("Rank", "number");
@@ -95,10 +95,10 @@ public sealed class PlayerRosterWindowTests
 
         Assert.Contains(shown!.GetVisualDescendants().OfType<TextBlock>(), block => block.Text == "Rank (Number)");
         shown!.Close();
-    }
+    });
 
-    [AvaloniaFact]
-    public async Task SelectingSeveralCharactersInTheListSelectsThemForPrinting()
+    [Fact]
+    public Task SelectingSeveralCharactersInTheListSelectsThemForPrinting() => AvaloniaUi.Run(async () =>
     {
         var api = new FakePlayerApi();
         var ann = api.AddPlayer("Ann");
@@ -118,7 +118,7 @@ public sealed class PlayerRosterWindowTests
 
         Assert.Equal(roster.Characters, roster.SelectedCharacters);
         window.Close();
-    }
+    });
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {
