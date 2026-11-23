@@ -372,6 +372,21 @@ public sealed class MessageScreenViewModelTests
     }
 
     [Fact]
+    public async Task ReplyTitleCutNeverSplitsACharacterInHalf()
+    {
+        // "Re: " and 123 letters fill 127 places, so the emoji's two halves sit on either side of the 128 limit.
+        var api = new FakeMessageApi();
+        api.AddMessage($"{new string('t', 123)}\U0001F680", Kira, Odo);
+        var dialogs = new FakeMessageDialogs();
+        var screen = await OpenAsync(api, dialogs);
+        screen.SelectedMessage = screen.Messages[0];
+
+        await screen.ReplyCommand.ExecuteAsync();
+
+        Assert.Equal($"Re: {new string('t', 123)}", dialogs.LastEditor!.MessageTitle);
+    }
+
+    [Fact]
     public async Task ReplyToAReplyKeepsASinglePrefix()
     {
         var api = new FakeMessageApi();

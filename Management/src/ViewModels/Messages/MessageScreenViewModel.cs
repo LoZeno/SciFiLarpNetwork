@@ -405,9 +405,24 @@ public sealed class MessageScreenViewModel : ScreenViewModel
         var title = source.Title.StartsWith(ReplyPrefix, StringComparison.OrdinalIgnoreCase)
             ? source.Title
             : $"{ReplyPrefix}{source.Title}";
-        editor.MessageTitle = title.Length > editor.MaximumTitleLength ? title[..editor.MaximumTitleLength] : title;
+        editor.MessageTitle = CutTitle(title, editor.MaximumTitleLength);
         await _dialogs.ShowMessageEditorAsync(editor);
         await ReloadAfterSendAsync(editor);
+    }
+
+    /// <summary>
+    /// Cuts a prefilled title to the limit without splitting a character made of two UTF-16 units, such as an emoji;
+    /// half of one cannot be stored.
+    /// </summary>
+    private static string CutTitle(string title, int maximumLength)
+    {
+        if (title.Length <= maximumLength)
+        {
+            return title;
+        }
+
+        var length = char.IsHighSurrogate(title[maximumLength - 1]) ? maximumLength - 1 : maximumLength;
+        return title[..length];
     }
 
     private MessageEditorViewModel CreateEditor(string titleKey, Guid? replyToMessageId, SirenAction action)
