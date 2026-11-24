@@ -11,4 +11,7 @@ public static class CatalogTexts
     public static bool IsValidDescription(string? description) =>
         string.IsNullOrWhiteSpace(description) ||
         (description.Trim().Length <= MaximumDescriptionLength && FreeText.IsStorable(description));
+
+    public static string? Normalize(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 }

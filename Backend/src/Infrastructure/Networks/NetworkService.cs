@@ -66,7 +66,7 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
                 normalizedCode,
                 definition.Name.Trim(),
                 normalizedName,
-                CatalogText.NormalizeDescription(definition.Description),
+                CatalogTexts.Normalize(definition.Description),
                 definition.Theme,
                 timeProvider.GetUtcNow()));
         return await session.SaveNetworkAsync(networkId, () => CreateConflictAsync(normalizedCode, cancellationToken),
@@ -98,7 +98,7 @@ internal sealed class NetworkService(AttributedSessionFactory sessions, TimeProv
         }
 
         var name = definition.Name.Trim();
-        var description = CatalogText.NormalizeDescription(definition.Description);
+        var description = CatalogTexts.Normalize(definition.Description);
         if (current.Name == name && current.Description == description && current.Theme == definition.Theme)
         {
             return NetworkResult.Success(current);

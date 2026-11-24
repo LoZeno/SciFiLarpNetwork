@@ -46,7 +46,7 @@ internal sealed class TalentService(AttributedSessionFactory sessions, TimeProvi
         var talentId = Guid.NewGuid();
         session.Events.StartStream<TalentDocument>(
             talentId,
-            new TalentCreated(talentId, definition.Name.Trim(), normalizedName, CatalogText.NormalizeDescription(definition.Description), timeProvider.GetUtcNow()));
+            new TalentCreated(talentId, definition.Name.Trim(), normalizedName, CatalogTexts.Normalize(definition.Description), timeProvider.GetUtcNow()));
         return await SaveAsync(session, talentId, cancellationToken);
     }
 
@@ -75,7 +75,7 @@ internal sealed class TalentService(AttributedSessionFactory sessions, TimeProvi
         }
 
         var name = definition.Name.Trim();
-        var description = CatalogText.NormalizeDescription(definition.Description);
+        var description = CatalogTexts.Normalize(definition.Description);
         if (current.Name == name && current.Description == description)
         {
             return CatalogResult<TalentSummary>.Success(current.ToSummary());

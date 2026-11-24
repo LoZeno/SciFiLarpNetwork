@@ -22,4 +22,11 @@ public sealed class CatalogTextsTests
     [Fact]
     public void DescriptionWithANullCharacterIsInvalid() =>
         Assert.False(CatalogTexts.IsValidDescription("a\0b"));
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(" \r\n ", null)]
+    [InlineData("  Line one\n\tLine two  ", "Line one\n\tLine two")]
+    public void NormalizeTrimsAndTurnsBlankIntoNull(string? value, string? expected) =>
+        Assert.Equal(expected, CatalogTexts.Normalize(value));
 }
