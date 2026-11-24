@@ -10,6 +10,7 @@ public static class CatalogErrors
     public const string StaleVersion = "errors.staleVersion";
     public const string NameAlreadyUsed = "errors.nameAlreadyUsed";
     public const string InvalidName = "errors.invalidName";
+    public const string InvalidDescription = "errors.invalidDescription";
     public const string InvalidCost = "errors.invalidCost";
     public const string UnknownTalent = "errors.unknownTalent";
     public const string TalentArchived = "errors.talentArchived";
@@ -29,6 +30,7 @@ public static class CatalogErrors
             CatalogOutcome.StaleVersion => Create(StatusCodes.Status409Conflict, StaleVersion),
             CatalogOutcome.NameAlreadyUsed => Create(StatusCodes.Status409Conflict, NameAlreadyUsed),
             CatalogOutcome.InvalidName => Create(StatusCodes.Status400BadRequest, InvalidName),
+            CatalogOutcome.InvalidDescription => Create(StatusCodes.Status400BadRequest, InvalidDescription),
             CatalogOutcome.InvalidCost => Create(StatusCodes.Status400BadRequest, InvalidCost),
             CatalogOutcome.UnknownTalent => Create(StatusCodes.Status400BadRequest, UnknownTalent),
             CatalogOutcome.TalentArchived => Create(StatusCodes.Status400BadRequest, TalentArchived),

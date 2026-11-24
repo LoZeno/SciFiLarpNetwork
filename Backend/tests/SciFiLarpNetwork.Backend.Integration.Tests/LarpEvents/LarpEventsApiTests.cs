@@ -89,6 +89,17 @@ public sealed class LarpEventsApiTests(AdministratorAuthenticationFactory factor
     }
 
     [Fact]
+    public async Task DescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await SendAsync(client, token, HttpMethod.Post, EventsPath, new { name = "Fort", description = "a\0b" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task AdministratorEditsAnEvent()
     {
         using var client = factory.CreateClient();

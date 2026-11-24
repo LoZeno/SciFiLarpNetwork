@@ -8,4 +8,4 @@ namespace SciFiLarpNetwork.Backend.Api.Skills;
 public sealed record TalentUpdateRequest(
     [Range(1, long.MaxValue)] long Version,
     [Required] string Name,
-    [StringLength(SkillCatalogLimits.MaximumDescriptionLength)] string? Description);
+    string? Description);

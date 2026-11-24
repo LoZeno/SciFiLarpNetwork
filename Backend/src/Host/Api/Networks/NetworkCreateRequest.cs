@@ -10,7 +10,7 @@ namespace SciFiLarpNetwork.Backend.Api.Networks;
 public sealed record NetworkCreateRequest(
     [Required] string Code,
     [Required] string Name,
-    [StringLength(NetworkLimits.MaximumDescriptionLength)] string? Description,
+    string? Description,
     NetworkTheme Theme)
 {
     public NetworkDefinition ToDefinition() => new(Name, Description, Theme);

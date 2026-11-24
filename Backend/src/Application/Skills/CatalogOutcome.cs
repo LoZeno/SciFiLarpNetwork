@@ -7,6 +7,7 @@ public enum CatalogOutcome
     StaleVersion,
     InvalidName,
     NameAlreadyUsed,
+    InvalidDescription,
     InvalidCost,
     UnknownTalent,
     TalentArchived,

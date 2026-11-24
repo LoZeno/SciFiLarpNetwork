@@ -10,6 +10,7 @@ public static class NetworkDefinitionValidator
 {
     public static NetworkOutcome? Validate(NetworkDefinition definition) =>
         !CatalogNames.IsValid(definition.Name) ? NetworkOutcome.InvalidName
+        : !CatalogTexts.IsValidDescription(definition.Description) ? NetworkOutcome.InvalidDescription
         : !Enum.IsDefined(definition.Theme) ? NetworkOutcome.InvalidTheme
         : null;
 

@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using SciFiLarpNetwork.Backend.Domain.Texts;
 
 namespace SciFiLarpNetwork.Backend.Domain.Players;
 
@@ -29,7 +30,7 @@ public static class PlayerContacts
         (trimmed.Length <= MaximumPhoneLength && !trimmed.Any(char.IsControl));
 
     public static bool IsValidNotes(string? notes) =>
-        Normalize(notes) is not { } trimmed || trimmed.Length <= MaximumNotesLength;
+        Normalize(notes) is not { } trimmed || (trimmed.Length <= MaximumNotesLength && FreeText.IsStorable(trimmed));
 
     public static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

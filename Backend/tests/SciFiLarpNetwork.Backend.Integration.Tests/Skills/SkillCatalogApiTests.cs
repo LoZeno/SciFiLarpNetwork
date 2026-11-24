@@ -208,6 +208,80 @@ public sealed class SkillCatalogApiTests(AdministratorAuthenticationFactory fact
     }
 
     [Fact]
+    public async Task SkillDescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, SkillsPath, token, new { name = "Hacking I", description = "a\0b", cost = 1 });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task TalentDescriptionWithANullCharacterReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, TalentsPath, token, new { name = "Medicine", description = "a\0b" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task TooLongTalentDescriptionReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, TalentsPath, token, new { name = "Medicine", description = new string('d', 2001) });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task TooLongSkillDescriptionReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Post, SkillsPath, token, new { name = "Hacking I", description = new string('d', 2001), cost = 1 });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task TalentEditWithANullCharacterInTheDescriptionReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var talentId = await CreateTalentAsync(client, token, "Medicine");
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Put, $"{TalentsPath}/{talentId:D}", token, new { version = 1, name = "Medicine", description = "a\0b" });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
+    public async Task SkillEditWithANullCharacterInTheDescriptionReturnsItsStableCode()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var skillId = await CreateSkillAsync(client, token, new { name = "Welding", cost = 1 });
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Put, $"{SkillsPath}/{skillId:D}", token, new { version = 1, name = "Welding", description = "a\0b", cost = 1 });
+
+        Assert.Equal(new ErrorSnapshot(HttpStatusCode.BadRequest, "errors.invalidDescription"), await ErrorAsync(response));
+    }
+
+    [Fact]
     public async Task PrerequisiteLoopReturnsItsStableCode()
     {
         using var client = factory.CreateClient();

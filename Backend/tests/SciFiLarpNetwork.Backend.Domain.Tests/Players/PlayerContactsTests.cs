@@ -53,6 +53,14 @@ public sealed class PlayerContactsTests
             });
     }
 
+    [Fact]
+    public void NotesWithATabAreValid() =>
+        Assert.True(PlayerContacts.IsValidNotes("Allergies:\tnone"));
+
+    [Fact]
+    public void NotesWithANullCharacterAreInvalid() =>
+        Assert.False(PlayerContacts.IsValidNotes("a\0b"));
+
     [Theory]
     [InlineData(null, null)]
     [InlineData("   ", null)]
