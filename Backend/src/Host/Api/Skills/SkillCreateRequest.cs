@@ -9,7 +9,7 @@ namespace SciFiLarpNetwork.Backend.Api.Skills;
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record SkillCreateRequest(
     [Required] string Name,
-    [StringLength(SkillCatalogLimits.MaximumDescriptionLength)] string? Description,
+    string? Description,
     int Cost,
     bool IsMultiPurchase,
     bool IsAdvanced,

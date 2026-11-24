@@ -9,6 +9,7 @@ public sealed class NetworkDefinitionValidatorTests
     {
         { Definition(" "), NetworkOutcome.InvalidName },
         { Definition("Outer Rim") with { Description = "a\0b" }, NetworkOutcome.InvalidDescription },
+        { Definition("Outer Rim") with { Description = new string('d', 2001) }, NetworkOutcome.InvalidDescription },
         { Definition("Outer Rim") with { Description = "a\0b", Theme = (NetworkTheme)99 }, NetworkOutcome.InvalidDescription },
         { Definition("Outer Rim") with { Theme = (NetworkTheme)99 }, NetworkOutcome.InvalidTheme },
         { Definition(" ") with { Theme = (NetworkTheme)99 }, NetworkOutcome.InvalidName }

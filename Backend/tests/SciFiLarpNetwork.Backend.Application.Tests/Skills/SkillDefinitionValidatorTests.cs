@@ -8,6 +8,7 @@ public sealed class SkillDefinitionValidatorTests
     {
         { Definition(" ", cost: 1), CatalogOutcome.InvalidName },
         { Definition("Hacking I", cost: 1) with { Description = "a\0b" }, CatalogOutcome.InvalidDescription },
+        { Definition("Hacking I", cost: 1) with { Description = new string('d', 2001) }, CatalogOutcome.InvalidDescription },
         { Definition("Hacking I", cost: -1) with { Description = "a\0b" }, CatalogOutcome.InvalidDescription },
         { Definition("Hacking I", cost: -1), CatalogOutcome.InvalidCost },
         { Definition("Hacking I", cost: 1000), CatalogOutcome.InvalidCost },

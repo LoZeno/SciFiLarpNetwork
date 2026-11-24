@@ -1,5 +1,4 @@
 using SciFiLarpNetwork.Backend.Domain.Skills;
-using SciFiLarpNetwork.Backend.Domain.Texts;
 
 namespace SciFiLarpNetwork.Backend.Application.Skills;
 
@@ -9,6 +8,6 @@ public static class TalentDefinitionValidator
     /// of the first failed check.</returns>
     public static CatalogOutcome Validate(TalentDefinition definition) =>
         !CatalogNames.IsValid(definition.Name) ? CatalogOutcome.InvalidName
-        : !FreeText.IsStorable(definition.Description) ? CatalogOutcome.InvalidDescription
+        : !CatalogTexts.IsValidDescription(definition.Description) ? CatalogOutcome.InvalidDescription
         : CatalogOutcome.Succeeded;
 }

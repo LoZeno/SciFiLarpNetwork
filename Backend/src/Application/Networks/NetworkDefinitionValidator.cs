@@ -1,6 +1,5 @@
 using SciFiLarpNetwork.Backend.Domain.Networks;
 using SciFiLarpNetwork.Backend.Domain.Skills;
-using SciFiLarpNetwork.Backend.Domain.Texts;
 
 namespace SciFiLarpNetwork.Backend.Application.Networks;
 
@@ -11,7 +10,7 @@ public static class NetworkDefinitionValidator
 {
     public static NetworkOutcome? Validate(NetworkDefinition definition) =>
         !CatalogNames.IsValid(definition.Name) ? NetworkOutcome.InvalidName
-        : !FreeText.IsStorable(definition.Description) ? NetworkOutcome.InvalidDescription
+        : !CatalogTexts.IsValidDescription(definition.Description) ? NetworkOutcome.InvalidDescription
         : !Enum.IsDefined(definition.Theme) ? NetworkOutcome.InvalidTheme
         : null;
 

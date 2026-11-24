@@ -8,6 +8,7 @@ public sealed class TalentDefinitionValidatorTests
     {
         { new TalentDefinition(" ", null), CatalogOutcome.InvalidName },
         { new TalentDefinition("Medicine", "a\0b"), CatalogOutcome.InvalidDescription },
+        { new TalentDefinition("Medicine", new string('d', 2001)), CatalogOutcome.InvalidDescription },
         { new TalentDefinition(" ", "a\0b"), CatalogOutcome.InvalidName }
     };
 

@@ -11,7 +11,7 @@ namespace SciFiLarpNetwork.Backend.Api.Skills;
 public sealed record SkillUpdateRequest(
     [Range(1, long.MaxValue)] long Version,
     [Required] string Name,
-    [StringLength(SkillCatalogLimits.MaximumDescriptionLength)] string? Description,
+    string? Description,
     int Cost,
     bool IsMultiPurchase,
     bool IsAdvanced,
