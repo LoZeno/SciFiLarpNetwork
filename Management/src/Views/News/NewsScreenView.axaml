@@ -1,0 +1,97 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.News.NewsScreenView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:news="using:SciFiLarpNetwork.Management.Views.News"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.News"
+    x:DataType="vm:NewsScreenViewModel">
+  <DockPanel>
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+      <DockPanel Grid.Column="0">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock Classes="heading" Text="{Binding NewsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <TextBlock Text="{Binding NetworkLabel}" />
+          <ComboBox
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding NetworkLabel}"
+              ItemsSource="{Binding Networks}"
+              SelectedItem="{Binding SelectedNetwork, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NetworkChoice">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <WrapPanel ItemSpacing="12" LineSpacing="8">
+            <RadioButton Content="{Binding ActiveAtLabel}" GroupName="NewsMode" IsChecked="{Binding ShowActiveAt, Mode=TwoWay}" />
+            <RadioButton Content="{Binding AllLabel}" GroupName="NewsMode" IsChecked="{Binding ShowAll, Mode=TwoWay}" />
+          </WrapPanel>
+          <WrapPanel IsEnabled="{Binding ShowActiveAt}" ItemSpacing="8" LineSpacing="8">
+            <CalendarDatePicker AutomationProperties.Name="{Binding ActiveAtLabel}" SelectedDate="{Binding ActiveAtDate, Mode=TwoWay}" />
+            <TimePicker AutomationProperties.Name="{Binding ActiveAtLabel}" ClockIdentifier="24HourClock" SelectedTime="{Binding ActiveAtTime, Mode=TwoWay}" />
+            <Button Command="{Binding ApplyFilterCommand}" Content="{Binding ApplyFilterLabel}" />
+          </WrapPanel>
+          <TextBlock Text="{Binding TimeZoneText}" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Command="{Binding PreviousStoriesCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding StoryPage}" TextWrapping="Wrap" />
+            <Button Command="{Binding NextStoriesCommand}" Content="{Binding NextLabel}" />
+          </WrapPanel>
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Command="{Binding NewStoryCommand}" Content="{Binding NewLabel}" IsVisible="{Binding CanWrite}" />
+            <Button Command="{Binding EditStoryCommand}" Content="{Binding EditLabel}" IsVisible="{Binding CanWrite}" />
+            <Button Command="{Binding OpenMediaLibraryCommand}" Content="{Binding MediaLibraryLabel}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasStoriesPlaceholder}"
+            Text="{Binding StoriesPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding NewsHeading}"
+            ItemsSource="{Binding Stories}"
+            SelectedItem="{Binding SelectedStory, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NewsStoryListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding DetailsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasDetailsPlaceholder}"
+            Text="{Binding DetailsPlaceholder}"
+            TextWrapping="Wrap" />
+        <StackPanel DockPanel.Dock="Top" Margin="0,8,0,0" Spacing="6" IsVisible="{Binding HasDetails}">
+          <SelectableTextBlock Classes="section" Text="{Binding DetailTitle}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailAuthor}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailNetwork}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailTimes}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailStatus}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailHackingDifficulty}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding DetailSaved}" TextWrapping="Wrap" />
+        </StackPanel>
+        <!-- A story holds up to 10,000 characters and 10 pictures and videos, so its preview scrolls by itself. -->
+        <ScrollViewer Margin="0,8,0,0" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding HasDetails}">
+          <news:NewsPreviewView AutomationProperties.Name="{Binding DetailTitle}" ItemsSource="{Binding DetailPreview}" />
+        </ScrollViewer>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

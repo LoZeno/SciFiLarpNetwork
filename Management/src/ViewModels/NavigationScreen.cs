@@ -9,5 +9,6 @@ public enum NavigationScreen
     PlayerRoster,
     CardTemplates,
     Events,
-    Messages
+    Messages,
+    News
 }

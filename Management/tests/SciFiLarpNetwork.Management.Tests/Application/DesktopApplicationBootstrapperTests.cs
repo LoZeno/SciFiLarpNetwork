@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Views.News;
 using SciFiLarpNetwork.Management.Views.CardTemplates;
 using SciFiLarpNetwork.Management.Views.LarpEvents;
 using System.Text.Json;
@@ -31,6 +32,7 @@ public sealed class DesktopApplicationBootstrapperTests
             new WindowCardTemplateDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowLarpEventDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowMessageDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
+            new WindowNewsDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         var lifetime = new ClassicDesktopStyleApplicationLifetime();

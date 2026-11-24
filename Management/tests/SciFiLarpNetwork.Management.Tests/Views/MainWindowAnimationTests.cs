@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
@@ -489,7 +490,7 @@ public sealed class MainWindowAnimationTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

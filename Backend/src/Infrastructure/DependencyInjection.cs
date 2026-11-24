@@ -14,6 +14,7 @@ using SciFiLarpNetwork.Backend.Application.EventSourcing;
 using SciFiLarpNetwork.Backend.Application.LarpEvents;
 using SciFiLarpNetwork.Backend.Application.Messages;
 using SciFiLarpNetwork.Backend.Application.Networks;
+using SciFiLarpNetwork.Backend.Application.News;
 using SciFiLarpNetwork.Backend.Application.Players;
 using SciFiLarpNetwork.Backend.Application.Skills;
 using SciFiLarpNetwork.Backend.Domain.Events.AdministratorEvents;
@@ -24,6 +25,7 @@ using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.MessageEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.RunningNumberEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
@@ -37,6 +39,7 @@ using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Messages;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.News;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 using SciFiLarpNetwork.Backend.Infrastructure.Players;
 using SciFiLarpNetwork.Backend.Infrastructure.Players.PlayerDocuments;
@@ -78,6 +81,9 @@ public static class DependencyInjection
         services.AddSingleton<ILarpEventCardService, LarpEventCardService>();
         services.AddSingleton<IMessageService, MessageService>();
         services.TryAddSingleton<IMessageNotifications, NoMessageNotifications>();
+        services.AddSingleton(new NewsMediaFiles(MediaRootPath(configuration)));
+        services.AddSingleton<INewsStoryService, NewsStoryService>();
+        services.AddSingleton<INewsMediaService, NewsMediaService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -241,6 +247,17 @@ public static class DependencyInjection
             // show a message right after it is sent. Live updates rely on it too: the document commits with the event,
             // so a client that reloads when MessageSentSubscription announces the event always finds the message.
             options.Projections.Add<MessageProjection>(ProjectionLifecycle.Inline);
+
+            options.Events.AddEventType<NewsStoryCreated>();
+            options.Events.AddEventType<NewsStoryEdited>();
+            options.Events.AddEventType<NewsMediaUploaded>();
+            options.Events.AddEventType<NewsMediaReferenced>();
+            options.Events.AddEventType<NewsMediaRemoved>();
+
+            // Saving reads these write models (a repeated submission, media in use), and the list and details show a
+            // story or media item right after it is saved.
+            options.Projections.Add<NewsStoryProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<NewsMediaProjection>(ProjectionLifecycle.Inline);
         })
         .AddSubscriptionWithServices<MessageSentSubscription>(ServiceLifetime.Singleton)
         .AddAsyncDaemon(DaemonMode.Solo);
@@ -251,4 +268,11 @@ public static class DependencyInjection
 
         return services;
     }
+
+    /// <summary>
+    /// The folder of uploaded news media: <c>Media:RootPath</c>, relative to the backend's own files unless absolute;
+    /// <c>media</c> next to them by default.
+    /// </summary>
+    private static string MediaRootPath(IConfiguration configuration) =>
+        Path.GetFullPath(configuration["Media:RootPath"] is { Length: > 0 } path ? path : "media", AppContext.BaseDirectory);
 }

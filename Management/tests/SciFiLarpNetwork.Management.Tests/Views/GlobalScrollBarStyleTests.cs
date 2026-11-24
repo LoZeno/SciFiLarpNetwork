@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -113,7 +114,7 @@ public sealed class GlobalScrollBarStyleTests
     {
         var viewModel = new MainWindowViewModel(new FakeCardTemplateApi(), new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel) { Height = 480 };
         window.Show();

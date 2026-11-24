@@ -1,0 +1,130 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.News.NewsEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:events="using:SciFiLarpNetwork.Management.ViewModels.LarpEvents"
+    xmlns:news="using:SciFiLarpNetwork.Management.Views.News"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.News"
+    x:DataType="vm:NewsEditorViewModel"
+    Title="{Binding Title}"
+    Width="1100"
+    Height="820"
+    MinWidth="720"
+    MinHeight="560"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button Command="{Binding SaveCommand}" Content="{Binding SaveLabel}" IsDefault="True" />
+        <Button Command="{Binding CancelCommand}" Content="{Binding CancelLabel}" IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+    <Grid Margin="0,10,0,0" ColumnDefinitions="*,*" ColumnSpacing="24">
+      <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{Binding NetworkLabel}" />
+          <ComboBox
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding NetworkLabel}"
+              ItemsSource="{Binding Networks}"
+              SelectedItem="{Binding Network, Mode=TwoWay}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NetworkChoice">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="section" Text="{Binding AuthorLabel}" />
+          <TextBlock Text="{Binding AuthorText}" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding SearchLabel}"
+                PlaceholderText="{Binding SearchLabel}"
+                Text="{Binding SearchText, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding SearchCommand}" Content="{Binding SearchButtonLabel}" />
+          </Grid>
+          <TextBlock IsVisible="{Binding HasSearchMessage}" Text="{Binding SearchMessage}" TextWrapping="Wrap" />
+          <ListBox
+              MaxHeight="120"
+              AutomationProperties.Name="{Binding SearchLabel}"
+              ItemsSource="{Binding FoundCharacters}"
+              SelectedItem="{Binding FoundCharacter, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="events:CharacterChoice">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Command="{Binding SetAuthorCommand}" Content="{Binding SetAuthorLabel}" />
+          <TextBlock Text="{Binding StoryTitleLabel}" />
+          <TextBox
+              AutomationProperties.Name="{Binding StoryTitleLabel}"
+              MaxLength="{Binding MaximumTitleLength}"
+              Text="{Binding StoryTitle, Mode=TwoWay}" />
+          <TextBlock Text="{Binding StartLabel}" />
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <CalendarDatePicker AutomationProperties.Name="{Binding StartLabel}" SelectedDate="{Binding StartDate, Mode=TwoWay}" />
+            <TimePicker AutomationProperties.Name="{Binding StartLabel}" ClockIdentifier="24HourClock" SelectedTime="{Binding StartTime, Mode=TwoWay}" />
+          </WrapPanel>
+          <TextBlock Text="{Binding EndLabel}" />
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <CalendarDatePicker AutomationProperties.Name="{Binding EndLabel}" SelectedDate="{Binding EndDate, Mode=TwoWay}" />
+            <TimePicker AutomationProperties.Name="{Binding EndLabel}" ClockIdentifier="24HourClock" SelectedTime="{Binding EndTime, Mode=TwoWay}" />
+          </WrapPanel>
+          <TextBlock Text="{Binding TimeZoneText}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding HackingDifficultyLabel}" />
+          <NumericUpDown
+              HorizontalAlignment="Left"
+              MinWidth="160"
+              AutomationProperties.Name="{Binding HackingDifficultyLabel}"
+              FormatString="0"
+              Increment="1"
+              Minimum="{Binding MinimumHackingDifficulty}"
+              Value="{Binding HackingDifficulty, Mode=TwoWay}" />
+          <TextBlock Text="{Binding BodyLabel}" />
+          <WrapPanel ItemSpacing="6" LineSpacing="6">
+            <Button Command="{Binding BoldCommand}" Content="{Binding BoldLabel}" />
+            <Button Command="{Binding ItalicCommand}" Content="{Binding ItalicLabel}" />
+            <Button Command="{Binding HeadingCommand}" Content="{Binding HeadingLabel}" />
+            <Button Command="{Binding BulletedListCommand}" Content="{Binding BulletedListLabel}" />
+            <Button Command="{Binding NumberedListCommand}" Content="{Binding NumberedListLabel}" />
+            <Button Command="{Binding InsertMediaCommand}" Content="{Binding InsertMediaLabel}" />
+          </WrapPanel>
+          <TextBox
+              Height="280"
+              AcceptsReturn="True"
+              AutomationProperties.Name="{Binding BodyLabel}"
+              MaxLength="{Binding MaximumBodyLength}"
+              SelectionEnd="{Binding SelectionEnd, Mode=TwoWay}"
+              SelectionStart="{Binding SelectionStart, Mode=TwoWay}"
+              Text="{Binding Body, Mode=TwoWay}"
+              TextWrapping="Wrap" />
+          <TextBlock Text="{Binding MediaCountText}" TextWrapping="Wrap" />
+        </StackPanel>
+      </ScrollViewer>
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Classes="section" Text="{Binding PreviewLabel}" />
+        <ScrollViewer Margin="0,8,0,0" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section" Text="{Binding StoryTitle}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding AuthorText}" TextWrapping="Wrap" />
+            <news:NewsPreviewView AutomationProperties.Name="{Binding PreviewLabel}" ItemsSource="{Binding Preview}" />
+          </StackPanel>
+        </ScrollViewer>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</Window>

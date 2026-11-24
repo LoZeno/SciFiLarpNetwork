@@ -32,7 +32,7 @@ public sealed class ManagementApiClientImageTests : IDisposable
 
         await client.GetImageAsync("http://localhost/api", "/api/v1/network-images/1", "it", TestContext.Current.CancellationToken);
 
-        Assert.Equal("image/png,image/jpeg,image/webp", string.Join(',', sent!.Headers.Accept.Select(header => header.MediaType)));
+        Assert.Equal("image/png,image/jpeg,image/webp,image/gif", string.Join(',', sent!.Headers.Accept.Select(header => header.MediaType)));
     }
 
     [Theory]

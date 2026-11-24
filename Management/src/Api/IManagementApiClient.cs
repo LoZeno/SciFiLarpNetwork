@@ -74,6 +74,27 @@ public interface IManagementApiClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Submits an advertised <c>multipart/form-data</c> action with text <paramref name="fields"/> and one file, and
+    /// returns the Siren answer. Errors are read as Siren errors, as for <see cref="SubmitActionAsync"/>.
+    /// </summary>
+    Task<SirenEntity> UploadFileActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        IReadOnlyDictionary<string, string> fields,
+        UploadFile file,
+        string locale,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This client cannot upload files.");
+
+    /// <summary>Submits an advertised action that has no body and answers with no content, such as a removal.</summary>
+    Task ExecuteActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        string locale,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This client cannot run actions without a result.");
+
+    /// <summary>
     /// Listens to the live message updates advertised at <paramref name="href"/>, within the configured API origin and
     /// path, with the signed-in session, and reports them to <paramref name="handlers"/>. Disposing the result closes
     /// the connection without reporting it as lost. Clients without live updates listen to nothing.

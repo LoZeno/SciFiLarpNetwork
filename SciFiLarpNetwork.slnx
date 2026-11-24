@@ -3,6 +3,7 @@
   <Folder Name="/Backend/src/Domain/">
     <Project Path="Backend/src/Domain/SciFiLarpNetwork.Backend.Domain.csproj" />
   </Folder>
+  <Folder Name="/Backend/src/" />
   <Folder Name="/Backend/src/Application/">
     <Project Path="Backend/src/Application/SciFiLarpNetwork.Backend.Application.csproj" />
   </Folder>
@@ -15,6 +16,7 @@
   <Folder Name="/Backend/tests/Domain/">
     <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Domain.Tests/SciFiLarpNetwork.Backend.Domain.Tests.csproj" />
   </Folder>
+  <Folder Name="/Backend/tests/" />
   <Folder Name="/Backend/tests/Application/">
     <Project Path="Backend/tests/SciFiLarpNetwork.Backend.Application.Tests/SciFiLarpNetwork.Backend.Application.Tests.csproj" />
   </Folder>
@@ -33,6 +35,9 @@
   </Folder>
   <Folder Name="/Shared/SciFiLarpNetwork.Localization/">
     <Project Path="Shared/SciFiLarpNetwork.Localization/SciFiLarpNetwork.Localization.csproj" />
+  </Folder>
+  <Folder Name="/Shared/SciFiLarpNetwork.NewsMarkdown/">
+    <Project Path="Shared/SciFiLarpNetwork.NewsMarkdown/SciFiLarpNetwork.NewsMarkdown.csproj" />
   </Folder>
   <Folder Name="/Shared/SciFiLarpNetwork.Siren/">
     <Project Path="Shared/SciFiLarpNetwork.Siren/SciFiLarpNetwork.Siren.csproj" />

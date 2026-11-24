@@ -684,12 +684,20 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorGrantDocument));
         await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdministratorAuditDocument));
         await base.DisposeAsync();
+        if (Directory.Exists(MediaRootPath))
+        {
+            Directory.Delete(MediaRootPath, recursive: true);
+        }
     }
+
+    /// <summary>The news media folder of this test host, separate from any real deployment's folder.</summary>
+    public string MediaRootPath { get; } = Path.Combine(Path.GetTempPath(), "scifilarnetwork-tests", $"media-{Guid.NewGuid():N}");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("PathBase", "/local");
         builder.UseSetting("ConnectionStrings:EventStore", BaseConnectionString);
+        builder.UseSetting("Media:RootPath", MediaRootPath);
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
@@ -710,6 +718,10 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         LogMessages.Messages.Clear();
         // Async projections are running, so the daemon must restart along with the data reset.
         await Services.ResetAllMartenDataAsync();
+        if (Directory.Exists(MediaRootPath))
+        {
+            Directory.Delete(MediaRootPath, recursive: true);
+        }
     }
 
     // Only the grant and audit documents come from async projections; every other document is inline.

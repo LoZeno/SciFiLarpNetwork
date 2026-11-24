@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\SciFiLarpNetwork.Backend.Application.csproj" />
     <ProjectReference Include="..\Domain\SciFiLarpNetwork.Backend.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\SciFiLarpNetwork.NewsMarkdown\SciFiLarpNetwork.NewsMarkdown.csproj" />
   </ItemGroup>
 
 </Project>

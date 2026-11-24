@@ -14,7 +14,7 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly MediaTypeWithQualityHeaderValue SirenMediaType =
         new(SirenMediaTypes.Json);
-    private static readonly string[] ImageMediaTypes = ["image/png", "image/jpeg", "image/webp"];
+    private static readonly string[] ImageMediaTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
     private string? _sessionToken;
     private Uri? _sessionApiRoot;
     private Uri? _sessionRenewTarget;
@@ -289,6 +289,47 @@ public sealed class ManagementApiClient(HttpClient httpClient) : IManagementApiC
         }
 
         return listening;
+    }
+
+    public async Task<SirenEntity> UploadFileActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        IReadOnlyDictionary<string, string> fields,
+        UploadFile file,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(action.Type, "multipart/form-data", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Only multipart/form-data Siren actions can upload files.");
+        }
+
+        using var request = CreateActionRequest(apiBaseUrl, action with { Type = null }, null, locale);
+        var form = new MultipartFormDataContent();
+        foreach (var (name, value) in fields)
+        {
+            form.Add(new StringContent(value), name);
+        }
+
+        var content = new ByteArrayContent(file.Content);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        form.Add(content, file.FieldName, file.FileName);
+        request.Content = form;
+        request.Headers.Accept.Add(SirenMediaType);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        return await ReadEntityAsync(response, cancellationToken);
+    }
+
+    public async Task ExecuteActionAsync(
+        string apiBaseUrl,
+        SirenAction action,
+        string locale,
+        CancellationToken cancellationToken = default)
+    {
+        using var request = CreateActionRequest(apiBaseUrl, action, null, locale);
+        request.Headers.Accept.Add(SirenMediaType);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
     }
 
     private HttpRequestMessage CreateActionRequest(string apiBaseUrl, SirenAction action, JsonElement? body, string locale)

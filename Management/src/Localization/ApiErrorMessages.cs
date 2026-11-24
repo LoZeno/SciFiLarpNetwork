@@ -107,7 +107,26 @@ public static class ApiErrorMessages
         "errors.tooManyRecipients",
         "errors.archivedCharacters",
         "errors.unknownReplySource",
-        "errors.messageIdInUse"
+        "errors.messageIdInUse",
+        "errors.invalidStoryId",
+        "errors.invalidNewsTitle",
+        "errors.invalidNewsBody",
+        "errors.invalidNewsTimes",
+        "errors.invalidHackingDifficulty",
+        "errors.unknownAuthor",
+        "errors.authorArchived",
+        "errors.externalImage",
+        "errors.missingMediaText",
+        "errors.invalidMediaReference",
+        "errors.tooManyMedia",
+        "errors.unknownMedia",
+        "errors.optionsOnPicture",
+        "errors.storyIdInUse",
+        "errors.invalidMediaName",
+        "errors.invalidMediaFile",
+        "errors.mediaTooLarge",
+        "errors.mediaDimensionsTooLarge",
+        "errors.mediaInUse"
     ];
 
     extension(IManagementLocalizer localizer)
