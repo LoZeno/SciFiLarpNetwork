@@ -1,6 +1,7 @@
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Application.Networks;
+using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Networks;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
@@ -185,6 +186,106 @@ public sealed class NetworkBackgroundImageServiceTests(AdministratorAuthenticati
     {
         Assert.Null(await Images.GetImageAsync(Guid.NewGuid(), TestContext.Current.CancellationToken));
     }
+
+    [Fact]
+    public async Task UploadedImageIsStoredInTheNetworkImagesFolderUnderItsIdentifier()
+    {
+        var network = await CreateNetworkAsync();
+        var content = NetworkTestImages.Png(size: 100);
+        var saved = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, content, TestContext.Current.CancellationToken);
+
+        var stored = await File.ReadAllBytesAsync(
+            Path.Combine(NetworkImagesFolder, saved.Value!.BackgroundImage!.ImageId.ToString("D")), TestContext.Current.CancellationToken);
+
+        Assert.Equal(content, stored);
+    }
+
+    [Fact]
+    public async Task SecondUploadBecomesTheNetworkImage()
+    {
+        var network = await CreateNetworkAsync();
+        var first = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken);
+
+        var second = await Images.SetBackgroundImageAsync(
+            network.NetworkId, first.Value!.Version, NetworkTestImages.Jpeg(size: 200), TestContext.Current.CancellationToken);
+
+        Assert.Equal(new NetworkImageReference(second.Value!.BackgroundImage!.ImageId, "image/jpeg", 200),
+            (await Networks.GetNetworkAsync(network.NetworkId, TestContext.Current.CancellationToken))!.BackgroundImage);
+    }
+
+    [Fact]
+    public async Task ReplacedImageKeepsItsFile()
+    {
+        var network = await CreateNetworkAsync();
+        var firstContent = NetworkTestImages.Png(size: 100);
+        var first = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, firstContent, TestContext.Current.CancellationToken);
+        await Images.SetBackgroundImageAsync(network.NetworkId, first.Value!.Version, NetworkTestImages.Jpeg(size: 200), TestContext.Current.CancellationToken);
+
+        var image = await Images.GetImageAsync(first.Value.BackgroundImage!.ImageId, TestContext.Current.CancellationToken);
+
+        Assert.Equivalent(new { MediaType = "image/png", Content = firstContent }, new { image!.MediaType, image.Content }, strict: true);
+    }
+
+    [Fact]
+    public async Task RemovedImageKeepsItsFile()
+    {
+        var network = await CreateNetworkAsync();
+        var withImage = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken);
+
+        await Images.RemoveBackgroundImageAsync(network.NetworkId, withImage.Value!.Version, TestContext.Current.CancellationToken);
+
+        Assert.True(File.Exists(Path.Combine(NetworkImagesFolder, withImage.Value.BackgroundImage!.ImageId.ToString("D"))));
+    }
+
+    [Fact]
+    public async Task UploadThatLosesARaceLeavesNoFile()
+    {
+        var network = await CreateNetworkAsync();
+        factory.Clock.FirstReadBarrier = new Barrier(2);
+
+        await Task.WhenAll(
+            Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken),
+            Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken));
+
+        Assert.Single(Directory.GetFiles(NetworkImagesFolder));
+    }
+
+    [Fact]
+    public async Task FailedUploadEventLeavesNoFile()
+    {
+        var network = await CreateNetworkAsync();
+        factory.NextCommit.FailNextSaveOf<NetworkBackgroundImageSet>();
+
+        await Record.ExceptionAsync(() =>
+            Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken));
+
+        Assert.Empty(Directory.Exists(NetworkImagesFolder) ? Directory.GetFiles(NetworkImagesFolder) : []);
+    }
+
+    [Fact]
+    public async Task CancellationRightAfterTheUploadCommitsStillReportsSuccess()
+    {
+        var network = await CreateNetworkAsync();
+        using var cancellation = new CancellationTokenSource();
+        factory.NextCommit.ArmAfter<NetworkBackgroundImageSet>(cancellation.Cancel);
+
+        var result = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), cancellation.Token);
+
+        Assert.Equal(NetworkOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task UnusableMediaFolderReportsItsOwnError()
+    {
+        var network = await CreateNetworkAsync();
+
+        var (expected, actual) = await factory.WithUnusableMediaFolderAsync("NetworkImages", () =>
+            Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken));
+
+        Assert.Equal(expected, actual);
+    }
+
+    private string NetworkImagesFolder => Path.Combine(factory.MediaRootPath, "NetworkImages");
 
     private async Task<NetworkSummary> CreateNetworkAsync() =>
         (await Networks.CreateNetworkAsync("rebels", new NetworkDefinition("Rebels", null, NetworkTheme.Grey), TestContext.Current.CancellationToken)).Value!;

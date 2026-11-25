@@ -35,7 +35,7 @@ These rules replace the numeric identifiers, the faction label, the unused param
 
 - An administrator can upload a background image for a network. When present, it replaces the theme's background image, so several networks sharing a theme can still look different. Removing it restores the theme's background image.
 - Accepted formats are PNG, JPEG, and WebP, up to 2 MB and 4096 × 4096 pixels. The server reads the format and the pixel size from the file's own header and rejects anything else, including SVG, an unreadable header, or a declared size above the limit, so a small file cannot claim a huge picture. Only the header is checked, so clients treat an image that fails to decode as no image, and an image that cannot be downloaded never blocks editing the network.
-- Image bytes are stored in their own document, separate from the event stream. The network's events record only the image identifier, media type, and size. Replaced or removed images are kept, so history keeps its references; nothing is deleted.
+- Image files are kept in the `NetworkImages/` subfolder of the media folder set by `Media:RootPath`, named by their identifier ([SPEC-31](../../SPEC-31-media-folder-layout.md)). Each upload gets a new identifier, so a file is never overwritten. The network's events record only the image identifier, media type, and size. Replaced or removed images are kept, so history keeps its references; nothing is deleted.
 - The management client shows a preview of the uploaded image.
 
 ### Enabling and disabling

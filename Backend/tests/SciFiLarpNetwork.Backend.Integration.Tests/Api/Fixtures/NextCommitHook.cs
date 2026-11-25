@@ -12,10 +12,33 @@ public sealed class NextCommitHook : DocumentSessionListenerBase
 {
     private (Func<object, bool> Matches, Action Act)? _armed;
 
+    private Func<object, bool>? _failing;
+
     public void ArmAfter<T>(Action act) => _armed = (data => data is T, act);
 
-    /// <summary>Drops an action that never ran, so it cannot fire in a later test.</summary>
-    public void Disarm() => _armed = null;
+    /// <summary>
+    /// Makes the next save that appends an event of type <c>T</c> throw before anything is written, as a failed
+    /// append would (Marten "Listening for Document Store Events", <c>BeforeSaveChangesAsync</c>).
+    /// </summary>
+    public void FailNextSaveOf<T>() => _failing = data => data is T;
+
+    /// <summary>Drops actions that never ran, so they cannot fire in a later test.</summary>
+    public void Disarm()
+    {
+        _armed = null;
+        _failing = null;
+    }
+
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
+    {
+        if (_failing is { } matches && session.PendingChanges.Streams().SelectMany(stream => stream.Events).Any(e => matches(e.Data)))
+        {
+            _failing = null;
+            throw new InvalidOperationException("The test made this save fail.");
+        }
+
+        return Task.CompletedTask;
+    }
 
     public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {

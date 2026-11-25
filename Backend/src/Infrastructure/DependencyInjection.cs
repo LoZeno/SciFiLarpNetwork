@@ -36,6 +36,7 @@ using SciFiLarpNetwork.Backend.Infrastructure.CardTemplates;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
+using SciFiLarpNetwork.Backend.Infrastructure.Media;
 using SciFiLarpNetwork.Backend.Infrastructure.Messages;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
@@ -81,7 +82,7 @@ public static class DependencyInjection
         services.AddSingleton<ILarpEventCardService, LarpEventCardService>();
         services.AddSingleton<IMessageService, MessageService>();
         services.TryAddSingleton<IMessageNotifications, NoMessageNotifications>();
-        services.AddSingleton(new NewsMediaFiles(MediaRootPath(configuration)));
+        services.AddSingleton(new MediaFileStore(MediaRootPath(configuration)));
         services.AddSingleton<INewsStoryService, NewsStoryService>();
         services.AddSingleton<INewsMediaService, NewsMediaService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
@@ -270,7 +271,7 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// The folder of uploaded news media: <c>Media:RootPath</c>, relative to the backend's own files unless absolute;
+    /// The folder of uploaded media: <c>Media:RootPath</c>, relative to the backend's own files unless absolute;
     /// <c>media</c> next to them by default.
     /// </summary>
     private static string MediaRootPath(IConfiguration configuration) =>

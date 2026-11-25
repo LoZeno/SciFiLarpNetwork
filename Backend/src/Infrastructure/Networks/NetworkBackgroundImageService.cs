@@ -2,15 +2,21 @@ using Marten;
 using SciFiLarpNetwork.Backend.Application.Networks;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Networks;
+using SciFiLarpNetwork.Backend.Infrastructure.Media;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Networks;
 
 /// <summary>
-/// The image document and the event that references it are written in one session, so they commit together.
+/// The image file and its event cannot commit together, so the file is written first and deleted again when the event
+/// does not commit. Every upload gets a new identifier, and files are never deleted afterwards, so history keeps its
+/// references.
 /// </summary>
-internal sealed class NetworkBackgroundImageService(AttributedSessionFactory sessions, TimeProvider timeProvider)
+internal sealed class NetworkBackgroundImageService(
+    AttributedSessionFactory sessions,
+    MediaFileStore files,
+    TimeProvider timeProvider)
     : INetworkBackgroundImageService
 {
     public async Task<NetworkResult> SetBackgroundImageAsync(
@@ -34,8 +40,6 @@ internal sealed class NetworkBackgroundImageService(AttributedSessionFactory ses
             return NetworkResult.Failure(NetworkOutcome.ImageDimensionsTooLarge);
         }
 
-        var mediaType = image.MediaType;
-
         await using var session = sessions.OpenSession();
         var (outcome, stream) = await session.FetchExpectedNetworkAsync(networkId, expectedVersion, cancellationToken);
         if (stream?.Aggregate is null)
@@ -44,10 +48,62 @@ internal sealed class NetworkBackgroundImageService(AttributedSessionFactory ses
         }
 
         var imageId = Guid.NewGuid();
-        session.Store(new NetworkImageDocument(imageId, networkId, mediaType, content));
-        stream.AppendOne(new NetworkBackgroundImageSet(networkId, imageId, mediaType, content.Length,
+        session.Store(new NetworkImageFileDocument(imageId, networkId, image.MediaType, content.Length));
+        stream.AppendOne(new NetworkBackgroundImageSet(networkId, imageId, image.MediaType, content.Length,
             timeProvider.GetUtcNow()));
-        return await session.SaveNetworkAsync(networkId, NetworkWrites.NameConflict, cancellationToken);
+        var committed = await CommitWithFileAsync(session, imageId, content, cancellationToken);
+        // Once committed, a cancelled read-back must not look like a failed upload.
+        return committed == NetworkOutcome.Succeeded
+            ? await session.LoadSavedNetworkAsync(networkId, CancellationToken.None)
+            : NetworkResult.Failure(committed);
+    }
+
+    /// <summary>Stores the file, then commits the session; the file is deleted again unless the session commits.</summary>
+    private async Task<NetworkOutcome> CommitWithFileAsync(IDocumentSession session, Guid imageId, byte[] content,
+        CancellationToken cancellationToken)
+    {
+        NetworkOutcome outcome;
+        try
+        {
+            outcome = await StoreFileAsync(imageId, content, cancellationToken)
+                ? await session.CommitNetworkAsync(NetworkWrites.NameConflict, cancellationToken)
+                : NetworkOutcome.ImageTooLarge;
+        }
+        catch
+        {
+            DeleteImageFiles(imageId);
+            throw;
+        }
+
+        if (outcome != NetworkOutcome.Succeeded)
+        {
+            DeleteImageFiles(imageId);
+        }
+
+        return outcome;
+    }
+
+    /// <summary>
+    /// Writes and commits the file. The upload was already checked against the same limit, so a refusal here only
+    /// happens if the two checks drift apart; it then commits nothing rather than a cut-off file.
+    /// </summary>
+    private async Task<bool> StoreFileAsync(Guid imageId, byte[] content, CancellationToken cancellationToken)
+    {
+        using var upload = new MemoryStream(content, writable: false);
+        if (await files.WriteTemporaryAsync(MediaFolder.NetworkImages, imageId, upload,
+                NetworkImageFormats.MaximumByteCount, cancellationToken) is null)
+        {
+            return false;
+        }
+
+        files.CommitTemporary(MediaFolder.NetworkImages, imageId);
+        return true;
+    }
+
+    private void DeleteImageFiles(Guid imageId)
+    {
+        files.DeleteTemporary(MediaFolder.NetworkImages, imageId);
+        files.Delete(MediaFolder.NetworkImages, imageId);
     }
 
     public async Task<NetworkResult> RemoveBackgroundImageAsync(Guid networkId, long expectedVersion,
@@ -72,8 +128,17 @@ internal sealed class NetworkBackgroundImageService(AttributedSessionFactory ses
     public async Task<NetworkImage?> GetImageAsync(Guid imageId, CancellationToken cancellationToken = default)
     {
         await using var query = sessions.QuerySession();
-        return await query.LoadAsync<NetworkImageDocument>(imageId, cancellationToken) is { } image
-            ? new NetworkImage(image.Id, image.MediaType, image.Content)
-            : null;
+        if (await query.LoadAsync<NetworkImageFileDocument>(imageId, cancellationToken) is not { } image ||
+            files.Open(MediaFolder.NetworkImages, imageId) is not { } file)
+        {
+            return null;
+        }
+
+        await using (file)
+        {
+            using var content = new MemoryStream(image.ByteCount);
+            await file.CopyToAsync(content, cancellationToken);
+            return new NetworkImage(image.Id, image.MediaType, content.ToArray());
+        }
     }
 }

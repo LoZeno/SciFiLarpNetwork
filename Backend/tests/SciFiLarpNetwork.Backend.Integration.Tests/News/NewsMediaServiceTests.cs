@@ -208,8 +208,41 @@ public sealed class NewsMediaServiceTests(AdministratorAuthenticationFactory fac
         return await Media.UploadMediaAsync("Upload", stream, Token);
     }
 
-    private int StoredFileCount() =>
-        Directory.Exists(factory.MediaRootPath) ? Directory.GetFiles(factory.MediaRootPath).Length : 0;
+    [Fact]
+    public async Task UploadedFileIsStoredInTheNewsFolderUnderItsIdentifier()
+    {
+        var picture = NewsTestData.Picture();
+        var uploaded = await _data.UploadAsync(picture);
+
+        var stored = await File.ReadAllBytesAsync(Path.Combine(NewsFolder, uploaded.MediaId.ToString("D")), Token);
+
+        Assert.Equal(picture, stored);
+    }
+
+    [Fact]
+    public async Task FailedUploadEventLeavesNoFile()
+    {
+        using var stream = new MemoryStream(NewsTestData.Picture());
+        factory.NextCommit.FailNextSaveOf<NewsMediaUploaded>();
+
+        await Record.ExceptionAsync(() => Media.UploadMediaAsync("Harbour", stream, Token));
+
+        Assert.Equal(0, StoredFileCount());
+    }
+
+    [Fact]
+    public async Task UnusableMediaFolderReportsItsOwnError()
+    {
+        using var stream = new MemoryStream(NewsTestData.Picture());
+
+        var (expected, actual) = await factory.WithUnusableMediaFolderAsync("News", () => Media.UploadMediaAsync("Harbour", stream, Token));
+
+        Assert.Equal(expected, actual);
+    }
+
+    private string NewsFolder => Path.Combine(factory.MediaRootPath, "News");
+
+    private int StoredFileCount() => Directory.Exists(NewsFolder) ? Directory.GetFiles(NewsFolder).Length : 0;
 
     /// <summary>A read-only stream of <paramref name="length"/> bytes that starts with a header, without holding them.</summary>
     private sealed class GeneratedStream(byte[] header, long length) : Stream

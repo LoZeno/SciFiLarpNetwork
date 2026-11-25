@@ -2,6 +2,7 @@ using Marten;
 using SciFiLarpNetwork.Backend.Application.News;
 using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.News;
+using SciFiLarpNetwork.Backend.Infrastructure.Media;
 using SciFiLarpNetwork.Backend.Infrastructure.News.NewsDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
@@ -11,7 +12,7 @@ namespace SciFiLarpNetwork.Backend.Infrastructure.News;
 /// The file and its upload event cannot commit together, so the file is written first and deleted again when the event
 /// does not commit; a removal commits its event first and then deletes the file.
 /// </summary>
-internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMediaFiles files, TimeProvider timeProvider)
+internal sealed class NewsMediaService(AttributedSessionFactory sessions, MediaFileStore files, TimeProvider timeProvider)
     : INewsMediaService
 {
     public async Task<IReadOnlyList<NewsMediaSummary>> GetMediaAsync(CancellationToken cancellationToken = default)
@@ -42,14 +43,14 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
         }
         catch
         {
-            files.DeleteTemporary(mediaId);
-            files.Delete(mediaId);
+            files.DeleteTemporary(MediaFolder.News, mediaId);
+            files.Delete(MediaFolder.News, mediaId);
             throw;
         }
 
         if (outcome != NewsOutcome.Succeeded)
         {
-            files.DeleteTemporary(mediaId);
+            files.DeleteTemporary(MediaFolder.News, mediaId);
             return NewsResults.Failure<NewsMediaSummary>(outcome);
         }
 
@@ -88,7 +89,7 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
             return NewsOutcome.ConcurrentChange;
         }
 
-        files.Delete(mediaId);
+        files.Delete(MediaFolder.News, mediaId);
         return NewsOutcome.Succeeded;
     }
 
@@ -96,7 +97,7 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
     {
         await using var session = sessions.QuerySession();
         return await session.LoadAsync<NewsMediaDocument>(mediaId, cancellationToken) is { IsRemoved: false } media &&
-               files.Open(mediaId) is { } content
+               files.Open(MediaFolder.News, mediaId) is { } content
             ? new NewsMediaContent(media.MediaType, content)
             : null;
     }
@@ -105,13 +106,13 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
     private async Task<NewsOutcome> StoreAsync(Guid mediaId, string name, Stream content,
         CancellationToken cancellationToken)
     {
-        if (await files.WriteTemporaryAsync(mediaId, content, NewsMediaFormats.MaximumByteCount, cancellationToken)
+        if (await files.WriteTemporaryAsync(MediaFolder.News, mediaId, content, NewsMediaFormats.MaximumByteCount, cancellationToken)
             is not { } byteCount)
         {
             return NewsOutcome.MediaTooLarge;
         }
 
-        var start = await files.ReadTemporaryStartAsync(mediaId, NewsMediaFormats.MaximumPictureByteCount, cancellationToken);
+        var start = await files.ReadTemporaryStartAsync(MediaFolder.News, mediaId, NewsMediaFormats.MaximumPictureByteCount, cancellationToken);
         if (NewsMediaFormats.Inspect(start) is not { } media)
         {
             return NewsOutcome.InvalidMediaFile;
@@ -127,7 +128,7 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
             return NewsOutcome.MediaDimensionsTooLarge;
         }
 
-        files.CommitTemporary(mediaId);
+        files.CommitTemporary(MediaFolder.News, mediaId);
         await using var session = sessions.OpenSession();
         session.Events.StartStream<NewsMediaDocument>(mediaId, new NewsMediaUploaded(
             mediaId, name, media.MediaType, media.Kind, byteCount, media.Width, media.Height, timeProvider.GetUtcNow()));
