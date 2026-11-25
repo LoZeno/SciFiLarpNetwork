@@ -15,3 +15,4 @@ For the signed-in character, lists saved files, allows creating a title/body fil
 - File display handles empty/long content and renders user-authored text safely, without interpreting it as HTML or script.
 - If encryption/decryption gameplay is retained, unauthorized users see a clear locked state; the successful-decryption behavior is fully specified and tested rather than a stub.
 - Save, retry, and error states do not lose the user's draft or create duplicate files after repeated submission.
+- If personal files carry pictures or videos, they are stored in their own subfolder of the media folder and use the shared media library, as decided in [SPEC-30](../../SPEC-30-uploaded-file-storage-review.md).

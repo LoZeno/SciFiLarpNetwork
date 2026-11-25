@@ -2,7 +2,7 @@
 
 ## Status
 
-Assessment, written 2026-11-24 after [MANAGER-05](legacy-features/manager-tabs/MANAGER-05-news.md). It is row 31 of [SPEC-22](SPEC-22-implementation-order.md): the row is done when the user has made the decisions below and they are recorded here. Nothing in the code changes until then, and any approved migration gets its own SPEC-22 row.
+Assessment, written 2026-11-24 after [MANAGER-05](legacy-features/manager-tabs/MANAGER-05-news.md). It is row 31 of [SPEC-22](SPEC-22-implementation-order.md). The user decided on 2026-11-25; the decisions are under [Decisions](#decisions). The approved code change is [SPEC-31](SPEC-31-media-folder-layout.md), row 32 of SPEC-22.
 
 ## Question
 
@@ -48,20 +48,25 @@ These reasons come from the MANAGER-05 decision (approved 2026-11-24). They are 
 - Database size and dump time grow with every replaced image or template, since they are kept. With a handful of networks and one template, this stays in the low tens of megabytes.
 - Two storage models to explain to operators and to back up correctly.
 
-## Recommendation
+## Decisions
 
-Not documented; my inference from the table above, for the user to decide.
+Made by the user on 2026-11-25. The first draft recommended keeping network images in the database; the user chose otherwise, because the media folder must be backed up anyway now, so the database no longer gives "one backup", and network images will be served to players ([WEBFORM-39](legacy-features/webforms/WEBFORM-39-network-selection.md)).
 
-- **Keep network images and card templates in the database for now.** They are small, few, read whole, and never need range requests. Moving them adds a migration and a riskier write path for little gain.
-- **Use the media folder for new uploads that are large or need range requests**, such as videos, and for player-facing media served often. Decide each new upload feature with the three measures above (size, volume, range requests) and record the choice in its specification.
-- **Make the backup rule explicit now.** The backup and restore procedures that [SPEC-09](SPEC-09-event-store-and-projections.md) requires, delivered with [SPEC-18](SPEC-18-self-hosted-deployment.md) (self-hosted deployment), must back up and restore the database and `Media:RootPath` together, and their restore test must check that every media item recorded in the database has its file.
-- **Revisit** if network images become a player-facing asset served on every page load, if more than a few hundred megabytes of images or templates build up, or if a second backend instance needs shared storage.
+1. **Pictures and videos live in the media folder** (`Media:RootPath`), one subfolder per feature:
 
-## Decisions needed
+   | Feature | Subfolder | Delivered by |
+   |---|---|---|
+   | News media | `News/` | [SPEC-31](SPEC-31-media-folder-layout.md) (moves from the folder root) |
+   | Network background images | `NetworkImages/` | [SPEC-31](SPEC-31-media-folder-layout.md) (moves from the database) |
+   | Datapad media | Its own subfolder | [MANAGER-08](legacy-features/manager-tabs/MANAGER-08-datapads-files.md) |
+   | Personal file media | Its own subfolder | [WEBFORM-08](legacy-features/webforms/WEBFORM-08-personal-files.md) |
 
-1. Keep network images and card templates in the database, as recommended, or move them to the media folder.
-2. Whether a later storage change should also keep replaced files (as network images and templates do now) or delete them (as news media does when removed).
-3. Whether to add the backup rule above to SPEC-09 and SPEC-18 now, ahead of their deployment rows in SPEC-22.
+   Every later picture or video upload follows the same rule.
+2. **Card templates stay in the database.** They are Typst source, not pictures; only the Management app and the card renderer read them, and the backend never serves them to the web client.
+3. **Files are named by identifier and never renamed or overwritten.** Each upload gets a new identifier. Replaced network images are kept, so history keeps its references; the upload time is in the event, not the file name. News media keeps its rule: a file is deleted only when it is removed and nothing uses it.
+4. **Media is shared across features.** Content points at media by identifier (`media:<id>`), never by folder, so a news story can use a picture uploaded for a datapad, and the reverse. The subfolder records where an item was uploaded; it does not limit where it is used. This needs one backend media library for all features, a Management app media dialog that lists every item with a filter by origin, and removal refused while any feature's current content uses the item. It is built with MANAGER-08, the first feature that needs it. Network images stay outside the shared library, because they are a network setting, not content.
+5. **Backup rule, added now** to [SPEC-09](SPEC-09-event-store-and-projections.md) and [SPEC-18](SPEC-18-self-hosted-deployment.md): back up and restore the database and `Media:RootPath` together, and the restore test checks that every media item recorded in the database has its file.
+6. **No data move.** No installation has been deployed, so SPEC-31 resets development data instead of migrating it.
 
 ## Acceptance criteria
 
