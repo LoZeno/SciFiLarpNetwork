@@ -235,9 +235,9 @@ public sealed class NewsMediaServiceTests(AdministratorAuthenticationFactory fac
     {
         using var stream = new MemoryStream(NewsTestData.Picture());
 
-        var exception = await factory.WithUnusableMediaFolderAsync(() => Media.UploadMediaAsync("Harbour", stream, Token));
+        var (expected, actual) = await factory.WithUnusableMediaFolderAsync("News", () => Media.UploadMediaAsync("Harbour", stream, Token));
 
-        Assert.Equal(typeof(IOException), exception?.GetType());
+        Assert.Equal(expected, actual);
     }
 
     private string NewsFolder => Path.Combine(factory.MediaRootPath, "News");

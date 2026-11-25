@@ -279,10 +279,10 @@ public sealed class NetworkBackgroundImageServiceTests(AdministratorAuthenticati
     {
         var network = await CreateNetworkAsync();
 
-        var exception = await factory.WithUnusableMediaFolderAsync(() =>
+        var (expected, actual) = await factory.WithUnusableMediaFolderAsync("NetworkImages", () =>
             Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken));
 
-        Assert.Equal(typeof(IOException), exception?.GetType());
+        Assert.Equal(expected, actual);
     }
 
     private string NetworkImagesFolder => Path.Combine(factory.MediaRootPath, "NetworkImages");

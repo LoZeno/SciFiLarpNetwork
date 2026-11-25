@@ -694,21 +694,26 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     public string MediaRootPath { get; } = Path.Combine(Path.GetTempPath(), "scifilarnetwork-tests", $"media-{Guid.NewGuid():N}");
 
     /// <summary>
-    /// Runs <paramref name="act"/> while a file stands where the media folder should be, so no media subfolder can be
-    /// created, and returns what it threw.
+    /// Runs <paramref name="act"/> while a file stands where the media folder should be, so <paramref name="subfolder"/>
+    /// cannot be created. Returns the error creating that subfolder raises on this operating system, and the error
+    /// <paramref name="act"/> threw, each as its type and message.
     /// </summary>
-    public async Task<Exception?> WithUnusableMediaFolderAsync(Func<Task> act)
+    public async Task<(string Expected, string? Actual)> WithUnusableMediaFolderAsync(string subfolder, Func<Task> act)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(MediaRootPath)!);
         await File.WriteAllBytesAsync(MediaRootPath, []);
         try
         {
-            return await Record.ExceptionAsync(act);
+            var expected = Record.Exception(() => Directory.CreateDirectory(Path.Combine(MediaRootPath, subfolder)));
+            var actual = await Record.ExceptionAsync(act);
+            return (Describe(expected!), actual is null ? null : Describe(actual));
         }
         finally
         {
             File.Delete(MediaRootPath);
         }
+
+        static string Describe(Exception exception) => $"{exception.GetType().Name}: {exception.Message}";
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
