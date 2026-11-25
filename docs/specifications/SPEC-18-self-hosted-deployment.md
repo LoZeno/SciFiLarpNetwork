@@ -10,6 +10,7 @@ Provide a self-hosted deployment option or package that lets an operator run the
 - The host does not need to install or configure IIS, Apache, or another dedicated web server. The application may use its own supported server process to serve the frontend and backend.
 - Operators can configure the bind address/port, data storage location, credentials/secrets, and other deployment-specific settings without rebuilding the applications.
 - Provide clear start, stop, update, and diagnostic/logging instructions, along with guidance for safe network exposure and persistent database storage.
+- Uploaded bytes are kept in two places: the database (event history and card templates) and the media folder `Media:RootPath` (pictures and videos, one subfolder per feature; see [SPEC-30](SPEC-30-uploaded-file-storage-review.md)). The documentation names both, the media folder is persistent storage like the database, and the backup and restore procedures cover both together. A tested restore finds the file of every media item recorded in the database.
 - The deployment is tested on each OS/architecture combination claimed by SPEC-07 and is packaged through SPEC-16.
 - If the selected datastore cannot be bundled or run locally in a supported manner on a target platform, document the limitation and request approval for a compatible alternative before narrowing support.
 - The complete self-hosted stack starts and runs without internet access after installation, with all dependencies, static assets, and database services available locally (SPEC-21).

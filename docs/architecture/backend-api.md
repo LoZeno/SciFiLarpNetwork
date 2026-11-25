@@ -40,6 +40,14 @@ For `Production`, `appsettings.Production.json` intentionally contains an empty 
 
 `Media:RootPath` sets the folder that holds uploaded news pictures and videos ([MANAGER-05](../specifications/legacy-features/manager-tabs/MANAGER-05-news.md)). A relative path is relative to the backend's own files; the default is `media` next to them. Files are named by their media identifier only, and the backend serves them itself; never publish the folder through a web server. Back up this folder together with the database: the database records the media, the folder holds the bytes.
 
+Uploaded bytes are kept in these places today. [SPEC-30](../specifications/SPEC-30-uploaded-file-storage-review.md) records the rule: pictures and videos go in the media folder, one subfolder per feature; [SPEC-31](../specifications/SPEC-31-media-folder-layout.md) moves the first two rows to that layout.
+
+| Uploaded bytes | Kept in |
+|---|---|
+| News pictures and videos | `Media:RootPath`, folder root (moves to `News/` with SPEC-31) |
+| Network background images | Database, `NetworkImageDocument` (moves to `Media:RootPath/NetworkImages/` with SPEC-31) |
+| Card templates | Database, `CardTemplateContentDocument` (stays there) |
+
 `DOTNET_ENVIRONMENT` selects the environment-specific file and takes precedence over `ASPNETCORE_ENVIRONMENT`; if neither is set, the environment defaults to `Production`. `ASPNETCORE_URLS` or the `--urls` argument configures Kestrel's bind URLs. Use loopback for local development; exposing the service to a venue LAN requires an explicit LAN bind address and appropriate host firewall rules.
 
 The PostgreSQL image supports both x64 and ARM64; Compose leaves platform selection unspecified so Docker uses the image matching the host architecture, including Windows x64/ARM64, Linux, and Intel/Apple Silicon Macs. The service binds only to loopback port `5432`; change the host port in `compose.yaml` if another local PostgreSQL instance already uses it, and update the application connection string accordingly.
