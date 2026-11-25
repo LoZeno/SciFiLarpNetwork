@@ -158,9 +158,40 @@ internal sealed class FakeNewsApi : IManagementApiClient
         return Task.CompletedTask;
     }
 
+    /// <summary>When set, picture downloads fail as if the server could not be reached.</summary>
+    public bool FailImageDownloads { get; set; }
+
+    /// <summary>When set, picture downloads wait until <see cref="ReleaseImageDownloads"/>.</summary>
+    public bool HoldImageDownloads { get; set; }
+
+    private readonly List<TaskCompletionSource<byte[]>> _heldImages = [];
+
+    public void ReleaseImageDownloads()
+    {
+        HoldImageDownloads = false;
+        foreach (var held in _heldImages)
+        {
+            held.SetResult(PictureBytes);
+        }
+
+        _heldImages.Clear();
+    }
+
     public Task<byte[]> GetImageAsync(string apiBaseUrl, string href, string locale, CancellationToken cancellationToken = default)
     {
         ImageDownloads.Add(href);
+        if (FailImageDownloads)
+        {
+            return Task.FromException<byte[]>(new HttpRequestException("Offline"));
+        }
+
+        if (HoldImageDownloads)
+        {
+            var held = new TaskCompletionSource<byte[]>();
+            _heldImages.Add(held);
+            return held.Task;
+        }
+
         return Task.FromResult(PictureBytes);
     }
 

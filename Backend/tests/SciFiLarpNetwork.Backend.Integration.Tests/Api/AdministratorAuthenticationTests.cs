@@ -707,8 +707,11 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         {
             services.AddSingleton<IStartupFilter, LoopbackAddressStartupFilter>();
             services.AddSingleton<TimeProvider>(Clock);
+            services.ConfigureMarten(options => options.Listeners.Add(NextCommit));
         });
     }
+
+    public Fixtures.NextCommitHook NextCommit { get; } = new();
 
     public AdjustableTimeProvider Clock { get; } = new();
 

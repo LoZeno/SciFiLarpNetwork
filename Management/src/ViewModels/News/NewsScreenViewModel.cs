@@ -463,8 +463,9 @@ public sealed class NewsScreenViewModel : ScreenViewModel
     }
 
     /// <summary>
-    /// Saves the story. When someone else saved it first, the dialog keeps the typed values, says so, and bases the
-    /// next save on the version now stored.
+    /// Saves the story. When someone else saved an edited story first, the dialog keeps the typed values, says so, and
+    /// bases the next save on the version now stored. A new story has no version: it is saved again as new, with the
+    /// same identifier.
     /// </summary>
     private async Task<bool> SaveAsync(NewsEditorViewModel editor, SirenAction action)
     {
@@ -476,9 +477,9 @@ public sealed class NewsScreenViewModel : ScreenViewModel
         catch (Exception failure) when (IsExpectedFailure(failure))
         {
             editor.ErrorMessage = Report(failure);
-            if (failure is ManagementApiException { ErrorCode: ConcurrentChangeCode } && _story?.FindLinkHref("self") is { } self)
+            if (failure is ManagementApiException { ErrorCode: ConcurrentChangeCode } && editor.IsEdit)
             {
-                var latest = SirenProperties.Read<NewsStoryDetailsProperties>((await GetAsync(self)).Properties);
+                var latest = SirenProperties.Read<NewsStoryDetailsProperties>((await GetAsync(action.Href)).Properties);
                 editor.BaseOn(latest.Version);
             }
 

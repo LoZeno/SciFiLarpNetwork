@@ -162,6 +162,25 @@ public sealed class NewsStoryServiceTests(AdministratorAuthenticationFactory fac
     }
 
     [Fact]
+    public async Task ConcurrentCopiesOfASubmissionWithMediaBothReturnTheStory()
+    {
+        var network = await _data.CreateNetworkAsync();
+        var author = await _data.CreateCharacterAsync();
+        var picture = await _data.UploadPictureAsync();
+        var content = _data.Content(network, author, NewsTestData.Embed(picture));
+        var storyId = Guid.NewGuid();
+
+        factory.Clock.FirstReadBarrier = new Barrier(2);
+        var results = await Task.WhenAll(
+            Stories.CreateStoryAsync(storyId, content, Token),
+            Stories.CreateStoryAsync(storyId, content, Token));
+
+        Assert.Equal(
+            [(NewsOutcome.Succeeded, (Guid?)storyId), (NewsOutcome.Succeeded, storyId)],
+            results.Select(result => (result.Outcome, result.Value?.StoryId)));
+    }
+
+    [Fact]
     public async Task SameIdentifierWithOtherContentIsRejected()
     {
         var network = await _data.CreateNetworkAsync();

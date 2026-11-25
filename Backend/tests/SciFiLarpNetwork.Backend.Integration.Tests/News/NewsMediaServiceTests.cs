@@ -1,4 +1,5 @@
 using SciFiLarpNetwork.Backend.Application.News;
+using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.News;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
 
@@ -104,6 +105,19 @@ public sealed class NewsMediaServiceTests(AdministratorAuthenticationFactory fac
         var result = await Media.UploadMediaAsync(" ", stream, Token);
 
         Assert.Equal(NewsOutcome.InvalidMediaName, result.Outcome);
+    }
+
+    [Fact]
+    public async Task CancellationRightAfterTheUploadCommitsKeepsTheFile()
+    {
+        using var cancellation = new CancellationTokenSource();
+        using var stream = new MemoryStream(NewsTestData.Picture());
+        factory.NextCommit.ArmAfter<NewsMediaUploaded>(cancellation.Cancel);
+
+        await Record.ExceptionAsync(() => Media.UploadMediaAsync("Harbour", stream, cancellation.Token));
+
+        var uploaded = (await Media.GetMediaAsync(Token)).Single();
+        Assert.NotNull(await Media.OpenMediaAsync(uploaded.MediaId, Token));
     }
 
     [Fact]

@@ -130,6 +130,9 @@ public sealed class NewsEditorViewModel : CatalogEditorViewModel
 
     public decimal MinimumHackingDifficulty => Limits.MinimumHackingDifficulty;
 
+    /// <summary>The API reads the difficulty as a 32-bit whole number; the rules themselves have no maximum.</summary>
+    public static decimal MaximumHackingDifficulty => int.MaxValue;
+
     public string NetworkLabel => Translate("news.network");
 
     public string AuthorLabel => Translate("news.author");
@@ -406,11 +409,15 @@ public sealed class NewsEditorViewModel : CatalogEditorViewModel
             : Author is null ? Translate("news.authorRequired")
             : StartDate is null || StartTime is null || EndDate is null || EndTime is null ? Translate("news.timesRequired")
             : StartsAt is null || EndsAt is null ? Translate("news.invalidLocalTime")
-            : HackingDifficulty is not { } difficulty || difficulty < Limits.MinimumHackingDifficulty || difficulty != decimal.Truncate(difficulty)
-                ? Translate("errors.invalidHackingDifficulty")
-                : null;
+            : !IsValidHackingDifficulty() ? Translate("errors.invalidHackingDifficulty")
+            : null;
         return ErrorMessage is null && await _submit(this);
     }
+
+    /// <summary>A whole number from the minimum up to the largest number the API accepts.</summary>
+    private bool IsValidHackingDifficulty() =>
+        HackingDifficulty is { } difficulty && difficulty >= Limits.MinimumHackingDifficulty &&
+        difficulty <= MaximumHackingDifficulty && difficulty == decimal.Truncate(difficulty);
 
     private void Apply(NewsBodyEdit edit)
     {

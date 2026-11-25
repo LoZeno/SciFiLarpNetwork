@@ -35,15 +35,10 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
         }
 
         var mediaId = Guid.NewGuid();
+        NewsOutcome outcome;
         try
         {
-            var stored = await StoreAsync(mediaId, name!.Trim(), content, cancellationToken);
-            if (stored.Outcome != NewsOutcome.Succeeded)
-            {
-                files.DeleteTemporary(mediaId);
-            }
-
-            return stored;
+            outcome = await StoreAsync(mediaId, name!.Trim(), content, cancellationToken);
         }
         catch
         {
@@ -51,6 +46,26 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
             files.Delete(mediaId);
             throw;
         }
+
+        if (outcome != NewsOutcome.Succeeded)
+        {
+            files.DeleteTemporary(mediaId);
+            return NewsResults.Failure<NewsMediaSummary>(outcome);
+        }
+
+        return NewsResults.Success(await CommittedSummaryAsync(mediaId));
+    }
+
+    /// <summary>
+    /// Reads back media whose upload has committed. It ignores the request's cancellation: the upload is done, and a
+    /// cancelled read must not look like a failed upload, whose file would then be deleted.
+    /// </summary>
+    private async Task<NewsMediaSummary> CommittedSummaryAsync(Guid mediaId)
+    {
+        await using var session = sessions.QuerySession();
+        var saved = await session.LoadAsync<NewsMediaDocument>(mediaId, CancellationToken.None);
+        var administrators = await NewsAdministrators.LoadAsync(session, [saved!.UploadedBy], CancellationToken.None);
+        return saved.ToSummary(administrators);
     }
 
     public async Task<NewsOutcome> RemoveMediaAsync(Guid mediaId, CancellationToken cancellationToken = default)
@@ -86,29 +101,30 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
             : null;
     }
 
-    private async Task<NewsResult<NewsMediaSummary>> StoreAsync(Guid mediaId, string name, Stream content,
+    /// <summary>Checks the upload, gives the file its final name, and commits the upload event.</summary>
+    private async Task<NewsOutcome> StoreAsync(Guid mediaId, string name, Stream content,
         CancellationToken cancellationToken)
     {
         if (await files.WriteTemporaryAsync(mediaId, content, NewsMediaFormats.MaximumByteCount, cancellationToken)
             is not { } byteCount)
         {
-            return NewsResults.Failure<NewsMediaSummary>(NewsOutcome.MediaTooLarge);
+            return NewsOutcome.MediaTooLarge;
         }
 
         var start = await files.ReadTemporaryStartAsync(mediaId, NewsMediaFormats.MaximumPictureByteCount, cancellationToken);
         if (NewsMediaFormats.Inspect(start) is not { } media)
         {
-            return NewsResults.Failure<NewsMediaSummary>(NewsOutcome.InvalidMediaFile);
+            return NewsOutcome.InvalidMediaFile;
         }
 
         if (!NewsMediaFormats.HasAcceptedSize(media, byteCount))
         {
-            return NewsResults.Failure<NewsMediaSummary>(NewsOutcome.MediaTooLarge);
+            return NewsOutcome.MediaTooLarge;
         }
 
         if (!NewsMediaFormats.HasAcceptedDimensions(media))
         {
-            return NewsResults.Failure<NewsMediaSummary>(NewsOutcome.MediaDimensionsTooLarge);
+            return NewsOutcome.MediaDimensionsTooLarge;
         }
 
         files.CommitTemporary(mediaId);
@@ -116,8 +132,6 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, NewsMe
         session.Events.StartStream<NewsMediaDocument>(mediaId, new NewsMediaUploaded(
             mediaId, name, media.MediaType, media.Kind, byteCount, media.Width, media.Height, timeProvider.GetUtcNow()));
         await session.SaveChangesAsync(cancellationToken);
-        var saved = await session.LoadAsync<NewsMediaDocument>(mediaId, cancellationToken);
-        var administrators = await NewsAdministrators.LoadAsync(session, [saved!.UploadedBy], cancellationToken);
-        return NewsResults.Success(saved.ToSummary(administrators));
+        return NewsOutcome.Succeeded;
     }
 }

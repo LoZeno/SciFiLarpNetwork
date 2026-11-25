@@ -9,6 +9,8 @@ namespace SciFiLarpNetwork.Management.ViewModels.News;
 internal sealed class NewsMediaCache(IManagementApiClient apiClient, string apiBaseUrl)
 {
     private readonly Dictionary<Guid, NewsMediaItem> _items = [];
+    private readonly HashSet<Guid> _downloading = [];
+    private readonly HashSet<Guid> _failed = [];
 
     public NewsMediaItem? Find(Guid mediaId) => _items.GetValueOrDefault(mediaId);
 
@@ -24,16 +26,24 @@ internal sealed class NewsMediaCache(IManagementApiClient apiClient, string apiB
     }
 
     /// <summary>
-    /// Downloads the remembered pictures among <paramref name="mediaIds"/> that are not downloaded yet. A picture that
-    /// cannot be downloaded is left out, so the preview shows its text instead.
+    /// Downloads the remembered pictures among <paramref name="mediaIds"/> that are not downloaded yet. A picture
+    /// already downloading is not asked for again, and one that could not be downloaded is not retried while the
+    /// screen is open, so typing in the story text does not repeat requests; the preview shows its text instead.
     /// </summary>
     /// <returns>Whether any picture was downloaded.</returns>
     public async Task<bool> LoadPicturesAsync(IEnumerable<Guid> mediaIds, string locale)
     {
         var loaded = false;
         foreach (var item in mediaIds.Distinct().Select(Find).OfType<NewsMediaItem>()
-                     .Where(item => item is { IsPicture: true, PictureContent: null, ContentHref: not null }))
+                     .Where(item => item is { IsPicture: true, PictureContent: null, ContentHref: not null } &&
+                                    !_failed.Contains(item.MediaId))
+                     .ToArray())
         {
+            if (!_downloading.Add(item.MediaId))
+            {
+                continue;
+            }
+
             try
             {
                 var content = await apiClient.GetImageAsync(apiBaseUrl, item.ContentHref!, locale);
@@ -42,7 +52,12 @@ internal sealed class NewsMediaCache(IManagementApiClient apiClient, string apiB
             }
             catch (Exception failure) when (failure is HttpRequestException or InvalidOperationException or ManagementApiException)
             {
+                _failed.Add(item.MediaId);
                 System.Diagnostics.Trace.TraceWarning("A news picture could not be downloaded: {0}", failure);
+            }
+            finally
+            {
+                _downloading.Remove(item.MediaId);
             }
         }
 

@@ -92,6 +92,7 @@
               AutomationProperties.Name="{Binding HackingDifficultyLabel}"
               FormatString="0"
               Increment="1"
+              Maximum="{x:Static vm:NewsEditorViewModel.MaximumHackingDifficulty}"
               Minimum="{Binding MinimumHackingDifficulty}"
               Value="{Binding HackingDifficulty, Mode=TwoWay}" />
           <TextBlock Text="{Binding BodyLabel}" />

@@ -73,12 +73,12 @@ internal sealed class NewsStoryService(AttributedSessionFactory sessions, TimePr
             return Failure(NewsOutcome.InvalidStoryId);
         }
 
-        if (Check(content) is { } invalid)
+        var (invalid, embeds) = Check(content);
+        if (invalid is not null)
         {
-            return Failure(invalid);
+            return Failure(invalid.Value);
         }
 
-        var embeds = NewsBodyMedia.Scan(content.Body!).Embeds;
         await using var session = sessions.OpenSession();
         if (await session.LoadAsync<NewsStoryDocument>(storyId, cancellationToken) is { } existing)
         {
@@ -98,30 +98,43 @@ internal sealed class NewsStoryService(AttributedSessionFactory sessions, TimePr
         {
             if (!await session.TrySaveChangesAsync(cancellationToken))
             {
-                return Failure(NewsOutcome.ConcurrentChange);
+                return await AfterLostCreationAsync(storyId, content, NewsOutcome.ConcurrentChange, cancellationToken);
             }
         }
         catch (ExistingStreamIdCollisionException)
         {
-            // The same submission committed first, or the identifier names another stream.
-            await using var query = sessions.QuerySession();
-            return await query.LoadAsync<NewsStoryDocument>(storyId, cancellationToken) is { } committed
-                ? await RepeatedAsync(query, committed, content, cancellationToken)
-                : Failure(NewsOutcome.StoryIdInUse);
+            return await AfterLostCreationAsync(storyId, content, NewsOutcome.StoryIdInUse, cancellationToken);
         }
 
         return await SavedAsync(session, storyId, cancellationToken);
     }
 
+    /// <summary>
+    /// After a creation lost a race: when the same submission committed first, it is answered as a repeated submission.
+    /// Two copies of a submission that place media both write to the media's stream, so the later one can fail on that
+    /// stream's version before it fails on the story's identifier.
+    /// </summary>
+    private async Task<NewsResult<NewsStoryDetails>> AfterLostCreationAsync(
+        Guid storyId,
+        NewsStoryContent content,
+        NewsOutcome otherwise,
+        CancellationToken cancellationToken)
+    {
+        await using var query = sessions.QuerySession();
+        return await query.LoadAsync<NewsStoryDocument>(storyId, cancellationToken) is { } committed
+            ? await RepeatedAsync(query, committed, content, cancellationToken)
+            : Failure(otherwise);
+    }
+
     public async Task<NewsResult<NewsStoryDetails>> EditStoryAsync(Guid storyId, long expectedVersion,
         NewsStoryContent content, CancellationToken cancellationToken = default)
     {
-        if (Check(content) is { } invalid)
+        var (invalid, embeds) = Check(content);
+        if (invalid is not null)
         {
-            return Failure(invalid);
+            return Failure(invalid.Value);
         }
 
-        var embeds = NewsBodyMedia.Scan(content.Body!).Embeds;
         await using var session = sessions.OpenSession();
         IEventStream<NewsStoryDocument> stream;
         try
@@ -154,22 +167,27 @@ internal sealed class NewsStoryService(AttributedSessionFactory sessions, TimePr
             : Failure(NewsOutcome.ConcurrentChange);
     }
 
-    /// <summary>Checks the content's own rules and its body's pictures and videos, which need no stored data.</summary>
-    private static NewsOutcome? Check(NewsStoryContent content)
+    /// <summary>
+    /// Checks the content's own rules and its body's pictures and videos, which need no stored data, parsing the body
+    /// once.
+    /// </summary>
+    /// <returns>The first problem, or <see langword="null"/>, and the body's pictures and videos.</returns>
+    private static (NewsOutcome? Problem, IReadOnlyList<NewsMediaEmbed> Embeds) Check(NewsStoryContent content)
     {
         if (NewsStoryContentValidator.Validate(content) is { } invalid)
         {
-            return invalid;
+            return (invalid, []);
         }
 
         var scan = NewsBodyMedia.Scan(content.Body!);
-        return scan.Problem switch
+        NewsOutcome? problem = scan.Problem switch
         {
             NewsBodyMediaProblem.ExternalImage => NewsOutcome.ExternalImage,
             NewsBodyMediaProblem.MissingText => NewsOutcome.MissingMediaText,
             NewsBodyMediaProblem.InvalidReference => NewsOutcome.InvalidMediaReference,
             _ => scan.Embeds.Count > NewsTexts.MaximumMediaPerStory ? NewsOutcome.TooManyMedia : null
         };
+        return (problem, scan.Embeds);
     }
 
     /// <summary>

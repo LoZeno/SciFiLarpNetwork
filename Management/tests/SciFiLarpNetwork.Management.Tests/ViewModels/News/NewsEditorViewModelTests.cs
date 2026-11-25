@@ -113,6 +113,26 @@ public sealed class NewsEditorViewModelTests
     }
 
     [Fact]
+    public async Task DifficultyAboveTheLargestWholeNumberIsReportedWithoutSaving()
+    {
+        var api = new FakeNewsApi();
+        var dialogs = new FakeNewsDialogs
+        {
+            OnStoryEditor = async editor =>
+            {
+                await WriteAsync(editor, "Fleet arrives", "Tonight.", difficulty: 3_000_000_000m);
+            }
+        };
+        var screen = await NewsScreens.OpenAsync(api, dialogs);
+
+        await screen.NewStoryCommand.ExecuteAsync();
+
+        Assert.Equal(
+            new { Error = (string?)"The hacking difficulty must be a whole number of 1 or more.", Sent = 0 },
+            new { Error = dialogs.LastEditor!.ErrorMessage, Sent = api.Submissions.Count });
+    }
+
+    [Fact]
     public async Task ServerErrorIsShownInTheDialog()
     {
         var api = new FakeNewsApi();
@@ -187,6 +207,30 @@ public sealed class NewsEditorViewModelTests
     }
 
     [Fact]
+    public async Task ConcurrentChangeOnANewStoryKeepsItNewWhileAnotherStoryIsSelected()
+    {
+        var api = new FakeNewsApi();
+        api.AddStory("Fleet arrives", FakeNewsApi.CoreId, Now.AddHours(-1), Now.AddHours(1));
+        var dialogs = new FakeNewsDialogs
+        {
+            OnStoryEditor = async editor =>
+            {
+                api.Failures["create-news-story"] = new ManagementApiException("errors.concurrentChange", HttpStatusCode.Conflict);
+                await WriteAsync(editor, "Fleet delayed", "Not tonight.");
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await NewsScreens.OpenAsync(api, dialogs);
+        await NewsScreens.SelectAsync(screen, "Fleet arrives");
+
+        await screen.NewStoryCommand.ExecuteAsync();
+
+        Assert.Equal(
+            new { IsEdit = false, Saved = true, Stories = 2 },
+            new { dialogs.LastEditor!.IsEdit, Saved = dialogs.LastEditor.IsSaved, Stories = api.Stories.Count });
+    }
+
+    [Fact]
     public async Task PreviewFollowsTheTypedText()
     {
         var dialogs = new FakeNewsDialogs();
@@ -223,6 +267,44 @@ public sealed class NewsEditorViewModelTests
         await editor.InsertMediaCommand.ExecuteAsync();
 
         Assert.Equal($"Before.\n\n![Launch day](media:{video.Id:D}?autoplay&controls)", editor.Body);
+    }
+
+    [Fact]
+    public async Task TypingWhileAPictureDownloadsAsksForItOnce()
+    {
+        var api = new FakeNewsApi();
+        var picture = api.AddMedia("Harbour", isVideo: false);
+        var dialogs = new FakeNewsDialogs();
+        var screen = await NewsScreens.OpenAsync(api, dialogs);
+        await screen.OpenMediaLibraryCommand.ExecuteAsync();
+        await screen.NewStoryCommand.ExecuteAsync();
+        var editor = dialogs.LastEditor!;
+        api.HoldImageDownloads = true;
+
+        editor.Body = $"![Harbour](media:{picture.Id:D})";
+        editor.Body += "\n\nMore";
+        editor.Body += " text";
+        api.ReleaseImageDownloads();
+
+        Assert.Single(api.ImageDownloads);
+    }
+
+    [Fact]
+    public async Task PictureThatFailedIsNotAskedForAgainWhileTyping()
+    {
+        var api = new FakeNewsApi { FailImageDownloads = true };
+        var picture = api.AddMedia("Harbour", isVideo: false);
+        var dialogs = new FakeNewsDialogs();
+        var screen = await NewsScreens.OpenAsync(api, dialogs);
+        await screen.OpenMediaLibraryCommand.ExecuteAsync();
+        await screen.NewStoryCommand.ExecuteAsync();
+        var editor = dialogs.LastEditor!;
+
+        editor.Body = $"![Harbour](media:{picture.Id:D})";
+        editor.Body += "\n\nMore";
+        editor.Body += " text";
+
+        Assert.Single(api.ImageDownloads);
     }
 
     [Fact]
@@ -269,14 +351,14 @@ public sealed class NewsEditorViewModelTests
             new { editor.Title, Insert = editor.InsertMediaLabel, Difficulty = editor.HackingDifficultyLabel });
     }
 
-    private static async Task WriteAsync(NewsEditorViewModel editor, string title, string body)
+    private static async Task WriteAsync(NewsEditorViewModel editor, string title, string body, decimal difficulty = 3)
     {
         editor.SearchText = "Odo";
         await editor.SearchCommand.ExecuteAsync();
         editor.SetAuthorCommand.Execute(null);
         editor.StoryTitle = title;
         editor.Body = body;
-        editor.HackingDifficulty = 3;
+        editor.HackingDifficulty = difficulty;
         await editor.SaveCommand.ExecuteAsync();
     }
 }
