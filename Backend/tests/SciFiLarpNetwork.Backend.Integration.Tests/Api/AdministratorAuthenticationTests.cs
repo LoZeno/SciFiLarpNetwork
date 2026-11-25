@@ -718,6 +718,7 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
     public async Task ResetAsync()
     {
         Clock.Reset();
+        NextCommit.Disarm();
         LogMessages.Messages.Clear();
         // Async projections are running, so the daemon must restart along with the data reset.
         await Services.ResetAllMartenDataAsync();

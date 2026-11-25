@@ -14,6 +14,9 @@ public sealed class NextCommitHook : DocumentSessionListenerBase
 
     public void ArmAfter<T>(Action act) => _armed = (data => data is T, act);
 
+    /// <summary>Drops an action that never ran, so it cannot fire in a later test.</summary>
+    public void Disarm() => _armed = null;
+
     public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
         if (_armed is { } armed && commit.GetEvents().Any(e => armed.Matches(e.Data)))

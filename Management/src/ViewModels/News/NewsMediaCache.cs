@@ -29,6 +29,7 @@ internal sealed class NewsMediaCache(IManagementApiClient apiClient, string apiB
     /// Downloads the remembered pictures among <paramref name="mediaIds"/> that are not downloaded yet. A picture
     /// already downloading is not asked for again, and one that could not be downloaded is not retried while the
     /// screen is open, so typing in the story text does not repeat requests; the preview shows its text instead.
+    /// No cancellation token is passed, so a <see cref="TaskCanceledException"/> can only be the client's timeout.
     /// </summary>
     /// <returns>Whether any picture was downloaded.</returns>
     public async Task<bool> LoadPicturesAsync(IEnumerable<Guid> mediaIds, string locale)
@@ -50,7 +51,8 @@ internal sealed class NewsMediaCache(IManagementApiClient apiClient, string apiB
                 _items[item.MediaId] = item with { PictureContent = content };
                 loaded = true;
             }
-            catch (Exception failure) when (failure is HttpRequestException or InvalidOperationException or ManagementApiException)
+            catch (Exception failure) when (failure is HttpRequestException or InvalidOperationException or
+                                                ManagementApiException or TaskCanceledException)
             {
                 _failed.Add(item.MediaId);
                 System.Diagnostics.Trace.TraceWarning("A news picture could not be downloaded: {0}", failure);

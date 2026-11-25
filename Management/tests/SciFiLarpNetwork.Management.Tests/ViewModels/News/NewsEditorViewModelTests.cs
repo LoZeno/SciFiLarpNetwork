@@ -308,6 +308,39 @@ public sealed class NewsEditorViewModelTests
     }
 
     [Fact]
+    public async Task PictureThatTimedOutIsNotAskedForAgainWhileTyping()
+    {
+        var (api, editor, picture) = await OpenEditorWithTimingOutPictureAsync();
+
+        editor.Body = $"![Harbour](media:{picture.Id:D})";
+        editor.Body += "\n\nMore";
+        editor.Body += " text";
+
+        Assert.Single(api.ImageDownloads);
+    }
+
+    [Fact]
+    public async Task PictureThatTimedOutShowsNoError()
+    {
+        var (_, editor, picture) = await OpenEditorWithTimingOutPictureAsync();
+
+        editor.Body = $"![Harbour](media:{picture.Id:D})";
+
+        Assert.Null(editor.ErrorMessage);
+    }
+
+    private static async Task<(FakeNewsApi Api, NewsEditorViewModel Editor, FakeMedia Picture)> OpenEditorWithTimingOutPictureAsync()
+    {
+        var api = new FakeNewsApi { TimeOutImageDownloads = true };
+        var picture = api.AddMedia("Harbour", isVideo: false);
+        var dialogs = new FakeNewsDialogs();
+        var screen = await NewsScreens.OpenAsync(api, dialogs);
+        await screen.OpenMediaLibraryCommand.ExecuteAsync();
+        await screen.NewStoryCommand.ExecuteAsync();
+        return (api, dialogs.LastEditor!, picture);
+    }
+
+    [Fact]
     public async Task MediaCountShowsTheLimit()
     {
         var api = new FakeNewsApi();

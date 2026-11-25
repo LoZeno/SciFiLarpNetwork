@@ -161,6 +161,9 @@ internal sealed class FakeNewsApi : IManagementApiClient
     /// <summary>When set, picture downloads fail as if the server could not be reached.</summary>
     public bool FailImageDownloads { get; set; }
 
+    /// <summary>When set, picture downloads fail as <see cref="HttpClient"/> does when its timeout runs out.</summary>
+    public bool TimeOutImageDownloads { get; set; }
+
     /// <summary>When set, picture downloads wait until <see cref="ReleaseImageDownloads"/>.</summary>
     public bool HoldImageDownloads { get; set; }
 
@@ -183,6 +186,13 @@ internal sealed class FakeNewsApi : IManagementApiClient
         if (FailImageDownloads)
         {
             return Task.FromException<byte[]>(new HttpRequestException("Offline"));
+        }
+
+        if (TimeOutImageDownloads)
+        {
+            return Task.FromException<byte[]>(new TaskCanceledException(
+                "The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.",
+                new TimeoutException()));
         }
 
         if (HoldImageDownloads)
