@@ -41,18 +41,34 @@ internal static class NetworkWrites
             Func<Task<NetworkOutcome>> uniqueConflict,
             CancellationToken cancellationToken)
         {
+            var outcome = await session.CommitNetworkAsync(uniqueConflict, cancellationToken);
+            return outcome == NetworkOutcome.Succeeded
+                ? await session.LoadSavedNetworkAsync(networkId, cancellationToken)
+                : NetworkResult.Failure(outcome);
+        }
+
+        /// <summary>
+        /// Commits the command. <paramref name="uniqueConflict"/> decides which unique value a concurrent command
+        /// claimed first when a unique index rejects the commit.
+        /// </summary>
+        public async Task<NetworkOutcome> CommitNetworkAsync(
+            Func<Task<NetworkOutcome>> uniqueConflict,
+            CancellationToken cancellationToken)
+        {
             try
             {
-                if (!await session.TrySaveChangesAsync(cancellationToken))
-                {
-                    return NetworkResult.Failure(NetworkOutcome.StaleVersion);
-                }
+                return await session.TrySaveChangesAsync(cancellationToken)
+                    ? NetworkOutcome.Succeeded
+                    : NetworkOutcome.StaleVersion;
             }
             catch (DocumentAlreadyExistsException)
             {
-                return NetworkResult.Failure(await uniqueConflict());
+                return await uniqueConflict();
             }
+        }
 
+        public async Task<NetworkResult> LoadSavedNetworkAsync(Guid networkId, CancellationToken cancellationToken)
+        {
             var saved = await session.LoadAsync<NetworkDocument>(networkId, cancellationToken);
             return NetworkResult.Success(saved!);
         }

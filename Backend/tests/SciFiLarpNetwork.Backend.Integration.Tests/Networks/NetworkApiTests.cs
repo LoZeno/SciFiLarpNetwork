@@ -349,6 +349,30 @@ public sealed class NetworkApiTests(AdministratorAuthenticationFactory factory) 
     }
 
     [Fact]
+    public async Task ReplacedImageIsStillServed()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var networkId = await CreateNetworkAsync(client, token, "rim", "Outer Rim");
+        var firstContent = NetworkTestImages.Png(size: 2048);
+        var firstHref = await UploadImageAsync(client, token, networkId, firstContent);
+        using var replaced = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(
+            client, HttpMethod.Put, $"{NetworksPath}/{networkId:D}/background-image", token,
+            new { version = 2, content = NetworkTestImages.Jpeg(size: 100) });
+        replaced.EnsureSuccessStatusCode();
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, firstHref, token);
+
+        Assert.Equal(
+            new ImageSnapshot(HttpStatusCode.OK, "image/png", "nosniff", firstContent),
+            new ImageSnapshot(
+                response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                string.Join(',', response.Headers.GetValues("X-Content-Type-Options")),
+                await response.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken)));
+    }
+
+    [Fact]
     public async Task UploadedImageIsLinkedFromTheNetworkList()
     {
         using var client = factory.CreateClient();

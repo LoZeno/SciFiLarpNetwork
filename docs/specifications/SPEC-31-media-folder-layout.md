@@ -20,7 +20,7 @@ Out of scope: the shared, cross-feature media library. It is built with [MANAGER
 
 - One backend media file store writes, reads, and deletes files for every feature. Each feature names its own subfolder; the subfolder name is fixed in code, never taken from a request.
 - Files are named by their identifier only. A user-supplied name never reaches a path.
-- The write path is the one news already uses: write a temporary file, record the event, then commit the file; delete the temporary file when the event does not commit.
+- The write path is the one news already uses: write a temporary file, check it, give it its final name, then record the event; delete the file again when the event does not commit.
 
 ### News media
 
@@ -31,7 +31,7 @@ Out of scope: the shared, cross-feature media library. It is built with [MANAGER
 - An upload writes the file to `NetworkImages/{imageId}`. Each upload gets a new identifier, so a file is never overwritten.
 - Replaced and removed images are kept. History keeps its references; nothing is deleted or renamed. The current image is the one named by the network's latest image event; the upload time is in that event.
 - Events, routes, limits, format checks, and the Management app are unchanged. The image route serves the stored file with its recorded type and `X-Content-Type-Options: nosniff`.
-- `NetworkImageDocument` and its Marten registration are removed.
+- `NetworkImageDocument` and its bytes in the database are removed. A byte-less `NetworkImageFileDocument` (image identifier, network, type, size) is saved in the same session as the image event, so the image route finds the recorded type of any image, current or replaced (decided by the user on 2026-11-25).
 
 ### Existing data
 

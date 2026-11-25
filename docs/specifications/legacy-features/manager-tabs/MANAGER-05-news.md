@@ -43,7 +43,7 @@ Approved 2026-11-24. Networks are defined by [MANAGER-11](MANAGER-11-networks.md
 - A media item has a generated identifier, a name, a media type, a size in bytes, the upload time, and the uploading administrator. Names are required, 1–128 characters after trimming, and are not unique.
 - Pictures are PNG, JPEG, WebP, or GIF (animated GIFs allowed), up to 5 MB and 4096 × 4096 pixels. Videos are WebM or MP4, up to 100 MB. SVG is refused, because it can run scripts.
 - The server finds the type, and for pictures the pixel size, from the file's first bytes, never from its name or a declared type.
-- The files are kept on the backend server, in the folder set by `Media:RootPath` (default: `media` next to the backend's own files), named by their identifier. Events record only the identifier, name, type, and size. Backups must copy this folder as well as the database.
+- The files are kept on the backend server, in the `News/` subfolder of the media folder set by `Media:RootPath` (default: `media` next to the backend's own files), named by their identifier. Events record only the identifier, name, type, and size. Backups must copy this folder as well as the database.
 - The backend serves media itself, with the stored type, `X-Content-Type-Options: nosniff`, and support for requesting parts of a file, so a video can jump ahead. The web application never serves the folder directly.
 - A media item can be removed only when no story's current body uses it. Removing deletes the file; the history keeps the record.
 - The Management app shows pictures. A video is shown as a video icon with its name, type, and size, because playing it would need a native video library on every platform.
