@@ -262,6 +262,29 @@ public sealed class NetworkBackgroundImageServiceTests(AdministratorAuthenticati
         Assert.Empty(Directory.Exists(NetworkImagesFolder) ? Directory.GetFiles(NetworkImagesFolder) : []);
     }
 
+    [Fact]
+    public async Task CancellationRightAfterTheUploadCommitsStillReportsSuccess()
+    {
+        var network = await CreateNetworkAsync();
+        using var cancellation = new CancellationTokenSource();
+        factory.NextCommit.ArmAfter<NetworkBackgroundImageSet>(cancellation.Cancel);
+
+        var result = await Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), cancellation.Token);
+
+        Assert.Equal(NetworkOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task UnusableMediaFolderReportsItsOwnError()
+    {
+        var network = await CreateNetworkAsync();
+
+        var exception = await factory.WithUnusableMediaFolderAsync(() =>
+            Images.SetBackgroundImageAsync(network.NetworkId, network.Version, NetworkTestImages.Png(size: 100), TestContext.Current.CancellationToken));
+
+        Assert.Equal(typeof(IOException), exception?.GetType());
+    }
+
     private string NetworkImagesFolder => Path.Combine(factory.MediaRootPath, "NetworkImages");
 
     private async Task<NetworkSummary> CreateNetworkAsync() =>

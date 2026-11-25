@@ -230,6 +230,16 @@ public sealed class NewsMediaServiceTests(AdministratorAuthenticationFactory fac
         Assert.Equal(0, StoredFileCount());
     }
 
+    [Fact]
+    public async Task UnusableMediaFolderReportsItsOwnError()
+    {
+        using var stream = new MemoryStream(NewsTestData.Picture());
+
+        var exception = await factory.WithUnusableMediaFolderAsync(() => Media.UploadMediaAsync("Harbour", stream, Token));
+
+        Assert.Equal(typeof(IOException), exception?.GetType());
+    }
+
     private string NewsFolder => Path.Combine(factory.MediaRootPath, "News");
 
     private int StoredFileCount() => Directory.Exists(NewsFolder) ? Directory.GetFiles(NewsFolder).Length : 0;

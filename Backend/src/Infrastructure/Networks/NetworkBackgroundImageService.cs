@@ -65,11 +65,9 @@ internal sealed class NetworkBackgroundImageService(
         NetworkOutcome outcome;
         try
         {
-            using var upload = new MemoryStream(content, writable: false);
-            await files.WriteTemporaryAsync(MediaFolder.NetworkImages, imageId, upload,
-                NetworkImageFormats.MaximumByteCount, cancellationToken);
-            files.CommitTemporary(MediaFolder.NetworkImages, imageId);
-            outcome = await session.CommitNetworkAsync(NetworkWrites.NameConflict, cancellationToken);
+            outcome = await StoreFileAsync(imageId, content, cancellationToken)
+                ? await session.CommitNetworkAsync(NetworkWrites.NameConflict, cancellationToken)
+                : NetworkOutcome.ImageTooLarge;
         }
         catch
         {
@@ -83,6 +81,23 @@ internal sealed class NetworkBackgroundImageService(
         }
 
         return outcome;
+    }
+
+    /// <summary>
+    /// Writes and commits the file. The upload was already checked against the same limit, so a refusal here only
+    /// happens if the two checks drift apart; it then commits nothing rather than a cut-off file.
+    /// </summary>
+    private async Task<bool> StoreFileAsync(Guid imageId, byte[] content, CancellationToken cancellationToken)
+    {
+        using var upload = new MemoryStream(content, writable: false);
+        if (await files.WriteTemporaryAsync(MediaFolder.NetworkImages, imageId, upload,
+                NetworkImageFormats.MaximumByteCount, cancellationToken) is null)
+        {
+            return false;
+        }
+
+        files.CommitTemporary(MediaFolder.NetworkImages, imageId);
+        return true;
     }
 
     private void DeleteImageFiles(Guid imageId)

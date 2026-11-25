@@ -690,8 +690,26 @@ public sealed class AdministratorAuthenticationFactory : WebApplicationFactory<P
         }
     }
 
-    /// <summary>The news media folder of this test host, separate from any real deployment's folder.</summary>
+    /// <summary>The media folder of this test host, separate from any real deployment's folder.</summary>
     public string MediaRootPath { get; } = Path.Combine(Path.GetTempPath(), "scifilarnetwork-tests", $"media-{Guid.NewGuid():N}");
+
+    /// <summary>
+    /// Runs <paramref name="act"/> while a file stands where the media folder should be, so no media subfolder can be
+    /// created, and returns what it threw.
+    /// </summary>
+    public async Task<Exception?> WithUnusableMediaFolderAsync(Func<Task> act)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(MediaRootPath)!);
+        await File.WriteAllBytesAsync(MediaRootPath, []);
+        try
+        {
+            return await Record.ExceptionAsync(act);
+        }
+        finally
+        {
+            File.Delete(MediaRootPath);
+        }
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

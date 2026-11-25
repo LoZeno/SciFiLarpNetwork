@@ -49,9 +49,24 @@ internal sealed class MediaFileStore(string rootPath)
     public void CommitTemporary(MediaFolder folder, Guid fileId) =>
         File.Move(TemporaryPath(folder, fileId), FinalPath(folder, fileId));
 
-    public void DeleteTemporary(MediaFolder folder, Guid fileId) => File.Delete(TemporaryPath(folder, fileId));
+    public void DeleteTemporary(MediaFolder folder, Guid fileId) => DeleteIfPresent(TemporaryPath(folder, fileId));
 
-    public void Delete(MediaFolder folder, Guid fileId) => File.Delete(FinalPath(folder, fileId));
+    public void Delete(MediaFolder folder, Guid fileId) => DeleteIfPresent(FinalPath(folder, fileId));
+
+    /// <summary>
+    /// A missing file is already deleted. On Windows a missing folder throws, which during clean-up after a failed write
+    /// would hide the error that made the write fail.
+    /// </summary>
+    private static void DeleteIfPresent(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (DirectoryNotFoundException)
+        {
+        }
+    }
 
     /// <summary>Opens a stored file for reading, or returns <see langword="null"/> when it is missing.</summary>
     public Stream? Open(MediaFolder folder, Guid fileId)
