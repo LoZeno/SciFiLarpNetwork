@@ -42,6 +42,9 @@ internal static class SirenNavigation
     extension(SirenSubEntity entity)
     {
         public string? FindLinkHref(string rel) => FindHref(entity.Links, rel);
+
+        public SirenAction? FindAction(string name) =>
+            entity.Actions?.FirstOrDefault(action => string.Equals(action.Name, name, StringComparison.Ordinal));
     }
 
     private static string? FindHref(IReadOnlyList<SirenLink>? links, string rel) =>

@@ -1,0 +1,59 @@
+<ItemsControl
+    x:Class="SciFiLarpNetwork.Management.Views.News.NewsPreviewView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:news="using:SciFiLarpNetwork.Management.Views.News"
+    xmlns:preview="using:SciFiLarpNetwork.Management.ViewModels.News.Preview">
+  <ItemsControl.DataTemplates>
+      <DataTemplate DataType="preview:NewsPreviewText" x:DataType="preview:NewsPreviewText">
+        <Grid Margin="{Binding Indent, Converter={x:Static conv:IndentConverter.Instance}}" ColumnDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Margin="0,4,6,0" IsVisible="{Binding HasMarker}" Text="{Binding Marker}" />
+          <news:FormattedTextBlock
+              Grid.Column="1"
+              Margin="0,4"
+              FontSize="{Binding HeadingLevel, Converter={x:Static conv:HeadingSizeConverter.Instance}}"
+              Runs="{Binding Inlines}"
+              TextWrapping="Wrap" />
+        </Grid>
+      </DataTemplate>
+      <DataTemplate DataType="preview:NewsPreviewRule" x:DataType="preview:NewsPreviewRule">
+        <Separator Margin="{Binding Indent, Converter={x:Static conv:IndentConverter.Instance}}" />
+      </DataTemplate>
+      <DataTemplate DataType="preview:NewsPreviewPicture" x:DataType="preview:NewsPreviewPicture">
+        <StackPanel Margin="{Binding Indent, Converter={x:Static conv:IndentConverter.Instance}}" Spacing="4">
+          <Image
+              MaxHeight="320"
+              HorizontalAlignment="Left"
+              AutomationProperties.Name="{Binding Text}"
+              Source="{Binding Content, Converter={x:Static conv:ImageBytesConverter.Instance}}"
+              Stretch="Uniform" />
+          <TextBlock FontStyle="Italic" Text="{Binding Text}" TextWrapping="Wrap" />
+        </StackPanel>
+      </DataTemplate>
+      <DataTemplate DataType="preview:NewsPreviewVideo" x:DataType="preview:NewsPreviewVideo">
+        <Border
+            Margin="{Binding Indent, Converter={x:Static conv:IndentConverter.Instance}}"
+            Padding="10"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+            BorderThickness="1"
+            CornerRadius="4">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <!-- A play symbol: the app shows a video by its facts and does not play it. -->
+            <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="28" Text="▶" />
+            <StackPanel Grid.Column="1" Spacing="2">
+              <TextBlock FontWeight="Bold" Text="{Binding Text}" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
+      <DataTemplate DataType="preview:NewsPreviewProblem" x:DataType="preview:NewsPreviewProblem">
+        <TextBlock
+            Margin="{Binding Indent, Converter={x:Static conv:IndentConverter.Instance}}"
+            Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+            Text="{Binding Message}"
+            TextWrapping="Wrap" />
+      </DataTemplate>
+    </ItemsControl.DataTemplates>
+</ItemsControl>

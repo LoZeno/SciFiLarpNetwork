@@ -9,6 +9,7 @@
     xmlns:templates="using:SciFiLarpNetwork.Management.Views.CardTemplates"
     xmlns:events="using:SciFiLarpNetwork.Management.Views.LarpEvents"
     xmlns:messages="using:SciFiLarpNetwork.Management.Views.Messages"
+    xmlns:news="using:SciFiLarpNetwork.Management.Views.News"
     xmlns:hud="using:SciFiLarpNetwork.Management.Views.Hud"
     xmlns:layout="using:SciFiLarpNetwork.Management.Views.Layout"
     xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
@@ -201,6 +202,11 @@
               <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsMessagesOpen}">
                 <layout:FillViewport>
                   <messages:MessageScreenView DataContext="{Binding Messages}" />
+                </layout:FillViewport>
+              </layout:ScreenScrollViewer>
+              <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsNewsOpen}">
+                <layout:FillViewport>
+                  <news:NewsScreenView DataContext="{Binding News}" />
                 </layout:FillViewport>
               </layout:ScreenScrollViewer>
             </Grid>

@@ -12,6 +12,7 @@ using SciFiLarpNetwork.Management.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.ViewModels.LarpEvents;
 using SciFiLarpNetwork.Management.ViewModels.Messages;
 using SciFiLarpNetwork.Management.ViewModels.Networks;
+using SciFiLarpNetwork.Management.ViewModels.News;
 using SciFiLarpNetwork.Management.ViewModels.Players;
 using SciFiLarpNetwork.Management.ViewModels.Skills;
 
@@ -28,6 +29,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly ICardTemplateDialogService _cardTemplateDialogs;
     private readonly ILarpEventDialogService _eventDialogs;
     private readonly IMessageDialogService _messageDialogs;
+    private readonly INewsDialogService _newsDialogs;
     private string _apiBaseUrl;
     private string _locale;
     private string _statusKey = "navigation.empty";
@@ -53,6 +55,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         ICardTemplateDialogService cardTemplateDialogs,
         ILarpEventDialogService eventDialogs,
         IMessageDialogService messageDialogs,
+        INewsDialogService newsDialogs,
         ManagementSettings settings,
         string? startupErrorKey = null)
     {
@@ -65,6 +68,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         _cardTemplateDialogs = cardTemplateDialogs;
         _eventDialogs = eventDialogs;
         _messageDialogs = messageDialogs;
+        _newsDialogs = newsDialogs;
         _apiBaseUrl = settings.ApiBaseUrl ?? new ManagementSettings().ApiBaseUrl;
         _locale = settings.Locale is "en" or "it" ? settings.Locale : "en";
         ConnectCommand = new AsyncCommand(ConnectAsync, HandleCommandException, () => !IsBusy);
@@ -312,6 +316,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
             OnPropertyChanged(nameof(IsEventsOpen));
             OnPropertyChanged(nameof(Messages));
             OnPropertyChanged(nameof(IsMessagesOpen));
+            OnPropertyChanged(nameof(News));
+            OnPropertyChanged(nameof(IsNewsOpen));
             OnPropertyChanged(nameof(IsResourceSummaryVisible));
         }
     }
@@ -339,6 +345,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public MessageScreenViewModel? Messages => CurrentScreen as MessageScreenViewModel;
 
     public bool IsMessagesOpen => Messages is not null;
+
+    public NewsScreenViewModel? News => CurrentScreen as NewsScreenViewModel;
+
+    public bool IsNewsOpen => News is not null;
 
     public bool IsResourceSummaryVisible => CurrentScreen is null;
 
@@ -558,6 +568,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         : link.Rel.Contains(SirenRelations.CardTemplates, StringComparer.Ordinal) ? NavigationScreen.CardTemplates
         : link.Rel.Contains(SirenRelations.Events, StringComparer.Ordinal) ? NavigationScreen.Events
         : link.Rel.Contains(SirenRelations.Messages, StringComparer.Ordinal) ? NavigationScreen.Messages
+        : link.Rel.Contains(SirenRelations.News, StringComparer.Ordinal) ? NavigationScreen.News
         : NavigationScreen.ResourceSummary;
 
     private IManagementScreen CreateScreen(NavigationItem item) =>
@@ -575,6 +586,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
                 new LarpEventScreenViewModel(_apiClient, _localizer, _eventDialogs, ApiBaseUrl, Locale, item.Href),
             NavigationScreen.Messages =>
                 new MessageScreenViewModel(_apiClient, _localizer, _messageDialogs, ApiBaseUrl, Locale, item.Href),
+            NavigationScreen.News =>
+                new NewsScreenViewModel(_apiClient, _localizer, _newsDialogs, ApiBaseUrl, Locale, item.Href, TimeZoneInfo.Local, TimeProvider.System),
             _ => throw new ArgumentOutOfRangeException(nameof(item), item.Screen, "The entry opens the resource summary.")
         };
 

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.ApiLinkPolicy\SciFiLarpNetwork.ApiLinkPolicy.csproj" />
     <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.Localization\SciFiLarpNetwork.Localization.csproj" />
+    <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.NewsMarkdown\SciFiLarpNetwork.NewsMarkdown.csproj" />
     <ProjectReference Include="..\..\Shared\SciFiLarpNetwork.Siren\SciFiLarpNetwork.Siren.csproj" />
   </ItemGroup>
 

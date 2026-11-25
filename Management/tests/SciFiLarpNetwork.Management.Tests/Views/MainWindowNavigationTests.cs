@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -177,7 +178,7 @@ public sealed class MainWindowNavigationTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(),
             new ManagementSettings());
         for (var entry = 1; entry <= EntryCount; entry++)
         {

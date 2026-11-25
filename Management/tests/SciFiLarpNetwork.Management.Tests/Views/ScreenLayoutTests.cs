@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -56,7 +57,8 @@ public sealed class ScreenLayoutTests
         var view = ScreenView(window);
 
         var overflowing = view.GetVisualDescendants().OfType<Control>()
-            .Where(control => control.IsEffectivelyVisible && !IsScrolledContent(view, control) && !IsInsideTextField(control))
+            .Where(control => control.IsEffectivelyVisible && !IsScrolledContent(view, control) && !IsInsideTextField(control)
+                              && !IsDrawnElsewhereOrScaled(control))
             .Where(control => SticksOutOfItsParent(control) || IsCutOffText(control) || DrawsTextOutsideItself(control))
             .Select(Describe)
             .ToArray();
@@ -106,7 +108,7 @@ public sealed class ScreenLayoutTests
     {
         var viewModel = new MainWindowViewModel(api, new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(),
-            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new ManagementSettings(Locale: locale));
+            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new ManagementSettings(Locale: locale));
         var window = new MainWindow(viewModel) { Width = width, Height = height };
         window.Show();
         await viewModel.ConnectCommand.ExecuteAsync();
@@ -125,6 +127,7 @@ public sealed class ScreenLayoutTests
         NavigationScreen.CardTemplates => new FakeCardTemplateApi(),
         NavigationScreen.Events => EventsApi(),
         NavigationScreen.Messages => MessagesApi(),
+        NavigationScreen.News => NewsApi(),
         _ => throw new ArgumentOutOfRangeException(nameof(screen), screen, "Add a fake API for this screen.")
     };
 
@@ -159,6 +162,30 @@ public sealed class ScreenLayoutTests
     }
 
     /// <summary>A reply with a long title, every character as recipient, and a long text, so every detail is shown.</summary>
+    /// <summary>Stories active whenever the test runs, one long, with headings, lists, a picture, and a video.</summary>
+    private static FakeNewsApi NewsApi()
+    {
+        var api = new FakeNewsApi();
+        var picture = api.AddMedia("Harbour at dawn", isVideo: false);
+        var video = api.AddMedia("Launch of the fleet", isVideo: true);
+        var body = string.Join("\n\n",
+        [
+            "# Fleet arrives",
+            $"![Harbour at dawn](media:{picture.Id:D})",
+            $"![Launch of the fleet](media:{video.Id:D}?autoplay&loop&controls)",
+            "- **First** point with a rather long line of text that has to wrap inside the preview",
+            .. Enumerable.Range(0, 60).Select(line => $"Line {line} of a long *story* text.")
+        ]);
+        var start = DateTimeOffset.UtcNow.AddDays(-30);
+        api.AddStory($"Fleet {new string('t', 120)}", FakeNewsApi.CoreId, start, start.AddYears(5), body);
+        foreach (var number in Enumerable.Range(1, 30))
+        {
+            api.AddStory($"Story {number}", FakeNewsApi.CoreId, start.AddMinutes(number), start.AddYears(5));
+        }
+
+        return api;
+    }
+
     private static FakeMessageApi MessagesApi()
     {
         var api = new FakeMessageApi();
@@ -201,6 +228,13 @@ public sealed class ScreenLayoutTests
 
     /// <summary>A text field scrolls its own text, so its placeholder and text may be wider than the field.</summary>
     private static bool IsInsideTextField(Control control) => control.GetVisualAncestors().OfType<TextBox>().Any();
+
+    /// <summary>
+    /// A drop-down list's popup anchor draws nothing in place (its list opens in an overlay), and a viewbox's content is
+    /// larger than the viewbox by design because the viewbox scales it down to fit, as for a drop-down arrow.
+    /// </summary>
+    private static bool IsDrawnElsewhereOrScaled(Control control) =>
+        control is Avalonia.Controls.Primitives.Popup || control.GetVisualParent() is Viewbox;
 
     private static bool SticksOutOfItsParent(Control control)
     {

@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using System.Globalization;
@@ -123,7 +124,7 @@ public sealed class NetworkCatalogWindowTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

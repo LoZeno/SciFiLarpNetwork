@@ -27,6 +27,10 @@ public static class SirenRelations
     public const string Messages = "urn:scifilarnetwork:rels:messages";
     public const string ReplySource = "urn:scifilarnetwork:rels:reply-source";
     public const string LiveUpdates = "urn:scifilarnetwork:rels:live-updates";
+    public const string News = "urn:scifilarnetwork:rels:news";
+    public const string NewsMedia = "urn:scifilarnetwork:rels:news-media";
+    public const string MediaContent = "urn:scifilarnetwork:rels:media-content";
+    public const string Network = "urn:scifilarnetwork:rels:network";
     public const string First = "first";
     public const string Previous = "prev";
     public const string Next = "next";

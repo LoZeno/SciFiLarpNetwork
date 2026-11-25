@@ -1,3 +1,4 @@
+using SciFiLarpNetwork.Management.Tests.ViewModels.News;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -197,7 +198,7 @@ public sealed class LarpEventWindowTests
 
     private static MainWindowViewModel CreateViewModel(FakeLarpEventApi api, FakeLarpEventDialogs dialogs) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), dialogs, new FakeMessageDialogs(), new ManagementSettings());
+            new FakeCardTemplateDialogs(), dialogs, new FakeMessageDialogs(), new FakeNewsDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {
