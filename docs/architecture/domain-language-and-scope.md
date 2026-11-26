@@ -23,7 +23,7 @@ The software is a configurable in-game information network and event-management 
 | **News story** | A network-scoped, time-bounded in-game publication. |
 | **Personal file** | A character-owned saved in-game document. |
 | **Datapad** | A configurable physical/digital prop that grants access to a list of in-game files. Renameable in setting UI. |
-| **Item / component** | A configurable game object and its ingredients/parts, with optional QR identification and print data. |
+| **Item / component** | A configurable game object and its ingredients/parts, with optional QR identification and print data. An item is a definition; each printed card is a **copy** of it with its own QR code, which can be deactivated when used up. |
 | **Substance / ingredient** | A configurable fictional material, medicine, toxin, or other LARP-defined category. The category vocabulary is setting-owned. |
 | **Condition** | A configurable fictional character state. “Infection” is one possible setting term, not a universal assumption or a real medical diagnosis. |
 | **QR code / label** | A machine-readable identifier that resolves through an authorized application workflow. A code is not trusted merely because it decoded successfully. |

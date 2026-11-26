@@ -1,0 +1,52 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.Items.ItemCatalogWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Items"
+    x:DataType="vm:ItemCatalogViewModel"
+    Title="{Binding Title}"
+    Width="520"
+    Height="600"
+    MinWidth="400"
+    MinHeight="400"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+      <TextBlock
+          AutomationProperties.LiveSetting="Polite"
+          IsVisible="{Binding HasStatusMessage}"
+          Text="{Binding StatusMessage}"
+          TextWrapping="Wrap" />
+      <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchived}" />
+    </StackPanel>
+    <StackPanel Margin="0,12,0,0" DockPanel.Dock="Bottom" Spacing="8">
+      <WrapPanel IsVisible="{Binding CanWrite}">
+        <Button Margin="0,0,8,8" Command="{Binding NewCommand}" Content="{Binding NewLabel}" />
+        <Button Margin="0,0,8,8" Command="{Binding RenameCommand}" Content="{Binding RenameLabel}" />
+        <Button Margin="0,0,8,8" Command="{Binding ToggleArchivedCommand}" Content="{Binding ToggleArchivedLabel}" />
+        <Button Margin="0,0,8,8" Command="{Binding MoveUpCommand}" Content="{Binding MoveUpLabel}" IsVisible="{Binding IsRarities}" />
+        <Button Margin="0,0,8,8" Command="{Binding MoveDownCommand}" Content="{Binding MoveDownLabel}" IsVisible="{Binding IsRarities}" />
+      </WrapPanel>
+      <Button HorizontalAlignment="Right" Command="{Binding CloseCommand}" Content="{Binding CloseLabel}" IsCancel="True" />
+    </StackPanel>
+    <TextBlock
+        Margin="0,8"
+        DockPanel.Dock="Top"
+        IsVisible="{Binding HasPlaceholder}"
+        Text="{Binding Placeholder}"
+        TextWrapping="Wrap" />
+    <ListBox
+        Margin="0,8,0,0"
+        AutomationProperties.Name="{Binding Title}"
+        ItemsSource="{Binding Entries}"
+        SelectedItem="{Binding SelectedEntry, Mode=TwoWay}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:ItemCatalogEntryListItem">
+          <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

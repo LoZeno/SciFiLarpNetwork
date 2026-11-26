@@ -11,6 +11,7 @@ using SciFiLarpNetwork.Backend.Application.Administration;
 using SciFiLarpNetwork.Backend.Application.CardTemplates;
 using SciFiLarpNetwork.Backend.Application.CharacterCards;
 using SciFiLarpNetwork.Backend.Application.EventSourcing;
+using SciFiLarpNetwork.Backend.Application.Items;
 using SciFiLarpNetwork.Backend.Application.LarpEvents;
 using SciFiLarpNetwork.Backend.Application.Messages;
 using SciFiLarpNetwork.Backend.Application.Networks;
@@ -22,11 +23,15 @@ using SciFiLarpNetwork.Backend.Domain.Events.CardFlagEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CardTemplateEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.CharacterStatEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.ItemCopyEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.ItemEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.ItemTypeEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.LarpEventEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.MessageEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NetworkEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.PlayerEvents;
+using SciFiLarpNetwork.Backend.Domain.Events.RarityEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.RunningNumberEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.SkillEvents;
 using SciFiLarpNetwork.Backend.Domain.Events.TalentEvents;
@@ -34,6 +39,8 @@ using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Administration.AdministratorDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.CardTemplates;
 using SciFiLarpNetwork.Backend.Infrastructure.CharacterCards;
+using SciFiLarpNetwork.Backend.Infrastructure.Items;
+using SciFiLarpNetwork.Backend.Infrastructure.Items.ItemDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.LarpEvents.LarpEventDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Media;
@@ -85,6 +92,12 @@ public static class DependencyInjection
         services.AddSingleton(new MediaFileStore(MediaRootPath(configuration)));
         services.AddSingleton<INewsStoryService, NewsStoryService>();
         services.AddSingleton<INewsMediaService, NewsMediaService>();
+        services.AddSingleton<IItemTypeService, ItemTypeService>();
+        services.AddSingleton<IRarityService, RarityService>();
+        services.AddSingleton<IItemService, ItemService>();
+        services.AddSingleton<IItemImageService, ItemImageService>();
+        services.AddSingleton<IItemCopyService, ItemCopyService>();
+        services.AddSingleton<IItemPrintService, ItemPrintService>();
         services.AddHostedService<EventStoreSchemaInitializer>();
         services.AddMarten(options =>
         {
@@ -259,6 +272,49 @@ public static class DependencyInjection
             // story or media item right after it is saved.
             options.Projections.Add<NewsStoryProjection>(ProjectionLifecycle.Inline);
             options.Projections.Add<NewsMediaProjection>(ProjectionLifecycle.Inline);
+
+            options.Events.AddEventType<ItemTypeCreated>();
+            options.Events.AddEventType<ItemTypeRenamed>();
+            options.Events.AddEventType<ItemTypeArchived>();
+            options.Events.AddEventType<ItemTypeUnarchived>();
+            options.Events.AddEventType<RarityCreated>();
+            options.Events.AddEventType<RarityRenamed>();
+            options.Events.AddEventType<RarityArchived>();
+            options.Events.AddEventType<RarityUnarchived>();
+            options.Events.AddEventType<RarityOrderChanged>();
+            options.Events.AddEventType<ItemCreated>();
+            options.Events.AddEventType<ItemDetailsChanged>();
+            options.Events.AddEventType<ItemComponentsChanged>();
+            options.Events.AddEventType<ItemImageSet>();
+            options.Events.AddEventType<ItemImageRemoved>();
+            options.Events.AddEventType<ItemArchived>();
+            options.Events.AddEventType<ItemUnarchived>();
+            options.Events.AddEventType<ItemCompositionChanged>();
+            options.Events.AddEventType<ItemPrintCreated>();
+            options.Events.AddEventType<ItemCopyPrinted>();
+            options.Events.AddEventType<ItemCopyDeactivated>();
+            options.Events.AddEventType<ItemCopyReactivated>();
+
+            // Item commands query these write models (unique names and recipes, archived types, rarities and
+            // components, the rarity order, a repeated print), and lists show a change right after it is saved.
+            options.Projections.Add<ItemTypeProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<RarityProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<RarityOrderProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<ItemCopyProjection>(ProjectionLifecycle.Inline);
+            options.Projections.Add<ItemPrintProjection>(ProjectionLifecycle.Inline);
+
+            // Only a FetchForWriting concurrency lock: the snapshot can lag behind the events.
+            options.Projections.Add<ItemCompositionProjection>(ProjectionLifecycle.Async);
+
+            options.Schema.For<ItemTypeDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, type => type.NormalizedName);
+            options.Schema.For<RarityDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, rarity => rarity.NormalizedName);
+            // Two calls create two separate unique indexes; one call with both members would make one composite index.
+            options.Schema.For<ItemDocument>()
+                .UniqueIndex(UniqueIndexType.Computed, item => item.NormalizedName)
+                .UniqueIndex(UniqueIndexType.Computed, item => item.RecipeKey);
         })
         .AddSubscriptionWithServices<MessageSentSubscription>(ServiceLifetime.Singleton)
         .AddAsyncDaemon(DaemonMode.Solo);

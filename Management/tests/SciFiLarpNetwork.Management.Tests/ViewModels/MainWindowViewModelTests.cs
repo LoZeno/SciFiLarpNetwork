@@ -648,7 +648,7 @@ public sealed class MainWindowViewModelTests
         StubSettingsStore settingsStore,
         ManagementSettings? settings = null) =>
         new(apiClient, settingsStore, new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), settings ?? new ManagementSettings());
+            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(), settings ?? new ManagementSettings());
 
     private static SirenEntity Resource(string properties, IReadOnlyList<SirenAction>? actions = null) =>
         new()

@@ -178,7 +178,7 @@ public sealed class MainWindowNavigationTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(), new FakeNewsDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(),
             new ManagementSettings());
         for (var entry = 1; entry <= EntryCount; entry++)
         {

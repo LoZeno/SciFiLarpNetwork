@@ -46,6 +46,7 @@ Uploaded bytes are kept in these places. [SPEC-30](../specifications/SPEC-30-upl
 |---|---|
 | News pictures and videos ([MANAGER-05](../specifications/legacy-features/manager-tabs/MANAGER-05-news.md)) | `Media:RootPath/News/{mediaId}` |
 | Network background images ([MANAGER-11](../specifications/legacy-features/manager-tabs/MANAGER-11-networks.md)) | `Media:RootPath/NetworkImages/{imageId}` |
+| Item pictures ([MANAGER-06](../specifications/legacy-features/manager-tabs/MANAGER-06-items-components.md)) | `Media:RootPath/ItemImages/{imageId}` |
 | Card templates | Database, `CardTemplateContentDocument` |
 
 `DOTNET_ENVIRONMENT` selects the environment-specific file and takes precedence over `ASPNETCORE_ENVIRONMENT`; if neither is set, the environment defaults to `Production`. `ASPNETCORE_URLS` or the `--urls` argument configures Kestrel's bind URLs. Use loopback for local development; exposing the service to a venue LAN requires an explicit LAN bind address and appropriate host firewall rules.

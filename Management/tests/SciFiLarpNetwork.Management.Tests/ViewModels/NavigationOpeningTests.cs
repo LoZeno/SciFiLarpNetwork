@@ -152,7 +152,7 @@ public sealed class NavigationOpeningTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(), new FakeNewsDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(),
             new ManagementSettings());
         viewModel.NavigationItems.Add(News);
         viewModel.NavigationItems.Add(Messages);

@@ -92,6 +92,7 @@ internal sealed class MediaFileStore(string rootPath)
     {
         MediaFolder.News => "News",
         MediaFolder.NetworkImages => "NetworkImages",
+        MediaFolder.ItemImages => "ItemImages",
         _ => throw new ArgumentOutOfRangeException(nameof(folder), folder, null),
     };
 }

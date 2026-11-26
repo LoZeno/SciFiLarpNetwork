@@ -1,0 +1,156 @@
+<UserControl
+    x:Class="SciFiLarpNetwork.Management.Views.Items.ItemScreenView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Items"
+    x:DataType="vm:ItemScreenViewModel">
+  <DockPanel>
+    <TextBlock
+        DockPanel.Dock="Top"
+        AutomationProperties.LiveSetting="Polite"
+        IsVisible="{Binding HasStatusMessage}"
+        Text="{Binding StatusMessage}"
+        TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+      <DockPanel Grid.Column="0">
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <TextBlock Classes="heading" Text="{Binding ItemsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Command="{Binding ManageItemTypesCommand}" Content="{Binding ManageItemTypesLabel}" />
+            <Button Command="{Binding ManageRaritiesCommand}" Content="{Binding ManageRaritiesLabel}" />
+          </WrapPanel>
+          <ComboBox
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding TypeFilterLabel}"
+              ItemsSource="{Binding TypeFilters}"
+              SelectedItem="{Binding SelectedTypeFilter, Mode=TwoWay}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox
+                Grid.Column="0"
+                AutomationProperties.Name="{Binding SearchLabel}"
+                PlaceholderText="{Binding SearchLabel}"
+                Text="{Binding Search, Mode=TwoWay}">
+              <TextBox.KeyBindings>
+                <KeyBinding Command="{Binding SearchCommand}" Gesture="Enter" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Command="{Binding SearchCommand}" Content="{Binding SearchLabel}" />
+          </Grid>
+          <CheckBox Content="{Binding ShowArchivedLabel}" IsChecked="{Binding ShowArchived}" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0" Spacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <Button Command="{Binding PreviousCommand}" Content="{Binding PreviousLabel}" />
+            <TextBlock VerticalAlignment="Center" Text="{Binding PageText}" TextWrapping="Wrap" />
+            <Button Command="{Binding NextCommand}" Content="{Binding NextLabel}" />
+          </WrapPanel>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding NewCommand}" Content="{Binding NewLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding EditCommand}" Content="{Binding EditLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding CloneCommand}" Content="{Binding CloneLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ToggleArchivedCommand}" Content="{Binding ToggleArchivedLabel}" />
+          </WrapPanel>
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
+            <TextBlock VerticalAlignment="Center" Text="{Binding CopiesPerItemLabel}" />
+            <TextBox
+                MinWidth="70"
+                AutomationProperties.Name="{Binding CopiesPerItemLabel}"
+                MaxLength="2"
+                Text="{Binding CopiesPerItemText, Mode=TwoWay}" />
+            <Button Command="{Binding PreviewCommand}" Content="{Binding PreviewLabel}" />
+            <Button Command="{Binding PrintCommand}" Content="{Binding PrintLabel}" IsVisible="{Binding CanWrite}" />
+          </WrapPanel>
+        </StackPanel>
+        <TextBlock
+            Margin="0,8"
+            DockPanel.Dock="Top"
+            IsVisible="{Binding HasItemsPlaceholder}"
+            Text="{Binding ItemsPlaceholder}"
+            TextWrapping="Wrap" />
+        <ListBox
+            MinHeight="200"
+            Margin="0,8,0,0"
+            AutomationProperties.Name="{Binding ItemsHeading}"
+            ItemsSource="{Binding Items}"
+            SelectionMode="Multiple"
+            SelectedItems="{Binding SelectedItems}"
+            SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ItemListItem">
+              <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,12,0" Spacing="8">
+        <TextBlock Classes="heading" Text="{Binding DetailsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+        <TextBlock IsVisible="{Binding HasDetailsPlaceholder}" Text="{Binding DetailsPlaceholder}" TextWrapping="Wrap" />
+        <StackPanel IsVisible="{Binding HasDetails}" Spacing="6">
+          <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding DetailName}" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="4">
+            <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="{Binding TypeFilterLabel}" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding DetailType}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Grid.Column="0" FontWeight="SemiBold" Text="{Binding RarityLabel}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DetailRarity}" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="2" Grid.Column="0" FontWeight="SemiBold" Text="{Binding CostLabel}" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DetailCost}" />
+            <TextBlock Grid.Row="3" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ChargesLabel}" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding DetailCharges}" />
+            <TextBlock Grid.Row="4" Grid.Column="0" FontWeight="SemiBold" Text="{Binding ExpiresOnLabel}" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DetailExpires}" />
+          </Grid>
+          <TextBlock FontWeight="SemiBold" Text="{Binding DescriptionLabel}" />
+          <TextBlock Text="{Binding DetailDescription}" TextWrapping="Wrap" />
+          <TextBlock FontWeight="SemiBold" Text="{Binding EffectLabel}" />
+          <TextBlock Text="{Binding DetailEffect}" TextWrapping="Wrap" />
+          <Border
+              MaxHeight="160"
+              HorizontalAlignment="Left"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+              BorderThickness="1"
+              IsVisible="{Binding HasDetailImage}">
+            <Image Source="{Binding DetailImage, Converter={x:Static conv:ImageBytesConverter.Instance}}" Stretch="Uniform" />
+          </Border>
+          <TextBlock Margin="0,8,0,0" Classes="section" Text="{Binding ComponentsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <ListBox
+              Height="120"
+              AutomationProperties.Name="{Binding ComponentsHeading}"
+              ItemsSource="{Binding Components}"
+              SelectedItem="{Binding SelectedComponent, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemComponentListItem">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding AddComponentCommand}" Content="{Binding AddComponentLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ChangeQuantityCommand}" Content="{Binding ChangeQuantityLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding RemoveComponentCommand}" Content="{Binding RemoveComponentLabel}" />
+          </WrapPanel>
+          <TextBlock Margin="0,8,0,0" Classes="section" Text="{Binding CopiesHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <ListBox
+              Height="160"
+              AutomationProperties.Name="{Binding CopiesHeading}"
+              ItemsSource="{Binding Copies}"
+              SelectionMode="Multiple"
+              SelectedItems="{Binding SelectedCopies}"
+              SelectedItem="{Binding SelectedCopy, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemCopyListItem">
+                <TextBlock FontFamily="Consolas,Menlo,monospace" Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <WrapPanel IsVisible="{Binding CanWrite}">
+            <Button Margin="0,0,8,8" Command="{Binding ReprintCommand}" Content="{Binding ReprintLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ToggleCopyActiveCommand}" Content="{Binding ToggleCopyActiveLabel}" />
+          </WrapPanel>
+        </StackPanel>
+      </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

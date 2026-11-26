@@ -44,7 +44,7 @@ public sealed class MainWindowCardTemplateTests
 
     private static MainWindowViewModel CreateViewModel(FakeCardTemplateApi api) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new ManagementSettings());
+            new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {
