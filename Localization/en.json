@@ -709,6 +709,7 @@
   "api.reactivateItemCopy": "Turn copy back on",
   "api.printItemCards": "Print item cards",
   "api.reprintItemCards": "Reprint item cards",
+  "api.reprintItemPrint": "Reprint a whole print",
   "api.previewItemCards": "Preview item cards",
   "items.name": "Name",
   "items.type": "Type",

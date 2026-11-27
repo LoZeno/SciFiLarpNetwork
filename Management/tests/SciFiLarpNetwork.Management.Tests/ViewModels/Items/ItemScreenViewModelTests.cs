@@ -288,6 +288,21 @@ public sealed class ItemScreenViewModelTests
     }
 
     [Fact]
+    public async Task CloneDialogMarksAnArchivedComponent()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell", isArchived: true);
+        api.AddItem("Blaster").Components.Add((cell.Id, 2));
+        var dialogs = new FakeItemDialogs();
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal(["2 × Power cell (Archived)"], dialogs.LastEditor!.Components.Select(component => component.DisplayName));
+    }
+
+    [Fact]
     public async Task ComponentRemovedInTheCloneDialogIsNotSent()
     {
         var api = new FakeItemApi();
@@ -730,20 +745,20 @@ public sealed class ItemScreenViewModelTests
     }
 
     [Fact]
-    public async Task ReprintWholePrintSendsEveryCopyOfThePrint()
+    public async Task ReprintWholePrintSendsThePrint()
     {
         var api = new FakeItemApi();
         var medkit = api.AddItem("Medkit");
         var printId = Guid.NewGuid();
-        var copies = new[] { api.AddCopy(medkit, printId: printId), api.AddCopy(medkit, printId: printId) };
+        api.AddCopy(medkit, printId: printId);
         api.AddCopy(medkit);
         var screen = await SelectedScreenAsync(api);
         screen.SelectedPrint = screen.Prints.Single(print => print.PrintId == printId);
 
         await screen.ReprintPrintCommand.ExecuteAsync();
 
-        Assert.Equal(copies.Select(copy => copy.Id),
-            JsonDocument.Parse(api.Submissions.Single().Body!).RootElement.GetProperty("copyIds").EnumerateArray().Select(id => id.GetGuid()));
+        Assert.Equal(("reprint-item-print", printId),
+            (api.Submissions.Single().ActionName, JsonDocument.Parse(api.Submissions.Single().Body!).RootElement.GetProperty("printId").GetGuid()));
     }
 
     [Fact]

@@ -25,7 +25,10 @@
   <Style Selector="ScrollViewer.screen ListBox">
     <Setter Property="MinHeight" Value="96" />
   </Style>
-  <!-- A track rounds each part's place and size on its own, so the page buttons could end a pixel past the track. -->
+  <!--
+    A track rounds each part's place and size on its own, so the page buttons could end a pixel past the track. Every
+    scroll bar gets this, so they all behave the same.
+  -->
   <Style Selector="ScrollBar /template/ Track > RepeatButton">
     <Setter Property="UseLayoutRounding" Value="False" />
   </Style>

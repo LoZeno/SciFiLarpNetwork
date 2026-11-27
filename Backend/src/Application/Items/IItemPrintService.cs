@@ -25,6 +25,12 @@ public interface IItemPrintService
     /// <summary>The cards of existing copies, in the requested order, with their own QR codes. Saves nothing.</summary>
     Task<ItemResult<ItemCardSet>> ReprintAsync(IReadOnlyList<Guid> copyIds, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The cards of every copy an earlier print made, of every item it covered, in print order. Saves nothing;
+    /// <see cref="ItemOutcome.NotFound"/> when no print has this identifier.
+    /// </summary>
+    Task<ItemResult<ItemCardSet>> ReprintPrintAsync(Guid printId, CancellationToken cancellationToken = default);
+
     /// <summary>The cards a print would make, with <see cref="SampleQrCode"/>. Saves nothing.</summary>
     Task<ItemResult<ItemCardSet>> PreviewAsync(IReadOnlyList<Guid> itemIds, int copiesPerItem,
         CancellationToken cancellationToken = default);

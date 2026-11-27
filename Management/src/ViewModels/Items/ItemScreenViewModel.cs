@@ -79,8 +79,8 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         PrintCommand = new AsyncCommand(() => RunAsync(PrintAsync), HandleUnexpectedFailure, () => CanPrint("print-item-cards"));
         ReprintCommand = new AsyncCommand(() => RunAsync(() => ReprintAsync(SelectedCopyIds())), HandleUnexpectedFailure,
             () => !IsBusy && SelectedCopies.Count > 0 && _collection?.FindAction("reprint-item-cards") is not null);
-        ReprintPrintCommand = new AsyncCommand(() => RunAsync(() => ReprintAsync(SelectedPrintCopyIds())), HandleUnexpectedFailure,
-            () => !IsBusy && SelectedPrint is not null && _collection?.FindAction("reprint-item-cards") is not null);
+        ReprintPrintCommand = new AsyncCommand(() => RunAsync(ReprintSelectedPrintAsync), HandleUnexpectedFailure,
+            () => !IsBusy && SelectedPrint is not null && _collection?.FindAction("reprint-item-print") is not null);
         ToggleCopyActiveCommand = new AsyncCommand(() => RunAsync(ToggleCopyActiveAsync), HandleUnexpectedFailure,
             () => CanWrite && !IsBusy && SelectedCopy is not null && SelectedCopies.Count <= 1);
         ManageItemTypesCommand = new AsyncCommand(() => RunAsync(() => ManageCatalogAsync(ItemCatalogKind.ItemTypes)),
@@ -846,12 +846,15 @@ public sealed class ItemScreenViewModel : ScreenViewModel
 
     private Guid[] SelectedCopyIds() => [.. Copies.Where(SelectedCopies.Contains).Select(copy => copy.CopyId)];
 
-    private Guid[] SelectedPrintCopyIds() =>
-        [.. _allCopies.Where(copy => copy.PrintId == SelectedPrint?.PrintId).Select(copy => copy.CopyId)];
+    private Task ReprintAsync(Guid[] copyIds) => OpenReprintAsync("reprint-item-cards", new { copyIds });
 
-    private async Task ReprintAsync(Guid[] copyIds)
+    /// <summary>Reprints every copy of the selected print, including the copies of the other items it covered.</summary>
+    private Task ReprintSelectedPrintAsync() =>
+        OpenReprintAsync("reprint-item-print", new { printId = (SelectedPrint ?? throw MissingAction()).PrintId });
+
+    private async Task OpenReprintAsync(string actionName, object body)
     {
-        var pdf = await DownloadAsync("reprint-item-cards", new { copyIds });
+        var pdf = await DownloadAsync(actionName, body);
         if (!await _dialogs.OpenPdfAsync(pdf, CardsFileName))
         {
             StatusMessage = Translate("players.cardsPreviewFailed");

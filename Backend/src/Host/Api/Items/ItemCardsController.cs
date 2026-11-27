@@ -32,6 +32,12 @@ public sealed class ItemCardsController(IItemPrintService printService, IItemCar
     public async Task<IActionResult> Reprint([FromBody] ItemReprintRequest request, CancellationToken cancellationToken) =>
         await RenderAsync(ItemErrors.Unwrap(await printService.ReprintAsync(request.CopyIds, cancellationToken)), cancellationToken);
 
+    [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
+    [HttpPost("reprint-print")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, PdfMediaType)]
+    public async Task<IActionResult> ReprintPrint([FromBody] ItemPrintReprintRequest request, CancellationToken cancellationToken) =>
+        await RenderAsync(ItemErrors.Unwrap(await printService.ReprintPrintAsync(request.PrintId, cancellationToken)), cancellationToken);
+
     [Authorize(Policy = AdministratorAuthorizationPolicies.Read)]
     [HttpPost("preview")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK, PdfMediaType)]

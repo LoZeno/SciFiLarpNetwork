@@ -66,7 +66,7 @@ public sealed class ItemsApiTests(AdministratorAuthenticationFactory factory) : 
         using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, ItemsPath, token);
 
         Assert.Equal(
-            ["search-items", "preview-item-cards", "create-item", "print-item-cards", "reprint-item-cards"],
+            ["search-items", "preview-item-cards", "create-item", "print-item-cards", "reprint-item-cards", "reprint-item-print"],
             ActionNames(await JsonAsync(response)));
     }
 
@@ -261,6 +261,20 @@ public sealed class ItemsApiTests(AdministratorAuthenticationFactory factory) : 
     }
 
     [Fact]
+    public async Task WholePrintIsReprintedAsPdf()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var itemId = await ItemIdAsync(client, token, "Medkit");
+        var printId = Guid.NewGuid();
+        (await PdfRequestAsync(client, token, "print", new { printId, itemIds = new[] { itemId }, copiesPerItem = 1 })).Dispose();
+
+        using var response = await PdfRequestAsync(client, token, "reprint-print", new { printId });
+
+        Assert.Equal((HttpStatusCode.OK, "application/pdf"), (response.StatusCode, response.Content.Headers.ContentType?.MediaType));
+    }
+
+    [Fact]
     public async Task CopySelfLinkReturnsTheCopy()
     {
         using var client = factory.CreateClient();
@@ -292,6 +306,7 @@ public sealed class ItemsApiTests(AdministratorAuthenticationFactory factory) : 
 
     [Theory]
     [InlineData("POST", "item-cards/reprint")]
+    [InlineData("POST", "item-cards/reprint-print")]
     [InlineData("POST", "item-copies/{copy}/deactivate")]
     [InlineData("POST", "item-copies/{copy}/reactivate")]
     [InlineData("POST", "items/{item}/components")]

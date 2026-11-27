@@ -244,7 +244,7 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
         _showComponentEditor = showComponentEditor;
         foreach (var component in components)
         {
-            Components.Add(ToComponentItem(component.ItemId, component.Name, component.Quantity));
+            Components.Add(ToComponentItem(component.ItemId, component.Name, component.Quantity, component.IsArchived));
         }
 
         OnPropertyChanged(nameof(EditsComponents));
@@ -346,7 +346,7 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
                     return Task.FromResult(false);
                 }
 
-                Components.Add(ToComponentItem(editor.SelectedItem!.Id!.Value, editor.SelectedItem.Name, editor.Quantity));
+                Components.Add(ToComponentItem(editor.SelectedItem!.Id!.Value, editor.SelectedItem.Name, editor.Quantity, false));
                 return Task.FromResult(true);
             });
         await editor.SearchCommand.ExecuteAsync();
@@ -360,7 +360,8 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
             null,
             editor =>
             {
-                Components[Components.IndexOf(component)] = ToComponentItem(component.ItemId, component.Name, editor.Quantity);
+                Components[Components.IndexOf(component)] =
+                    ToComponentItem(component.ItemId, component.Name, editor.Quantity, component.IsArchived);
                 return Task.FromResult(true);
             });
         await _showComponentEditor!(editor);
@@ -368,8 +369,10 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
 
     private void RemoveComponent() => Components.Remove(SelectedComponent!);
 
-    private static ItemComponentListItem ToComponentItem(Guid itemId, string name, int quantity) =>
-        new(itemId, name, quantity, false, $"{quantity} × {name}");
+    /// <summary>An archived component is marked, because the server refuses to create an item with it.</summary>
+    private ItemComponentListItem ToComponentItem(Guid itemId, string name, int quantity, bool isArchived) =>
+        new(itemId, name, quantity, isArchived,
+            isArchived ? $"{quantity} × {name} {Translate("items.archivedTag")}" : $"{quantity} × {name}");
 
     private void NotifyComponentCommandsChanged()
     {

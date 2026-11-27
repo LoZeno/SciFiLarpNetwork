@@ -324,6 +324,7 @@ internal sealed class FakeItemApi : IManagementApiClient
             actions.Add(Action("create-item", ItemsHref, "POST"));
             actions.Add(Action("print-item-cards", $"{CardsHref}/print", "POST"));
             actions.Add(Action("reprint-item-cards", $"{CardsHref}/reprint", "POST"));
+            actions.Add(Action("reprint-item-print", $"{CardsHref}/reprint-print", "POST"));
         }
 
         return new SirenEntity
@@ -502,7 +503,7 @@ internal sealed class FakeItemApi : IManagementApiClient
                 itemId = component.ItemId,
                 name = Name(component.ItemId),
                 quantity = component.Quantity,
-                isArchived = false
+                isArchived = Items.SingleOrDefault(candidate => candidate.Id == component.ItemId)?.IsArchived ?? false
             }).ToArray(),
             isArchived = item.IsArchived,
             version = item.Version

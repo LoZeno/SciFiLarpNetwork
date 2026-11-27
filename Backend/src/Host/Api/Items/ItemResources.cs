@@ -157,7 +157,9 @@ internal sealed class ItemResources(IApplicationText text, string pathBase, bool
                             Field("copiesPerItem", "number", "items.copiesPerItem", 1)
                         ]),
                         CardAction("reprint-item-cards", $"{ItemCardsPath}/reprint", "api.reprintItemCards",
-                            [Field("copyIds", "hidden", "items.copies", Array.Empty<Guid>())])
+                            [Field("copyIds", "hidden", "items.copies", Array.Empty<Guid>())]),
+                        CardAction("reprint-item-print", $"{ItemCardsPath}/reprint-print", "api.reprintItemPrint",
+                            [Field("printId", "hidden", "items.printId", (Guid?)null)])
                     ]
                     : []
             ]

@@ -28,6 +28,27 @@ public sealed class ItemPrintServiceTests(AdministratorAuthenticationFactory fac
     }
 
     [Fact]
+    public async Task ReprintOfAWholePrintCoversEveryItemItPrinted()
+    {
+        var medkit = await data.ItemAsync("Medkit");
+        var grenade = await data.ItemAsync("Grenade");
+        var printId = Guid.NewGuid();
+        var printed = (await Prints.PrintAsync(printId, [medkit.ItemId, grenade.ItemId], 2, Token)).Value!;
+
+        var reprinted = await Prints.ReprintPrintAsync(printId, Token);
+
+        Assert.Equal(printed.Cards.Select(card => (card.Name, card.QrCode)), reprinted.Value!.Cards.Select(card => (card.Name, card.QrCode)));
+    }
+
+    [Fact]
+    public async Task ReprintOfAnUnknownPrintIsNotFound()
+    {
+        var result = await Prints.ReprintPrintAsync(Guid.NewGuid(), Token);
+
+        Assert.Equal(ItemOutcome.NotFound, result.Outcome);
+    }
+
+    [Fact]
     public async Task ItemListedTwiceIsPrintedForEachTime()
     {
         var medkit = await data.ItemAsync("Medkit");

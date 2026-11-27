@@ -91,6 +91,14 @@ internal sealed class ItemPrintService(AttributedSessionFactory sessions, TimePr
         return await CardsAsync(query, [.. copyIds.Select(id => (copies[id].ItemId, ItemCopyCodes.Format(id)))], cancellationToken);
     }
 
+    public async Task<ItemResult<ItemCardSet>> ReprintPrintAsync(Guid printId, CancellationToken cancellationToken = default)
+    {
+        await using var query = sessions.QuerySession();
+        return await query.LoadAsync<ItemPrintDocument>(printId, cancellationToken) is { } print
+            ? await ReprintAsync(print.CopyIds, cancellationToken)
+            : Failure(ItemOutcome.NotFound);
+    }
+
     public async Task<ItemResult<ItemCardSet>> PreviewAsync(IReadOnlyList<Guid> itemIds, int copiesPerItem,
         CancellationToken cancellationToken = default)
     {

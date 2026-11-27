@@ -709,6 +709,7 @@
   "api.reactivateItemCopy": "Riattiva copia",
   "api.printItemCards": "Stampa cartellini degli oggetti",
   "api.reprintItemCards": "Ristampa cartellini degli oggetti",
+  "api.reprintItemPrint": "Ristampa un'intera stampa",
   "api.previewItemCards": "Anteprima cartellini degli oggetti",
   "items.name": "Nome",
   "items.type": "Tipo",

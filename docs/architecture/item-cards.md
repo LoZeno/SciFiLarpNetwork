@@ -4,8 +4,8 @@ Item cards ([MANAGER-06](../specifications/legacy-features/manager-tabs/MANAGER-
 
 ## How a PDF is made
 
-1. The item collection advertises `print-item-cards` and `reprint-item-cards` to administrators, and `preview-item-cards` to readers and administrators (see the [Siren API profile](siren-api-profile.md)).
-2. `IItemPrintService` collects the cards: a print creates the copies first, a reprint reads existing copies, and a preview uses the sample QR code `00000000000000000000000000000000`.
+1. The item collection advertises `print-item-cards`, `reprint-item-cards` and `reprint-item-print` to administrators, and `preview-item-cards` to readers and administrators (see the [Siren API profile](siren-api-profile.md)).
+2. `IItemPrintService` collects the cards: a print creates the copies first, a reprint reads existing copies (chosen ones, or every copy of one print), and a preview uses the sample QR code `00000000000000000000000000000000`.
 3. The renderer writes `cards.json` and runs Typst exactly as for character cards. The QR image is drawn by the backend (QRCoder) as SVG.
 
 ## The `cards.json` data
