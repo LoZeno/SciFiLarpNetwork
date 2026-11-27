@@ -735,7 +735,6 @@
   "itemCards.effect": "Effetto",
   "itemCards.charges": "Cariche",
   "itemCards.expires": "Scadenza",
-  "itemCards.archived": "Archiviato",
   "errors.invalidEffect": "L'effetto può avere al massimo 4.000 caratteri.",
   "errors.invalidItemCost": "Inserisci un costo da 0 a 999.999.",
   "errors.invalidCharges": "Lascia vuote le cariche o inserisci da 1 a 999.",

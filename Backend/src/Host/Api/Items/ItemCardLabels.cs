@@ -8,7 +8,7 @@ namespace SciFiLarpNetwork.Backend.Api.Items;
 /// </summary>
 public static class ItemCardLabels
 {
-    public static readonly IReadOnlyList<string> Names = ["documentTitle", "description", "effect", "charges", "expires", "archived"];
+    public static readonly IReadOnlyList<string> Names = ["documentTitle", "description", "effect", "charges", "expires"];
 
     public static IReadOnlyDictionary<string, string> Localize(IApplicationText text) =>
         Names.ToDictionary(name => name, name => text.GetLocalizedText($"itemCards.{name}"), StringComparer.Ordinal);

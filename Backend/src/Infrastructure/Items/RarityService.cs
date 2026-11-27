@@ -103,7 +103,11 @@ internal sealed class RarityService(AttributedSessionFactory sessions, TimeProvi
 
         var order = await session.Events.FetchForWriting<RarityOrderDocument>(RarityOrderDocument.StreamId, cancellationToken);
         var current = order.Aggregate?.RarityIds ?? [];
-        var moved = RarityOrder.Move(current, rarityId, up);
+        var archived = (await session.LoadManyAsync<RarityDocument>(cancellationToken, current))
+            .Where(entry => entry.IsArchived)
+            .Select(entry => entry.Id)
+            .ToHashSet();
+        var moved = RarityOrder.Move(current, rarityId, up, archived.Contains);
         if (moved.SequenceEqual(current))
         {
             return ItemResult<RaritySummary>.Success(ToSummary(rarity, [.. current]));

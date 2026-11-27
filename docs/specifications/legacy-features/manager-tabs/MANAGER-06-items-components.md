@@ -30,7 +30,7 @@ An item is a definition, like a class: it says what a kind of object is. The phy
 ### Rarities
 
 - A rarity (legacy “availability”) has a generated identifier and a name, with the same name rules as item types. Each LARP names its own rarities, for example Common, Uncommon and Rare.
-- Rarities have an order set by administrators. A new rarity is added at the end; **Move up** and **Move down** change its place. Lists show rarities in this order.
+- Rarities have an order set by administrators. A new rarity is added at the end; **Move up** and **Move down** swap it with the nearest rarity above or below that is not archived, so archived rarities, hidden by default, keep their places. Lists show rarities in this order.
 - Rarities can be archived and unarchived. Nothing is deleted. An archived rarity keeps its place.
 
 ### Items

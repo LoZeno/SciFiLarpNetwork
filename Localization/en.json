@@ -735,7 +735,6 @@
   "itemCards.effect": "Effect",
   "itemCards.charges": "Charges",
   "itemCards.expires": "Expires",
-  "itemCards.archived": "Archived",
   "errors.invalidEffect": "Keep the effect to 4,000 characters.",
   "errors.invalidItemCost": "Enter a cost from 0 to 999,999.",
   "errors.invalidCharges": "Leave charges empty or enter 1 to 999.",

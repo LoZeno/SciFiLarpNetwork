@@ -13,7 +13,7 @@ Item cards ([MANAGER-06](../specifications/legacy-features/manager-tabs/MANAGER-
 | Member | Type | Meaning |
 |---|---|---|
 | `language` | text | Two-letter language of the labels. |
-| `labels` | object | Localized labels: `documentTitle`, `description`, `effect`, `charges`, `expires`, `archived`. |
+| `labels` | object | Localized labels: `documentTitle`, `description`, `effect`, `charges`, `expires`. |
 | `cards` | list | One entry per card, in print order. |
 
 Each card:

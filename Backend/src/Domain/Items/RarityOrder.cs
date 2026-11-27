@@ -4,14 +4,27 @@ namespace SciFiLarpNetwork.Backend.Domain.Items;
 public static class RarityOrder
 {
     /// <summary>
-    /// Swaps <paramref name="rarityId"/> with its neighbour above (<paramref name="up"/>) or below. A rarity already at
-    /// that end, or not in the order, leaves the order unchanged.
+    /// Swaps <paramref name="rarityId"/> with the nearest rarity above (<paramref name="up"/>) or below that is not
+    /// archived; archived rarities in between keep their places. Lists hide archived rarities by default, so swapping
+    /// with one would look like nothing happened. A rarity with no such neighbour, or not in the order, leaves the order
+    /// unchanged.
     /// </summary>
-    public static IReadOnlyList<Guid> Move(IReadOnlyList<Guid> order, Guid rarityId, bool up)
+    public static IReadOnlyList<Guid> Move(IReadOnlyList<Guid> order, Guid rarityId, bool up, Func<Guid, bool> isArchived)
     {
         var index = order.ToList().IndexOf(rarityId);
-        var target = up ? index - 1 : index + 1;
-        if (index < 0 || target < 0 || target >= order.Count)
+        if (index < 0)
+        {
+            return order;
+        }
+
+        var step = up ? -1 : 1;
+        var target = index + step;
+        while (target >= 0 && target < order.Count && isArchived(order[target]))
+        {
+            target += step;
+        }
+
+        if (target < 0 || target >= order.Count)
         {
             return order;
         }

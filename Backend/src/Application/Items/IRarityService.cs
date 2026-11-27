@@ -20,8 +20,8 @@ public interface IRarityService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Swaps the rarity with its neighbour above (<paramref name="up"/>) or below, archived rarities included. A rarity
-    /// already at that end stays where it is.
+    /// Swaps the rarity with the nearest rarity above (<paramref name="up"/>) or below that is not archived; archived
+    /// rarities in between keep their places. A rarity with no such neighbour stays where it is.
     /// </summary>
     Task<ItemResult<RaritySummary>> MoveRarityAsync(Guid rarityId, bool up, CancellationToken cancellationToken = default);
 
