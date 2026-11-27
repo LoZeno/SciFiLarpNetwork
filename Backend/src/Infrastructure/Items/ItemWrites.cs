@@ -26,26 +26,45 @@ internal static class ItemWrites
             Func<Task<ItemOutcome>> uniqueConflict,
             CancellationToken cancellationToken)
         {
+            var outcome = await session.CommitItemAsync(sessions, itemId, editedVersion, uniqueConflict, cancellationToken);
+            return outcome == ItemOutcome.Succeeded
+                ? ItemResult<ItemSummary>.Success(await session.ReadBackItemAsync(itemId))
+                : ItemResult<ItemSummary>.Failure(outcome);
+        }
+
+        /// <summary>
+        /// Commits the command; <see cref="ItemOutcome.Succeeded"/> means it committed. See
+        /// <see cref="SaveItemAsync"/> for what a rejected commit means.
+        /// </summary>
+        public async Task<ItemOutcome> CommitItemAsync(
+            AttributedSessionFactory sessions,
+            Guid itemId,
+            long? editedVersion,
+            Func<Task<ItemOutcome>> uniqueConflict,
+            CancellationToken cancellationToken)
+        {
             try
             {
-                if (!await session.TrySaveChangesAsync(cancellationToken))
-                {
-                    return ItemResult<ItemSummary>.Failure(await LostRaceOutcomeAsync(sessions, itemId, editedVersion, cancellationToken));
-                }
+                return await session.TrySaveChangesAsync(cancellationToken)
+                    ? ItemOutcome.Succeeded
+                    : await LostRaceOutcomeAsync(sessions, itemId, editedVersion, cancellationToken);
             }
             catch (ExistingStreamIdCollisionException)
             {
                 // Two first-ever component additions both started the item-composition stream; the later one lost.
-                return ItemResult<ItemSummary>.Failure(ItemOutcome.ConcurrentChange);
+                return ItemOutcome.ConcurrentChange;
             }
             catch (DocumentAlreadyExistsException)
             {
-                return ItemResult<ItemSummary>.Failure(await uniqueConflict());
+                return await uniqueConflict();
             }
+        }
 
-            // Once committed, a cancelled read-back must not look like a failed command.
+        /// <summary>The committed item. Once committed, a cancelled read-back must not look like a failed command.</summary>
+        public async Task<ItemSummary> ReadBackItemAsync(Guid itemId)
+        {
             var saved = await session.LoadAsync<ItemDocument>(itemId, CancellationToken.None);
-            return ItemResult<ItemSummary>.Success(await session.SummarizeAsync(saved!, CancellationToken.None));
+            return await session.SummarizeAsync(saved!, CancellationToken.None);
         }
     }
 

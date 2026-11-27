@@ -763,7 +763,7 @@
   "errors.noCopiesSelected": "Seleziona almeno una copia.",
   "errors.unknownCopies": "Alcune copie selezionate non esistono più. Ricarica l'elenco.",
   "items.imageHelp": "PNG, JPEG o WebP, fino a 2 MB e 4096 × 4096 pixel. L'immagine non viene stampata sul cartellino.",
-  "items.cloneNote": "Questo è un clone. Dagli un nuovo nome. Mantiene i componenti dell'originale, ma due oggetti non possono avere gli stessi componenti: il clone di un oggetto con componenti non può essere salvato.",
+  "items.cloneNote": "Questo è un clone. Dagli un nuovo nome. Se ha componenti, cambia anche quelli: due oggetti non possono avere lo stesso nome né gli stessi componenti.",
   "items.notSet": "Non impostato",
   "items.details": "Dettagli",
   "items.selectItem": "Seleziona un oggetto per vederne i dettagli.",
@@ -778,6 +778,9 @@
   "items.previewCards": "Anteprima cartellini",
   "items.printCards": "Stampa cartellini",
   "items.reprint": "Ristampa",
+  "items.prints": "Stampe",
+  "items.printSummary": "{0} da {1}. Copie: {2}, attive: {3}",
+  "items.reprintPrint": "Ristampa tutta la stampa",
   "items.deactivateCopy": "Disattiva",
   "items.reactivateCopy": "Riattiva",
   "items.itemTypes": "Tipi di oggetto",
@@ -791,7 +794,6 @@
   "items.allTypes": "Tutti i tipi",
   "items.activeTag": "(Attiva)",
   "items.deactivatedTag": "(Disattivata)",
-  "items.printedBy": "stampata il {0} da {1}",
   "items.unknownAdministrator": "sconosciuto",
   "items.unknownEntry": "Sconosciuto",
   "items.confirmArchive": "Archiviare l'oggetto “{0}”? Non potrà più essere stampato né aggiunto come componente. Le sue copie restano valide.",
@@ -803,5 +805,5 @@
   "items.confirmDeactivateCopy": "Disattivare la copia {0}? Non potrà più essere usata nel gioco.",
   "items.confirmReactivateCopy": "Riattivare la copia {0}?",
   "items.printed": "Le copie sono state create e i loro cartellini aperti.",
-  "items.printedNotOpened": "Le copie sono state create, ma i loro cartellini non si sono potuti aprire. Selezionale nell'elenco delle copie e scegli Ristampa."
+  "items.printedNotOpened": "Le copie sono state create, ma i loro cartellini non si sono potuti aprire. Seleziona la loro stampa nell'elenco delle stampe e scegli Ristampa tutta la stampa."
 }

@@ -116,6 +116,25 @@
           <Button Command="{Binding RemoveImageCommand}" Content="{Binding RemoveImageLabel}" />
         </StackPanel>
         <TextBlock FontSize="12" Text="{Binding ImageHelp}" TextWrapping="Wrap" />
+        <StackPanel IsVisible="{Binding EditsComponents}" Spacing="10">
+          <TextBlock FontWeight="SemiBold" Text="{Binding ComponentsLabel}" />
+          <ListBox
+              Height="120"
+              AutomationProperties.Name="{Binding ComponentsLabel}"
+              ItemsSource="{Binding Components}"
+              SelectedItem="{Binding SelectedComponent, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemComponentListItem">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <WrapPanel>
+            <Button Margin="0,0,8,8" Command="{Binding AddComponentCommand}" Content="{Binding AddComponentLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ChangeQuantityCommand}" Content="{Binding ChangeQuantityLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding RemoveComponentCommand}" Content="{Binding RemoveComponentLabel}" />
+          </WrapPanel>
+        </StackPanel>
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

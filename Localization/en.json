@@ -763,7 +763,7 @@
   "errors.noCopiesSelected": "Select at least one copy.",
   "errors.unknownCopies": "Some selected copies no longer exist. Reload the list.",
   "items.imageHelp": "PNG, JPEG, or WebP, up to 2 MB and 4096 × 4096 pixels. The picture is not printed on the card.",
-  "items.cloneNote": "This is a clone. Give it a new name. It keeps the original components, but two items cannot have the same components, so a clone of an item with components cannot be saved.",
+  "items.cloneNote": "This is a clone. Give it a new name. If it has components, change them too: two items cannot have the same name or the same components.",
   "items.notSet": "Not set",
   "items.details": "Details",
   "items.selectItem": "Select an item to see its details.",
@@ -778,6 +778,9 @@
   "items.previewCards": "Preview cards",
   "items.printCards": "Print cards",
   "items.reprint": "Reprint",
+  "items.prints": "Prints",
+  "items.printSummary": "{0} by {1}. Copies: {2}, active: {3}",
+  "items.reprintPrint": "Reprint whole print",
   "items.deactivateCopy": "Deactivate",
   "items.reactivateCopy": "Turn back on",
   "items.itemTypes": "Item types",
@@ -791,7 +794,6 @@
   "items.allTypes": "All types",
   "items.activeTag": "(Active)",
   "items.deactivatedTag": "(Deactivated)",
-  "items.printedBy": "printed {0} by {1}",
   "items.unknownAdministrator": "unknown",
   "items.unknownEntry": "Unknown",
   "items.confirmArchive": "Archive the item “{0}”? It can no longer be printed or added as a component. Its copies keep working.",
@@ -803,5 +805,5 @@
   "items.confirmDeactivateCopy": "Deactivate the copy {0}? It can no longer be used in the game.",
   "items.confirmReactivateCopy": "Turn the copy {0} back on?",
   "items.printed": "The copies were made and their cards opened.",
-  "items.printedNotOpened": "The copies were made, but their cards could not be opened. Select them in the copy list and choose Reprint."
+  "items.printedNotOpened": "The copies were made, but their cards could not be opened. Select their print in the print list and choose Reprint whole print."
 }

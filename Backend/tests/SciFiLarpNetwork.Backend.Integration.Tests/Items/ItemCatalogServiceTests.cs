@@ -145,6 +145,29 @@ public sealed class ItemCatalogServiceTests(AdministratorAuthenticationFactory f
     }
 
     [Fact]
+    public async Task ArchivedRarityIsHiddenByDefault()
+    {
+        await data.RarityAsync("Common");
+        var rare = await data.RarityAsync("Rare");
+        await data.Rarities.ArchiveRarityAsync(rare.RarityId, Token);
+
+        var rarities = await data.Rarities.GetRaritiesAsync(includeArchived: false, Token);
+
+        Assert.Equal(["Common"], rarities.Select(rarity => rarity.Name));
+    }
+
+    [Fact]
+    public async Task UnarchivedRarityIsActiveAgain()
+    {
+        var rare = await data.RarityAsync("Rare");
+        await data.Rarities.ArchiveRarityAsync(rare.RarityId, Token);
+
+        var result = await data.Rarities.UnarchiveRarityAsync(rare.RarityId, Token);
+
+        Assert.False(result.Value!.IsArchived);
+    }
+
+    [Fact]
     public async Task ArchivedRarityKeepsItsPlace()
     {
         await data.RarityAsync("Common");

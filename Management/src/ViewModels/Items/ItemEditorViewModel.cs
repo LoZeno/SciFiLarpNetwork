@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -28,6 +29,10 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
     private ItemChoice? _selectedRarity;
     private byte[]? _previewImage;
     private ItemImageChange _imageChange;
+    private ItemComponentListItem? _selectedComponent;
+    private Func<string, Task<IReadOnlyList<ItemChoice>>>? _searchComponents;
+    private Func<ItemComponentEditorViewModel, Task>? _showComponentEditor;
+    private bool _isCreated;
 
     internal ItemEditorViewModel(
         IManagementLocalizer localizer,
@@ -51,6 +56,12 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
         _selectedRarity = rarities.Count > 0 ? rarities[0] : null;
         ChooseImageCommand = new AsyncCommand(ChooseImageAsync, _ => ErrorMessage = Translate("networks.imageReadError"));
         RemoveImageCommand = new DelegateCommand(RemoveImage, () => HasPreviewImage);
+        AddComponentCommand = new AsyncCommand(AddComponentAsync, _ => ErrorMessage = Translate("common.error"),
+            () => _showComponentEditor is not null && !_isCreated);
+        ChangeQuantityCommand = new AsyncCommand(ChangeQuantityAsync, _ => ErrorMessage = Translate("common.error"),
+            () => _showComponentEditor is not null && !_isCreated && SelectedComponent is not null);
+        RemoveComponentCommand = new DelegateCommand(RemoveComponent,
+            () => _showComponentEditor is not null && !_isCreated && SelectedComponent is not null);
     }
 
     public IReadOnlyList<ItemChoice> Types { get; }
@@ -63,6 +74,39 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
     public AsyncCommand ChooseImageCommand { get; }
 
     public DelegateCommand RemoveImageCommand { get; }
+
+    public AsyncCommand AddComponentCommand { get; }
+
+    public AsyncCommand ChangeQuantityCommand { get; }
+
+    public DelegateCommand RemoveComponentCommand { get; }
+
+    /// <summary>The components a clone is created with; changed here, sent with the first save.</summary>
+    public ObservableCollection<ItemComponentListItem> Components { get; } = [];
+
+    public ItemComponentListItem? SelectedComponent
+    {
+        get => _selectedComponent;
+        set
+        {
+            if (_selectedComponent == value)
+            {
+                return;
+            }
+
+            _selectedComponent = value;
+            OnPropertyChanged();
+            NotifyComponentCommandsChanged();
+        }
+    }
+
+    public string ComponentsLabel => Translate("items.components");
+
+    public string AddComponentLabel => Translate("items.addComponent");
+
+    public string ChangeQuantityLabel => Translate("items.changeQuantity");
+
+    public string RemoveComponentLabel => Translate("items.removeComponent");
 
     public string TypeLabel => Translate("items.type");
 
@@ -188,6 +232,38 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
 
     internal void MarkImageChangeSaved() => _imageChange = ItemImageChange.None;
 
+    /// <summary>
+    /// Lets the dialog change the components a clone starts with, because two items cannot have the same components.
+    /// </summary>
+    internal void EditComponents(
+        IEnumerable<ItemComponentProperties> components,
+        Func<string, Task<IReadOnlyList<ItemChoice>>> search,
+        Func<ItemComponentEditorViewModel, Task> showComponentEditor)
+    {
+        _searchComponents = search;
+        _showComponentEditor = showComponentEditor;
+        foreach (var component in components)
+        {
+            Components.Add(ToComponentItem(component.ItemId, component.Name, component.Quantity));
+        }
+
+        OnPropertyChanged(nameof(EditsComponents));
+        NotifyComponentCommandsChanged();
+    }
+
+    /// <summary>Whether the dialog shows the components; only a clone changes them here.</summary>
+    public bool EditsComponents => _showComponentEditor is not null;
+
+    /// <summary>After the item is created, later saves change only its details, so the components are fixed.</summary>
+    internal void MarkCreated()
+    {
+        _isCreated = true;
+        NotifyComponentCommandsChanged();
+    }
+
+    internal IReadOnlyList<ItemComponentProperties> ComponentsToSave() =>
+        [.. Components.Select(component => new ItemComponentProperties(component.ItemId, component.Name, component.Quantity, false))];
+
     /// <summary>Checks the typed numbers; shows the error and returns <see langword="false"/> when one is not valid.</summary>
     internal bool ValidateNumbers()
     {
@@ -257,6 +333,49 @@ public sealed class ItemEditorViewModel : CatalogEditorViewModel
     {
         _imageChange = ItemImageChange.Remove;
         PreviewImage = null;
+    }
+
+    private async Task AddComponentAsync()
+    {
+        var editor = new ItemComponentEditorViewModel(Localizer, Locale, "items.addComponent", null, 1, _searchComponents,
+            editor =>
+            {
+                if (Components.Any(component => component.ItemId == editor.SelectedItem!.Id))
+                {
+                    editor.ErrorMessage = Localizer.TranslateApiError("errors.componentAlreadyAdded", Locale);
+                    return Task.FromResult(false);
+                }
+
+                Components.Add(ToComponentItem(editor.SelectedItem!.Id!.Value, editor.SelectedItem.Name, editor.Quantity));
+                return Task.FromResult(true);
+            });
+        await editor.SearchCommand.ExecuteAsync();
+        await _showComponentEditor!(editor);
+    }
+
+    private async Task ChangeQuantityAsync()
+    {
+        var component = SelectedComponent!;
+        var editor = new ItemComponentEditorViewModel(Localizer, Locale, "items.changeQuantity", component.Name, component.Quantity,
+            null,
+            editor =>
+            {
+                Components[Components.IndexOf(component)] = ToComponentItem(component.ItemId, component.Name, editor.Quantity);
+                return Task.FromResult(true);
+            });
+        await _showComponentEditor!(editor);
+    }
+
+    private void RemoveComponent() => Components.Remove(SelectedComponent!);
+
+    private static ItemComponentListItem ToComponentItem(Guid itemId, string name, int quantity) =>
+        new(itemId, name, quantity, false, $"{quantity} × {name}");
+
+    private void NotifyComponentCommandsChanged()
+    {
+        AddComponentCommand.NotifyCanExecuteChanged();
+        ChangeQuantityCommand.NotifyCanExecuteChanged();
+        RemoveComponentCommand.NotifyCanExecuteChanged();
     }
 
     private void Set(ref string field, string value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)

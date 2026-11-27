@@ -32,6 +32,9 @@ public sealed class ItemScreenViewModel : ScreenViewModel
     private ItemChoice? _selectedTypeFilter;
     private ItemComponentListItem? _selectedComponent;
     private ItemCopyListItem? _selectedCopy;
+    private ItemPrintListItem? _selectedPrint;
+    private ItemCopyListItem[] _allCopies = [];
+    private Guid? _printToSelect;
     private string _search = string.Empty;
     private string _copiesPerItemText = "1";
     private bool _showArchived;
@@ -40,6 +43,7 @@ public sealed class ItemScreenViewModel : ScreenViewModel
     private int _detailsGeneration;
     private ItemProperties? _details;
     private byte[]? _detailImage;
+    private (Guid PrintId, Guid[] ItemIds, int Copies)? _unansweredPrint;
 
     public ItemScreenViewModel(
         IManagementApiClient apiClient,
@@ -73,8 +77,10 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         PreviewCommand = new AsyncCommand(() => RunAsync(PreviewAsync), HandleUnexpectedFailure,
             () => CanPrint("preview-item-cards"));
         PrintCommand = new AsyncCommand(() => RunAsync(PrintAsync), HandleUnexpectedFailure, () => CanPrint("print-item-cards"));
-        ReprintCommand = new AsyncCommand(() => RunAsync(ReprintAsync), HandleUnexpectedFailure,
+        ReprintCommand = new AsyncCommand(() => RunAsync(() => ReprintAsync(SelectedCopyIds())), HandleUnexpectedFailure,
             () => !IsBusy && SelectedCopies.Count > 0 && _collection?.FindAction("reprint-item-cards") is not null);
+        ReprintPrintCommand = new AsyncCommand(() => RunAsync(() => ReprintAsync(SelectedPrintCopyIds())), HandleUnexpectedFailure,
+            () => !IsBusy && SelectedPrint is not null && _collection?.FindAction("reprint-item-cards") is not null);
         ToggleCopyActiveCommand = new AsyncCommand(() => RunAsync(ToggleCopyActiveAsync), HandleUnexpectedFailure,
             () => CanWrite && !IsBusy && SelectedCopy is not null && SelectedCopies.Count <= 1);
         ManageItemTypesCommand = new AsyncCommand(() => RunAsync(() => ManageCatalogAsync(ItemCatalogKind.ItemTypes)),
@@ -111,6 +117,9 @@ public sealed class ItemScreenViewModel : ScreenViewModel
 
     public AsyncCommand ReprintCommand { get; }
 
+    /// <summary>Reprints every copy of the selected print.</summary>
+    public AsyncCommand ReprintPrintCommand { get; }
+
     public AsyncCommand ToggleCopyActiveCommand { get; }
 
     public AsyncCommand ManageItemTypesCommand { get; }
@@ -126,6 +135,10 @@ public sealed class ItemScreenViewModel : ScreenViewModel
 
     public ObservableCollection<ItemComponentListItem> Components { get; } = [];
 
+    /// <summary>The item's prints, newest first.</summary>
+    public ObservableCollection<ItemPrintListItem> Prints { get; } = [];
+
+    /// <summary>The copies of the selected print.</summary>
     public ObservableCollection<ItemCopyListItem> Copies { get; } = [];
 
     /// <summary>The copies to reprint, kept in step with the copy list's selection.</summary>
@@ -184,6 +197,23 @@ public sealed class ItemScreenViewModel : ScreenViewModel
 
             _selectedComponent = value;
             OnPropertyChanged();
+            NotifyCommandsChanged();
+        }
+    }
+
+    public ItemPrintListItem? SelectedPrint
+    {
+        get => _selectedPrint;
+        set
+        {
+            if (_selectedPrint == value)
+            {
+                return;
+            }
+
+            _selectedPrint = value;
+            OnPropertyChanged();
+            ShowCopiesOfSelectedPrint(null);
             NotifyCommandsChanged();
         }
     }
@@ -314,6 +344,10 @@ public sealed class ItemScreenViewModel : ScreenViewModel
 
     public string ReprintLabel => Translate("items.reprint");
 
+    public string ReprintPrintLabel => Translate("items.reprintPrint");
+
+    public string PrintsHeading => Translate("items.prints");
+
     public string ToggleCopyActiveLabel => Translate(SelectedCopy is { IsActive: false } ? "items.reactivateCopy" : "items.deactivateCopy");
 
     public string ManageItemTypesLabel => Translate("items.itemTypes");
@@ -363,7 +397,7 @@ public sealed class ItemScreenViewModel : ScreenViewModel
                  {
                      SearchCommand, PreviousCommand, NextCommand, NewCommand, EditCommand, CloneCommand, ToggleArchivedCommand,
                      AddComponentCommand, ChangeQuantityCommand, RemoveComponentCommand, PreviewCommand, PrintCommand, ReprintCommand,
-                     ToggleCopyActiveCommand, ManageItemTypesCommand, ManageRaritiesCommand
+                     ReprintPrintCommand, ToggleCopyActiveCommand, ManageItemTypesCommand, ManageRaritiesCommand
                  })
         {
             command.NotifyCanExecuteChanged();
@@ -466,14 +500,7 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         _detailImage = image;
         ReplaceAll(Components, (_details?.Components ?? []).Select(ToComponentItem));
         SelectedComponent = null;
-        var selectedCopyId = SelectedCopy?.CopyId;
-        ReplaceAll(Copies, (copies?.Entities ?? []).Select(ToCopyItem));
-        SelectedCopy = Copies.FirstOrDefault(copy => copy.CopyId == selectedCopyId);
-        SelectedCopies.Clear();
-        if (SelectedCopy is { } restored)
-        {
-            SelectedCopies.Add(restored);
-        }
+        ShowPrints(copies);
 
         foreach (var name in new[]
                  {
@@ -486,6 +513,34 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         }
 
         NotifyCommandsChanged();
+    }
+
+    /// <summary>
+    /// Groups the copies by print, in the server's order (newest print first). Selects the print just made, else keeps
+    /// the selected print and copy when they still exist, else selects the newest print.
+    /// </summary>
+    private void ShowPrints(SirenEntity? copies)
+    {
+        var properties = (copies?.Entities ?? []).Select(entity => SirenProperties.Read<ItemCopyProperties>(entity.Properties)).ToArray();
+        _allCopies = [.. properties.Select(ToCopyItem)];
+        var selectedPrintId = _printToSelect ?? SelectedPrint?.PrintId;
+        _printToSelect = null;
+        var selectedCopyId = SelectedCopy?.CopyId;
+        ReplaceAll(Prints, properties.GroupBy(copy => copy.PrintId).Select(ToPrintItem));
+        _selectedPrint = Prints.FirstOrDefault(print => print.PrintId == selectedPrintId) ?? Prints.FirstOrDefault();
+        OnPropertyChanged(nameof(SelectedPrint));
+        ShowCopiesOfSelectedPrint(selectedCopyId);
+    }
+
+    private void ShowCopiesOfSelectedPrint(Guid? selectedCopyId)
+    {
+        ReplaceAll(Copies, _allCopies.Where(copy => copy.PrintId == SelectedPrint?.PrintId));
+        SelectedCopy = Copies.FirstOrDefault(copy => copy.CopyId == selectedCopyId);
+        SelectedCopies.Clear();
+        if (SelectedCopy is { } restored)
+        {
+            SelectedCopies.Add(restored);
+        }
     }
 
     /// <summary>A picture that cannot be downloaded is not shown; the rest of the item still is.</summary>
@@ -547,8 +602,8 @@ public sealed class ItemScreenViewModel : ScreenViewModel
     }
 
     /// <summary>
-    /// Opens the dialog filled with the item's fields; saving creates a new item with the same components and, unless
-    /// the picture is changed, the same picture.
+    /// Opens the dialog filled with the item's fields and components; saving creates a new item with the components as
+    /// changed in the dialog and, unless the picture is changed, the same picture.
     /// </summary>
     private async Task CloneItemAsync()
     {
@@ -560,13 +615,21 @@ public sealed class ItemScreenViewModel : ScreenViewModel
             editor,
             async () =>
             {
-                saved = saved is null
-                    ? await SubmitAsync(action, editor.CreateBody(null, source.Components, source.ItemId))
-                    : await UpdateDetailsAsync(saved, editor);
+                if (saved is null)
+                {
+                    saved = await SubmitAsync(action, editor.CreateBody(null, editor.ComponentsToSave(), source.ItemId));
+                    editor.MarkCreated();
+                }
+                else
+                {
+                    saved = await UpdateDetailsAsync(saved, editor);
+                }
+
                 saved = await SaveImageChangeAsync(saved, editor);
             },
             null));
         editor.Apply(source);
+        editor.EditComponents(source.Components, text => SearchComponentsAsync(text, null), _dialogs.ShowComponentEditorAsync);
         editor.ShowSavedImage(await TryGetImageAsync(sourceResource));
         await _dialogs.ShowItemEditorAsync(editor);
         await ReloadAfterSaveAsync(editor.IsSaved, saved);
@@ -669,15 +732,16 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         var item = await GetAsync(SelectedItem?.Href ?? throw MissingAction());
         var action = item.FindAction("add-item-component") ?? throw MissingAction();
         var version = SirenProperties.Read<ItemProperties>(item.Properties).Version;
-        var editor = new ItemComponentEditorViewModel(Localizer, Locale, "items.addComponent", null, 1, SearchComponentsAsync,
+        var editor = new ItemComponentEditorViewModel(Localizer, Locale, "items.addComponent", null, 1,
+            text => SearchComponentsAsync(text, SelectedItem?.ItemId),
             editor => SubmitEditorAsync(editor, () => SubmitAsync(action, editor.CreateAddBody(version)), null));
         await editor.SearchCommand.ExecuteAsync();
         await _dialogs.ShowComponentEditorAsync(editor);
         await ReloadDetailsAfterChangeAsync(editor.IsSaved);
     }
 
-    /// <summary>The items that can become components: not archived, and not the item itself.</summary>
-    private async Task<IReadOnlyList<ItemChoice>> SearchComponentsAsync(string text)
+    /// <summary>The items that can become components: not archived, and not <paramref name="itemId"/> itself.</summary>
+    private async Task<IReadOnlyList<ItemChoice>> SearchComponentsAsync(string text, Guid? itemId)
     {
         var search = (_collection ?? throw MissingAction()).FindAction("search-items") ?? throw MissingAction();
         var found = await GetAsync(search.ToQueryHref(new Dictionary<string, string?> { ["search"] = text }));
@@ -685,7 +749,7 @@ public sealed class ItemScreenViewModel : ScreenViewModel
         [
             .. (found.Entities ?? [])
                 .Select(entity => SirenProperties.Read<ItemProperties>(entity.Properties))
-                .Where(item => item.ItemId != SelectedItem?.ItemId)
+                .Where(item => item.ItemId != itemId)
                 .Select(item => new ItemChoice(item.ItemId, item.Name))
         ];
     }
@@ -745,8 +809,9 @@ public sealed class ItemScreenViewModel : ScreenViewModel
     }
 
     /// <summary>
-    /// Makes the copies and opens their cards. A new print identifier is chosen for each click, so a retry after a lost
-    /// answer is a new print; the copies of a print whose cards could not be opened can be reprinted from the copy list.
+    /// Makes the copies and opens their cards. A print that got no answer keeps its identifier, so printing the same
+    /// items and count again resends it and the server returns the copies it already made instead of making more. The
+    /// copies of a print whose cards could not be opened can be reprinted from the copy list.
     /// </summary>
     private async Task PrintAsync()
     {
@@ -766,16 +831,26 @@ public sealed class ItemScreenViewModel : ScreenViewModel
             return;
         }
 
-        var pdf = await DownloadAsync("print-item-cards", new { printId = Guid.NewGuid(), itemIds, copiesPerItem = copies });
+        var printId = _unansweredPrint is { } unanswered && unanswered.Copies == copies && unanswered.ItemIds.SequenceEqual(itemIds)
+            ? unanswered.PrintId
+            : Guid.NewGuid();
+        _unansweredPrint = (printId, itemIds, copies);
+        var pdf = await DownloadAsync("print-item-cards", new { printId, itemIds, copiesPerItem = copies });
+        _unansweredPrint = null;
+        _printToSelect = printId;
         await LoadDetailsCoreAsync();
         StatusMessage = await _dialogs.OpenPdfAsync(pdf, CardsFileName)
             ? Translate("items.printed")
             : Translate("items.printedNotOpened");
     }
 
-    private async Task ReprintAsync()
+    private Guid[] SelectedCopyIds() => [.. Copies.Where(SelectedCopies.Contains).Select(copy => copy.CopyId)];
+
+    private Guid[] SelectedPrintCopyIds() =>
+        [.. _allCopies.Where(copy => copy.PrintId == SelectedPrint?.PrintId).Select(copy => copy.CopyId)];
+
+    private async Task ReprintAsync(Guid[] copyIds)
     {
-        var copyIds = Copies.Where(SelectedCopies.Contains).Select(copy => copy.CopyId).ToArray();
         var pdf = await DownloadAsync("reprint-item-cards", new { copyIds });
         if (!await _dialogs.OpenPdfAsync(pdf, CardsFileName))
         {
@@ -860,13 +935,18 @@ public sealed class ItemScreenViewModel : ScreenViewModel
             $"{component.Quantity} × {name}");
     }
 
-    private ItemCopyListItem ToCopyItem(SirenSubEntity entity)
+    private ItemCopyListItem ToCopyItem(ItemCopyProperties copy) =>
+        new(copy.CopyId, copy.PrintId, copy.QrCode, copy.IsActive,
+            $"{copy.QrCode} {Translate(copy.IsActive ? "items.activeTag" : "items.deactivatedTag")}");
+
+    private ItemPrintListItem ToPrintItem(IGrouping<Guid, ItemCopyProperties> print)
     {
-        var copy = SirenProperties.Read<ItemCopyProperties>(entity.Properties);
-        var state = Translate(copy.IsActive ? "items.activeTag" : "items.deactivatedTag");
-        var printed = string.Format(CultureInfo.CurrentCulture, Translate("items.printedBy"),
-            copy.PrintedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture), copy.PrintedBy ?? Translate("items.unknownAdministrator"));
-        return new ItemCopyListItem(copy.CopyId, copy.QrCode, copy.IsActive, $"{copy.QrCode} {state} — {printed}");
+        var first = print.First();
+        return new ItemPrintListItem(print.Key, string.Format(CultureInfo.CurrentCulture, Translate("items.printSummary"),
+            first.PrintedAtUtc.ToLocalTime().ToString("g", CultureInfo.CurrentCulture),
+            first.PrintedBy ?? Translate("items.unknownAdministrator"),
+            print.Count(),
+            print.Count(copy => copy.IsActive)));
     }
 
     private string EntryName(Dictionary<Guid, ItemCatalogEntryProperties> entries, Guid id) =>

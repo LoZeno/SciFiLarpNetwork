@@ -2,7 +2,7 @@ using Marten;
 using SciFiLarpNetwork.Backend.Application.Items;
 using SciFiLarpNetwork.Backend.Domain.Events.ItemCopyEvents;
 using SciFiLarpNetwork.Backend.Infrastructure.Items.ItemDocuments;
-using SciFiLarpNetwork.Backend.Infrastructure.News;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
 
 namespace SciFiLarpNetwork.Backend.Infrastructure.Items;
@@ -24,7 +24,7 @@ internal sealed class ItemCopyService(AttributedSessionFactory sessions, TimePro
         var copies = await query.Query<ItemCopyDocument>()
             .Where(copy => copy.ItemId == itemId)
             .ToListAsync(cancellationToken);
-        var administrators = await NewsAdministrators.LoadAsync(
+        var administrators = await AdministratorNames.LoadAsync(
             query, copies.SelectMany(copy => new[] { copy.PrintedBy, copy.ChangedBy }), cancellationToken);
         return
         [
@@ -34,6 +34,14 @@ internal sealed class ItemCopyService(AttributedSessionFactory sessions, TimePro
                 .ThenBy(copy => copy.Id)
                 .Select(copy => ToSummary(copy, administrators))
         ];
+    }
+
+    public async Task<ItemCopySummary?> GetCopyAsync(Guid copyId, CancellationToken cancellationToken = default)
+    {
+        await using var query = sessions.QuerySession();
+        return await query.LoadAsync<ItemCopyDocument>(copyId, cancellationToken) is { } copy
+            ? await SummarizeAsync(query, copy, cancellationToken)
+            : null;
     }
 
     public Task<ItemResult<ItemCopySummary>> DeactivateCopyAsync(Guid copyId, CancellationToken cancellationToken = default) =>
@@ -64,11 +72,14 @@ internal sealed class ItemCopyService(AttributedSessionFactory sessions, TimePro
         }
 
         var saved = await session.LoadAsync<ItemCopyDocument>(copyId, CancellationToken.None);
-        var administrators = await NewsAdministrators.LoadAsync(session, [saved!.PrintedBy, saved.ChangedBy], CancellationToken.None);
-        return ItemResult<ItemCopySummary>.Success(ToSummary(saved, administrators));
+        return ItemResult<ItemCopySummary>.Success(await SummarizeAsync(session, saved!, CancellationToken.None));
     }
 
-    private static ItemCopySummary ToSummary(ItemCopyDocument copy, NewsAdministrators administrators) =>
+    private static async Task<ItemCopySummary> SummarizeAsync(
+        IQuerySession session, ItemCopyDocument copy, CancellationToken cancellationToken) =>
+        ToSummary(copy, await AdministratorNames.LoadAsync(session, [copy.PrintedBy, copy.ChangedBy], cancellationToken));
+
+    private static ItemCopySummary ToSummary(ItemCopyDocument copy, AdministratorNames administrators) =>
         new(
             copy.Id,
             ItemCopyCodes.Format(copy.Id),

@@ -129,7 +129,22 @@
             <Button Margin="0,0,8,8" Command="{Binding ChangeQuantityCommand}" Content="{Binding ChangeQuantityLabel}" />
             <Button Margin="0,0,8,8" Command="{Binding RemoveComponentCommand}" Content="{Binding RemoveComponentLabel}" />
           </WrapPanel>
-          <TextBlock Margin="0,8,0,0" Classes="section" Text="{Binding CopiesHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <TextBlock Margin="0,8,0,0" Classes="section" Text="{Binding PrintsHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
+          <ListBox
+              Height="120"
+              AutomationProperties.Name="{Binding PrintsHeading}"
+              ItemsSource="{Binding Prints}"
+              SelectedItem="{Binding SelectedPrint, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemPrintListItem">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <WrapPanel>
+            <Button Margin="0,0,8,8" Command="{Binding ReprintPrintCommand}" Content="{Binding ReprintPrintLabel}" IsVisible="{Binding CanWrite}" />
+          </WrapPanel>
+          <TextBlock Classes="section" Text="{Binding CopiesHeading, Converter={x:Static conv:UpperCaseConverter.Instance}}" />
           <ListBox
               Height="160"
               AutomationProperties.Name="{Binding CopiesHeading}"

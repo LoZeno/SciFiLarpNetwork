@@ -133,7 +133,8 @@ internal sealed class ItemTypeService(AttributedSessionFactory sessions, TimePro
             return ItemResult<ItemTypeSummary>.Failure(ItemOutcome.NameAlreadyUsed);
         }
 
-        var saved = await session.LoadAsync<ItemTypeDocument>(itemTypeId, cancellationToken);
+        // Once committed, a cancelled read-back must not look like a failed command.
+        var saved = await session.LoadAsync<ItemTypeDocument>(itemTypeId, CancellationToken.None);
         return ItemResult<ItemTypeSummary>.Success(ToSummary(saved!));
     }
 

@@ -20,8 +20,9 @@ public sealed class WindowItemDialogService(Func<Window> owner) : IItemDialogSer
 
     public Task ShowItemEditorAsync(ItemEditorViewModel editor) => new ItemEditorWindow(editor).ShowDialog(owner());
 
+    /// <remarks>A clone's components are changed from the item dialog, so this is owned by the active window.</remarks>
     public Task ShowComponentEditorAsync(ItemComponentEditorViewModel editor) =>
-        new ItemComponentEditorWindow(editor).ShowDialog(owner());
+        new ItemComponentEditorWindow(editor).ShowDialog(ActiveWindow());
 
     public Task ShowCatalogAsync(ItemCatalogViewModel catalog) => new ItemCatalogWindow(catalog).ShowDialog(owner());
 

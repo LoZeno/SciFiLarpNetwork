@@ -47,17 +47,20 @@ internal sealed class ItemImageService(AttributedSessionFactory sessions, MediaF
         return await CommitWithFileAsync(session, current, imageId, content, expectedVersion, cancellationToken);
     }
 
-    /// <summary>Stores the file, then commits the session; the file is deleted again unless the session commits.</summary>
+    /// <summary>
+    /// Stores the file, then commits the session; the file is deleted again unless the session commits. Reading the
+    /// item back comes after that decision, so a failed read-back never deletes the file of a committed event.
+    /// </summary>
     private async Task<ItemResult<ItemSummary>> CommitWithFileAsync(IDocumentSession session, ItemDocument current,
         Guid imageId, byte[] content, long expectedVersion, CancellationToken cancellationToken)
     {
-        ItemResult<ItemSummary> result;
+        ItemOutcome outcome;
         try
         {
-            result = await StoreFileAsync(imageId, content, cancellationToken)
-                ? await session.SaveItemAsync(sessions, current.Id, expectedVersion,
+            outcome = await StoreFileAsync(imageId, content, cancellationToken)
+                ? await session.CommitItemAsync(sessions, current.Id, expectedVersion,
                     ItemWrites.NameOrRecipeConflict(sessions, current.Id, current.NormalizedName), cancellationToken)
-                : ItemResult<ItemSummary>.Failure(ItemOutcome.ImageTooLarge);
+                : ItemOutcome.ImageTooLarge;
         }
         catch
         {
@@ -65,12 +68,13 @@ internal sealed class ItemImageService(AttributedSessionFactory sessions, MediaF
             throw;
         }
 
-        if (result.Outcome != ItemOutcome.Succeeded)
+        if (outcome != ItemOutcome.Succeeded)
         {
             DeleteImageFiles(imageId);
+            return ItemResult<ItemSummary>.Failure(outcome);
         }
 
-        return result;
+        return ItemResult<ItemSummary>.Success(await session.ReadBackItemAsync(current.Id));
     }
 
     /// <summary>

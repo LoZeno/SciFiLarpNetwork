@@ -28,6 +28,29 @@ public sealed class ItemPrintServiceTests(AdministratorAuthenticationFactory fac
     }
 
     [Fact]
+    public async Task ItemListedTwiceIsPrintedForEachTime()
+    {
+        var medkit = await data.ItemAsync("Medkit");
+
+        var result = await Prints.PrintAsync(Guid.NewGuid(), [medkit.ItemId, medkit.ItemId], 2, Token);
+
+        Assert.Equal(4, result.Value!.Cards.Select(card => card.QrCode).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task PrintIdResentWithTheItemsInAnotherOrderIsRefused()
+    {
+        var medkit = await data.ItemAsync("Medkit");
+        var grenade = await data.ItemAsync("Grenade");
+        var printId = Guid.NewGuid();
+        await Prints.PrintAsync(printId, [medkit.ItemId, grenade.ItemId], 1, Token);
+
+        var result = await Prints.PrintAsync(printId, [grenade.ItemId, medkit.ItemId], 1, Token);
+
+        Assert.Equal(ItemOutcome.PrintIdInUse, result.Outcome);
+    }
+
+    [Fact]
     public async Task EveryPrintedCardHasItsOwnQrCode()
     {
         var medkit = await data.ItemAsync();

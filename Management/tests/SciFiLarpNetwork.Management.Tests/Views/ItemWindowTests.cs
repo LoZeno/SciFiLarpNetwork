@@ -56,6 +56,33 @@ public sealed class ItemWindowTests
     });
 
     [Fact]
+    public Task CloneComponentDialogOpensOverTheItemDialog() => AvaloniaUi.Run(async () =>
+    {
+        var owner = ShowOwner();
+        var api = new FakeItemApi();
+        api.AddItem("Blaster");
+        var screen = await LoadedScreenAsync(api, owner);
+        screen.SelectedItem = screen.Items[0];
+        Dispatcher.UIThread.RunJobs();
+        var cloneRunning = screen.CloneCommand.ExecuteAsync();
+        Dispatcher.UIThread.RunJobs();
+        var itemWindow = owner.OwnedWindows.Single();
+        var editor = (ItemEditorViewModel)itemWindow.DataContext!;
+
+        var running = editor.AddComponentCommand.ExecuteAsync();
+        Dispatcher.UIThread.RunJobs();
+        var componentWindow = itemWindow.OwnedWindows.Single();
+        var result = (componentWindow.GetType(), componentWindow.Title);
+        componentWindow.Close();
+        await running;
+        itemWindow.Close();
+        Dispatcher.UIThread.RunJobs();
+        await cloneRunning;
+
+        Assert.Equal((typeof(ItemComponentEditorWindow), "Add component"), result);
+    });
+
+    [Fact]
     public Task ManagingRaritiesOpensTheCatalogWindow() => AvaloniaUi.Run(async () =>
     {
         var owner = ShowOwner();

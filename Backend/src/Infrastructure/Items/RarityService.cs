@@ -172,8 +172,9 @@ internal sealed class RarityService(AttributedSessionFactory sessions, TimeProvi
             return ItemResult<RaritySummary>.Failure(ItemOutcome.NameAlreadyUsed);
         }
 
-        var saved = await session.LoadAsync<RarityDocument>(rarityId, cancellationToken);
-        return ItemResult<RaritySummary>.Success(ToSummary(saved!, await OrderAsync(session, cancellationToken)));
+        // Once committed, a cancelled read-back must not look like a failed command.
+        var saved = await session.LoadAsync<RarityDocument>(rarityId, CancellationToken.None);
+        return ItemResult<RaritySummary>.Success(ToSummary(saved!, await OrderAsync(session, CancellationToken.None)));
     }
 
     /// <summary>A rarity missing from the order (never expected) is listed last.</summary>

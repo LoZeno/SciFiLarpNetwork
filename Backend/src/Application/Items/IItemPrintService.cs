@@ -14,8 +14,10 @@ public interface IItemPrintService
 
     /// <summary>
     /// Creates <paramref name="copiesPerItem"/> new active copies of every item, in the requested order, each with a new
-    /// QR code. Sending the same <paramref name="printId"/> again with the same items and count returns the cards of the
-    /// copies already made; with different content it reports <see cref="ItemOutcome.PrintIdInUse"/>.
+    /// QR code. An item listed twice gets copies for each time it is listed. Sending the same <paramref name="printId"/>
+    /// again with the same items in the same order and the same count returns the cards of the copies already made; with
+    /// different content, including another order (the order sets the card order), it reports
+    /// <see cref="ItemOutcome.PrintIdInUse"/>.
     /// </summary>
     Task<ItemResult<ItemCardSet>> PrintAsync(Guid printId, IReadOnlyList<Guid> itemIds, int copiesPerItem,
         CancellationToken cancellationToken = default);

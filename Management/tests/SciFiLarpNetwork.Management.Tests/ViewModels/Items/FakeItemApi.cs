@@ -63,9 +63,9 @@ internal sealed class FakeItemApi : IManagementApiClient
         return item;
     }
 
-    public FakeCopy AddCopy(FakeItem item, bool isActive = true)
+    public FakeCopy AddCopy(FakeItem item, bool isActive = true, Guid? printId = null)
     {
-        var copy = new FakeCopy(Guid.NewGuid(), item.Id, Guid.NewGuid()) { IsActive = isActive };
+        var copy = new FakeCopy(Guid.NewGuid(), item.Id, printId ?? Guid.NewGuid()) { IsActive = isActive };
         Copies.Add(copy);
         return copy;
     }
@@ -115,14 +115,15 @@ internal sealed class FakeItemApi : IManagementApiClient
             return Task.FromException<byte[]>(failure);
         }
 
-        if (action.Name == "print-item-cards")
+        if (action.Name == "print-item-cards" && Copies.All(copy => copy.PrintId != body.GetProperty("printId").GetGuid()))
         {
+            var printId = body.GetProperty("printId").GetGuid();
             var copies = body.GetProperty("copiesPerItem").GetInt32();
             foreach (var itemId in body.GetProperty("itemIds").EnumerateArray().Select(id => id.GetGuid()))
             {
                 for (var index = 0; index < copies; index++)
                 {
-                    AddCopy(Items.Single(item => item.Id == itemId));
+                    AddCopy(Items.Single(item => item.Id == itemId), printId: printId);
                 }
             }
         }
@@ -415,7 +416,7 @@ internal sealed class FakeItemApi : IManagementApiClient
         {
             Class = ["item-copy-collection"],
             Properties = Json(new { title = "Copies", itemId = item.Id, copyCount = Copies.Count(copy => copy.ItemId == item.Id) }),
-            Entities = [.. Copies.Where(copy => copy.ItemId == item.Id).Select(copy => new SirenSubEntity
+            Entities = [.. NewestPrintFirst(Copies.Where(copy => copy.ItemId == item.Id)).Select(copy => new SirenSubEntity
             {
                 Rel = ["item"],
                 Href = $"/api/v1/item-copies/{copy.Id:D}",
@@ -430,6 +431,10 @@ internal sealed class FakeItemApi : IManagementApiClient
                     : null
             })]
         };
+
+    /// <summary>The server lists the newest print first; copies were added in print order.</summary>
+    private IEnumerable<FakeCopy> NewestPrintFirst(IEnumerable<FakeCopy> copies) =>
+        copies.OrderByDescending(copy => Copies.FindIndex(candidate => candidate.PrintId == copy.PrintId));
 
     private SirenEntity CatalogCollection(List<FakeCatalogEntry> entries, string href, string createAction, bool includeArchived) =>
         new()

@@ -295,6 +295,64 @@ public sealed class ItemServiceTests(AdministratorAuthenticationFactory factory)
     }
 
     [Fact]
+    public async Task AddingAComponentThatContainsTheItemSeveralLevelsDownIsALoop()
+    {
+        var cell = await data.ItemAsync("Power cell");
+        var core = await data.ItemAsync("Core", new ItemComponent(cell.ItemId, 1));
+        var housing = await data.ItemAsync("Housing", new ItemComponent(core.ItemId, 1));
+        var frame = await data.ItemAsync("Frame", new ItemComponent(housing.ItemId, 2));
+        var blaster = await data.ItemAsync("Blaster", new ItemComponent(frame.ItemId, 1));
+        var current = (await Items.GetItemAsync(cell.ItemId, Token))!;
+
+        var result = await Items.AddComponentAsync(cell.ItemId, current.Version, blaster.ItemId, 1, Token);
+
+        Assert.Equal(ItemOutcome.ComponentLoop, result.Outcome);
+    }
+
+    [Fact]
+    public async Task AddingAComponentFromAnotherBranchIsNoLoop()
+    {
+        var cell = await data.ItemAsync("Power cell");
+        var core = await data.ItemAsync("Core", new ItemComponent(cell.ItemId, 1));
+        var housing = await data.ItemAsync("Housing", new ItemComponent(core.ItemId, 1));
+        var scope = await data.ItemAsync("Scope");
+        var current = (await Items.GetItemAsync(scope.ItemId, Token))!;
+
+        var result = await Items.AddComponentAsync(scope.ItemId, current.Version, housing.ItemId, 1, Token);
+
+        Assert.Equal(ItemOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ArchivedItemIsMarkedArchived()
+    {
+        var medkit = await data.ItemAsync("Medkit");
+
+        var result = await Items.ArchiveItemAsync(medkit.ItemId, Token);
+
+        Assert.True(result.Value!.IsArchived);
+    }
+
+    [Fact]
+    public async Task UnarchivedItemIsListedAgain()
+    {
+        var medkit = await data.ArchivedItemAsync("Medkit");
+        await Items.UnarchiveItemAsync(medkit.ItemId, Token);
+
+        var page = await Items.GetItemsAsync(new ItemQuery(null, null, false, 1), Token);
+
+        Assert.Equal(["Medkit"], page.Items.Select(item => item.Name));
+    }
+
+    [Fact]
+    public async Task ArchivingAnUnknownItemIsNotFound()
+    {
+        var result = await Items.ArchiveItemAsync(Guid.NewGuid(), Token);
+
+        Assert.Equal(ItemOutcome.NotFound, result.Outcome);
+    }
+
+    [Fact]
     public async Task AddingAComponentWithAZeroQuantityIsRejected()
     {
         var cell = await data.ItemAsync("Power cell");

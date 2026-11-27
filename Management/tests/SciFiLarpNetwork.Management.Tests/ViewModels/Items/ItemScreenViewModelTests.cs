@@ -273,6 +273,169 @@ public sealed class ItemScreenViewModelTests
     }
 
     [Fact]
+    public async Task CloneDialogStartsWithTheSourceComponents()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        api.AddItem("Blaster").Components.Add((cell.Id, 2));
+        var dialogs = new FakeItemDialogs();
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal(["2 × Power cell"], dialogs.LastEditor!.Components.Select(component => component.DisplayName));
+    }
+
+    [Fact]
+    public async Task ComponentRemovedInTheCloneDialogIsNotSent()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        var scope = api.AddItem("Scope");
+        var blaster = api.AddItem("Blaster");
+        blaster.Components.AddRange([(cell.Id, 2), (scope.Id, 1)]);
+        var dialogs = new FakeItemDialogs
+        {
+            OnItemEditor = async editor =>
+            {
+                editor.Name = "Pistol";
+                editor.SelectedComponent = editor.Components.Single(component => component.ItemId == scope.Id);
+                editor.RemoveComponentCommand.Execute(null);
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal([(cell.Id, 2)], SentComponents(api));
+    }
+
+    [Fact]
+    public async Task ComponentAddedInTheCloneDialogIsSent()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        var scope = api.AddItem("Scope");
+        api.AddItem("Blaster").Components.Add((cell.Id, 2));
+        var dialogs = new FakeItemDialogs
+        {
+            OnItemEditor = async editor =>
+            {
+                editor.Name = "Rifle";
+                await editor.AddComponentCommand.ExecuteAsync();
+                await editor.SaveCommand.ExecuteAsync();
+            },
+            OnComponentEditor = async editor =>
+            {
+                editor.SearchText = "Scope";
+                await editor.SearchCommand.ExecuteAsync();
+                editor.SelectedItem = editor.Choices.Single(choice => choice.Id == scope.Id);
+                editor.QuantityText = "3";
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal([(cell.Id, 2), (scope.Id, 3)], SentComponents(api));
+    }
+
+    [Fact]
+    public async Task CloneDialogRefusesAComponentItAlreadyHas()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        api.AddItem("Blaster").Components.Add((cell.Id, 2));
+        var dialogs = new FakeItemDialogs
+        {
+            OnItemEditor = editor => editor.AddComponentCommand.ExecuteAsync(),
+            OnComponentEditor = async editor =>
+            {
+                editor.SelectedItem = editor.Choices.Single(choice => choice.Id == cell.Id);
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal("That item is already a component. Change its quantity instead.", dialogs.LastComponentEditor!.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task QuantityChangedInTheCloneDialogIsSent()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        api.AddItem("Blaster").Components.Add((cell.Id, 2));
+        var dialogs = new FakeItemDialogs
+        {
+            OnItemEditor = async editor =>
+            {
+                editor.Name = "Rifle";
+                editor.SelectedComponent = editor.Components.Single();
+                await editor.ChangeQuantityCommand.ExecuteAsync();
+                await editor.SaveCommand.ExecuteAsync();
+            },
+            OnComponentEditor = async editor =>
+            {
+                editor.QuantityText = "5";
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items.Single(item => item.Name == "Blaster");
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.Equal([(cell.Id, 5)], SentComponents(api));
+    }
+
+    [Fact]
+    public async Task CloneComponentsAreFixedOnceTheCloneIsCreated()
+    {
+        var api = new FakeItemApi();
+        api.AddItem("Blaster");
+        api.SubmitFailures["set-item-image"] = new HttpRequestException("The connection was lost.");
+        var dialogs = new FakeItemDialogs
+        {
+            PickedImage = Png,
+            OnItemEditor = async editor =>
+            {
+                editor.Name = "Rifle";
+                await editor.ChooseImageCommand.ExecuteAsync();
+                await editor.SaveCommand.ExecuteAsync();
+            }
+        };
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items[0];
+
+        await screen.CloneCommand.ExecuteAsync();
+
+        Assert.False(dialogs.LastEditor!.AddComponentCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task EditDialogDoesNotEditComponents()
+    {
+        var api = new FakeItemApi();
+        api.AddItem("Blaster");
+        var dialogs = new FakeItemDialogs();
+        var screen = await LoadedScreenAsync(api, dialogs);
+        screen.SelectedItem = screen.Items[0];
+
+        await screen.EditCommand.ExecuteAsync();
+
+        Assert.False(dialogs.LastEditor!.EditsComponents);
+    }
+
+    [Fact]
     public async Task CloneDialogShowsTheCloneNote()
     {
         var api = new FakeItemApi();
@@ -494,6 +657,109 @@ public sealed class ItemScreenViewModelTests
     }
 
     [Fact]
+    public async Task PrintRetriedAfterALostAnswerResendsTheSamePrintId()
+    {
+        var api = new FakeItemApi();
+        api.AddItem("Medkit");
+        var screen = await SelectedScreenAsync(api);
+        api.SubmitFailures["print-item-cards"] = new HttpRequestException("The connection was lost.");
+        await screen.PrintCommand.ExecuteAsync();
+
+        await screen.PrintCommand.ExecuteAsync();
+
+        Assert.Single(api.Submissions.Select(submission => PrintId(submission.Body)).Distinct());
+    }
+
+    [Fact]
+    public async Task PrintAfterAnAnsweredPrintSendsANewPrintId()
+    {
+        var api = new FakeItemApi();
+        api.AddItem("Medkit");
+        var screen = await SelectedScreenAsync(api);
+        await screen.PrintCommand.ExecuteAsync();
+
+        await screen.PrintCommand.ExecuteAsync();
+
+        Assert.Equal(2, api.Submissions.Select(submission => PrintId(submission.Body)).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task RetryWithAnotherCopyCountSendsANewPrintId()
+    {
+        var api = new FakeItemApi();
+        api.AddItem("Medkit");
+        var screen = await SelectedScreenAsync(api);
+        api.SubmitFailures["print-item-cards"] = new HttpRequestException("The connection was lost.");
+        await screen.PrintCommand.ExecuteAsync();
+        screen.CopiesPerItemText = "2";
+
+        await screen.PrintCommand.ExecuteAsync();
+
+        Assert.Equal(2, api.Submissions.Select(submission => PrintId(submission.Body)).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task CopiesAreGroupedByPrint()
+    {
+        var api = new FakeItemApi();
+        var medkit = api.AddItem("Medkit");
+        var first = Guid.NewGuid();
+        api.AddCopy(medkit, printId: first);
+        api.AddCopy(medkit, printId: first);
+        api.AddCopy(medkit, isActive: false, printId: Guid.NewGuid());
+
+        var screen = await SelectedScreenAsync(api);
+
+        Assert.Equal(
+            ["by operator. Copies: 1, active: 0", "by operator. Copies: 2, active: 2"],
+            screen.Prints.Select(print => print.DisplayName[print.DisplayName.IndexOf("by", StringComparison.Ordinal)..]));
+    }
+
+    [Fact]
+    public async Task CopyListShowsTheCopiesOfTheSelectedPrint()
+    {
+        var api = new FakeItemApi();
+        var medkit = api.AddItem("Medkit");
+        api.AddCopy(medkit);
+        var second = api.AddCopy(medkit);
+        var screen = await SelectedScreenAsync(api);
+
+        screen.SelectedPrint = screen.Prints.Single(print => print.PrintId == second.PrintId);
+
+        Assert.Equal([second.Id], screen.Copies.Select(copy => copy.CopyId));
+    }
+
+    [Fact]
+    public async Task ReprintWholePrintSendsEveryCopyOfThePrint()
+    {
+        var api = new FakeItemApi();
+        var medkit = api.AddItem("Medkit");
+        var printId = Guid.NewGuid();
+        var copies = new[] { api.AddCopy(medkit, printId: printId), api.AddCopy(medkit, printId: printId) };
+        api.AddCopy(medkit);
+        var screen = await SelectedScreenAsync(api);
+        screen.SelectedPrint = screen.Prints.Single(print => print.PrintId == printId);
+
+        await screen.ReprintPrintCommand.ExecuteAsync();
+
+        Assert.Equal(copies.Select(copy => copy.Id),
+            JsonDocument.Parse(api.Submissions.Single().Body!).RootElement.GetProperty("copyIds").EnumerateArray().Select(id => id.GetGuid()));
+    }
+
+    [Fact]
+    public async Task NewPrintIsSelectedAfterPrinting()
+    {
+        var api = new FakeItemApi();
+        var medkit = api.AddItem("Medkit");
+        api.AddCopy(medkit);
+        var screen = await SelectedScreenAsync(api);
+
+        await screen.PrintCommand.ExecuteAsync();
+
+        Assert.Equal(PrintId(api.Submissions.Single().Body), screen.SelectedPrint!.PrintId);
+    }
+
+    [Fact]
     public async Task DeactivatedCopyIsShownAsDeactivated()
     {
         var api = new FakeItemApi();
@@ -539,6 +805,15 @@ public sealed class ItemScreenViewModelTests
 
         Assert.Equal((ItemCatalogKind.Rarities, "Common"), (shown!.Kind, shown.Entries.Single().Name));
     }
+
+    private static (Guid, int)[] SentComponents(FakeItemApi api) =>
+    [
+        .. JsonDocument.Parse(api.Submissions.Single(submission => submission.ActionName == "create-item").Body!).RootElement
+            .GetProperty("components").EnumerateArray()
+            .Select(component => (component.GetProperty("itemId").GetGuid(), component.GetProperty("quantity").GetInt32()))
+    ];
+
+    private static Guid PrintId(string? body) => JsonDocument.Parse(body!).RootElement.GetProperty("printId").GetGuid();
 
     private static async Task<ItemScreenViewModel> LoadedScreenAsync(FakeItemApi api, FakeItemDialogs? dialogs = null)
     {

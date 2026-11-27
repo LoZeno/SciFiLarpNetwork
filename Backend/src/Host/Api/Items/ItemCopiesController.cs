@@ -12,6 +12,12 @@ namespace SciFiLarpNetwork.Backend.Api.Items;
 [Produces(SirenMediaTypes.Json)]
 public sealed class ItemCopiesController(IItemCopyService copyService, IApplicationText text) : ControllerBase
 {
+    [Authorize(Policy = AdministratorAuthorizationPolicies.Read)]
+    [HttpGet("{copyId:guid}")]
+    public async Task<ActionResult<SirenEntity<ItemCopySummary>>> GetCopy(Guid copyId, CancellationToken cancellationToken) =>
+        Ok(Resources.Copy(await copyService.GetCopyAsync(copyId, cancellationToken)
+                          ?? throw ItemErrors.ToApiException(ItemOutcome.NotFound)));
+
     [Authorize(Policy = AdministratorAuthorizationPolicies.Write)]
     [HttpPost("{copyId:guid}/deactivate")]
     public async Task<ActionResult<SirenEntity<ItemCopySummary>>> DeactivateCopy(Guid copyId, CancellationToken cancellationToken) =>

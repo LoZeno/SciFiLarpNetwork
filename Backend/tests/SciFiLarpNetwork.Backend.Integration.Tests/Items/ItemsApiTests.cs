@@ -261,6 +261,60 @@ public sealed class ItemsApiTests(AdministratorAuthenticationFactory factory) : 
     }
 
     [Fact]
+    public async Task CopySelfLinkReturnsTheCopy()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+        var itemId = await ItemIdAsync(client, token, "Medkit");
+        (await PdfRequestAsync(client, token, "print", new { printId = Guid.NewGuid(), itemIds = new[] { itemId }, copiesPerItem = 1 })).Dispose();
+        using var copies = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get, $"{ItemsPath}/{itemId:D}/copies", token);
+        var listed = (await JsonAsync(copies)).GetProperty("entities")[0];
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get,
+            listed.GetProperty("href").GetString()!, token);
+        var copy = await JsonAsync(response);
+
+        Assert.Equal((HttpStatusCode.OK, listed.GetProperty("properties").GetProperty("qrCode").GetString(), listed.GetProperty("href").GetString()),
+            (response.StatusCode, Property(copy, "qrCode").GetString(), Hrefs(copy, "links").First()));
+    }
+
+    [Fact]
+    public async Task UnknownCopyIsNotFound()
+    {
+        using var client = factory.CreateClient();
+        var token = await AdministratorTokenAsync(client);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedAsync(client, HttpMethod.Get,
+            $"/local/api/v1/item-copies/{Guid.NewGuid():D}", token);
+
+        Assert.Equal((HttpStatusCode.NotFound, "errors.notFound"), await ErrorAsync(response));
+    }
+
+    [Theory]
+    [InlineData("POST", "item-cards/reprint")]
+    [InlineData("POST", "item-copies/{copy}/deactivate")]
+    [InlineData("POST", "item-copies/{copy}/reactivate")]
+    [InlineData("POST", "items/{item}/components")]
+    [InlineData("PUT", "items/{item}/components/{copy}")]
+    [InlineData("DELETE", "items/{item}/components/{copy}")]
+    [InlineData("PUT", "items/{item}/image")]
+    [InlineData("DELETE", "items/{item}/image")]
+    [InlineData("POST", "items/{item}/archive")]
+    [InlineData("PUT", "items/{item}")]
+    public async Task ReaderCannotChangeItemsOrCopies(string method, string path)
+    {
+        using var client = factory.CreateClient();
+        var (token, itemId) = await ReaderTokenAfterItemAsync(client);
+        var href = "/local/api/v1/" + path.Replace("{item}", itemId.ToString("D"), StringComparison.Ordinal)
+            .Replace("{copy}", Guid.NewGuid().ToString("D"), StringComparison.Ordinal);
+
+        using var response = await AdministratorAuthenticationFactory.SendAuthorizedJsonAsync(client, new HttpMethod(method), href, token,
+            new { version = 1 });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ItemImageIsServedWithItsTypeAndNoSniffing()
     {
         using var client = factory.CreateClient();

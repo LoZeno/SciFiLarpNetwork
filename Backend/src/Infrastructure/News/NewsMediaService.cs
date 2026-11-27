@@ -1,5 +1,6 @@
 using Marten;
 using SciFiLarpNetwork.Backend.Application.News;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.News;
 using SciFiLarpNetwork.Backend.Infrastructure.Media;
@@ -23,7 +24,7 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, MediaF
             .OrderByDescending(item => item.UploadedAtUtc)
             .ThenByDescending(item => item.Id)
             .ToListAsync(cancellationToken);
-        var administrators = await NewsAdministrators.LoadAsync(session, media.Select(item => item.UploadedBy), cancellationToken);
+        var administrators = await AdministratorNames.LoadAsync(session, media.Select(item => item.UploadedBy), cancellationToken);
         return [.. media.Select(item => item.ToSummary(administrators))];
     }
 
@@ -65,7 +66,7 @@ internal sealed class NewsMediaService(AttributedSessionFactory sessions, MediaF
     {
         await using var session = sessions.QuerySession();
         var saved = await session.LoadAsync<NewsMediaDocument>(mediaId, CancellationToken.None);
-        var administrators = await NewsAdministrators.LoadAsync(session, [saved!.UploadedBy], CancellationToken.None);
+        var administrators = await AdministratorNames.LoadAsync(session, [saved!.UploadedBy], CancellationToken.None);
         return saved.ToSummary(administrators);
     }
 

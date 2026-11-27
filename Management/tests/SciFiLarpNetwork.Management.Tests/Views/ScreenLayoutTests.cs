@@ -109,7 +109,8 @@ public sealed class ScreenLayoutTests
     {
         var viewModel = new MainWindowViewModel(api, new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(),
-            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(), new ManagementSettings(Locale: locale));
+            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new FakeItemDialogs(),
+            new ManagementSettings(Locale: locale));
         var window = new MainWindow(viewModel) { Width = width, Height = height };
         window.Show();
         await viewModel.ConnectCommand.ExecuteAsync();

@@ -1,5 +1,7 @@
 using SciFiLarpNetwork.Backend.Application.Items;
+using SciFiLarpNetwork.Backend.Domain.Networks;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api;
+using SciFiLarpNetwork.Backend.Tests.Integration.Networks;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Items;
 
@@ -78,6 +80,17 @@ public sealed class ItemImageServiceTests(AdministratorAuthenticationFactory fac
         await data.Images.SetImageAsync(item.ItemId, item.Version, ItemTestImages.Png(), Token);
 
         Assert.False(Directory.Exists(ItemImagesFolder) && Directory.EnumerateFiles(ItemImagesFolder).Any());
+    }
+
+    [Fact]
+    public async Task PictureWiderThanTheLimitIsRefused()
+    {
+        var item = await data.ItemAsync();
+
+        var result = await data.Images.SetImageAsync(item.ItemId, item.Version,
+            NetworkTestImages.Png(size: 100, NetworkImageFormats.MaximumPixelDimension + 1, 10), Token);
+
+        Assert.Equal(ItemOutcome.ImageDimensionsTooLarge, result.Outcome);
     }
 
     [Fact]
