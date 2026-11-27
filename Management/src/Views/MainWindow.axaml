@@ -211,7 +211,8 @@
                 </layout:FillViewport>
               </layout:ScreenScrollViewer>
               <layout:ScreenScrollViewer Classes="screen" IsVisible="{Binding IsItemsOpen}">
-                <layout:FillViewport>
+                <!-- The item buttons wrap onto many lines in Italian; below this height the screen scrolls instead. -->
+                <layout:FillViewport MinHeight="564">
                   <items:ItemScreenView DataContext="{Binding Items}" />
                 </layout:FillViewport>
               </layout:ScreenScrollViewer>

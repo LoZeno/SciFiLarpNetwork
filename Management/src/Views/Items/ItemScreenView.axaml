@@ -69,7 +69,6 @@
             Text="{Binding ItemsPlaceholder}"
             TextWrapping="Wrap" />
         <ListBox
-            MinHeight="200"
             Margin="0,8,0,0"
             AutomationProperties.Name="{Binding ItemsHeading}"
             ItemsSource="{Binding Items}"
