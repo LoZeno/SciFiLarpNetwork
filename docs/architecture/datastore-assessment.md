@@ -36,7 +36,7 @@ Back up with PostgreSQL-supported logical or physical backup procedures and veri
 
 The datastore decision is complete, but these are not claimed as completed product verification:
 
-- Exercise application persistence, concurrency, projection rebuild/failure recovery, backup/restore, and restart durability in automated tests.
+- Exercise application persistence, concurrency, backup/restore, and restart durability in automated tests. Rebuild, duplicate delivery and failure recovery of projections are guaranteed by Marten's async daemon ([async daemon](https://martendb.io/events/projections/async-daemon.html), [rebuilding](https://martendb.io/events/projections/rebuilding.html)), so this project does not test Marten itself. Our part is to keep every projection a pure function of its events: no clock, no other documents, no services, so a rebuild gives the same state.
 - Build and smoke-test the full application/deployment on all six SPEC-07 RIDs. Validate each host's container runtime and the database image architecture; Windows ARM must account for Docker Desktop's Early Access status.
 - Perform SPEC-21's outbound-blocked deployment test with the database image already available locally.
 - Before release, pin the actual PostgreSQL image by digest, include its notices, provide backup/restore and upgrade instructions, and review the applicable Docker Desktop terms for the intended operator.
