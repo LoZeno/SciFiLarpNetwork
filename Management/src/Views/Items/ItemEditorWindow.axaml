@@ -1,0 +1,141 @@
+<Window
+    x:Class="SciFiLarpNetwork.Management.Views.Items.ItemEditorWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:SciFiLarpNetwork.Management.Views.Converters"
+    xmlns:vm="using:SciFiLarpNetwork.Management.ViewModels.Items"
+    x:DataType="vm:ItemEditorViewModel"
+    Title="{Binding Title}"
+    Width="640"
+    Height="760"
+    MinWidth="480"
+    MinHeight="480"
+    WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="24">
+    <StackPanel
+        Margin="0,12,0,0"
+        DockPanel.Dock="Bottom"
+        Spacing="10">
+      <TextBlock
+          AutomationProperties.LiveSetting="Assertive"
+          Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+          IsVisible="{Binding HasError}"
+          Text="{Binding ErrorMessage}"
+          TextWrapping="Wrap" />
+      <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <Button
+            Command="{Binding SaveCommand}"
+            Content="{Binding SaveLabel}"
+            IsDefault="True" />
+        <Button
+            Command="{Binding CancelCommand}"
+            Content="{Binding CancelLabel}"
+            IsCancel="True" />
+      </StackPanel>
+    </StackPanel>
+    <ScrollViewer>
+      <StackPanel Margin="0,0,12,0" Spacing="10">
+        <TextBlock Classes="heading" Text="{Binding Title, Converter={x:Static converters:UpperCaseConverter.Instance}}" />
+        <TextBlock IsVisible="{Binding IsClone}" Text="{Binding CloneNote}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding NameLabel}" />
+        <TextBox
+            AutomationProperties.Name="{Binding NameLabel}"
+            MaxLength="64"
+            Text="{Binding Name, Mode=TwoWay}" />
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding TypeLabel}" />
+          <ComboBox
+              Grid.Row="1"
+              Grid.Column="0"
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding TypeLabel}"
+              ItemsSource="{Binding Types}"
+              SelectedItem="{Binding SelectedType, Mode=TwoWay}" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RarityLabel}" />
+          <ComboBox
+              Grid.Row="1"
+              Grid.Column="1"
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding RarityLabel}"
+              ItemsSource="{Binding Rarities}"
+              SelectedItem="{Binding SelectedRarity, Mode=TwoWay}" />
+        </Grid>
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding CostLabel}" />
+          <TextBox
+              Grid.Row="1"
+              Grid.Column="0"
+              AutomationProperties.Name="{Binding CostLabel}"
+              MaxLength="7"
+              Text="{Binding CostText, Mode=TwoWay}" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ChargesLabel}" />
+          <TextBox
+              Grid.Row="1"
+              Grid.Column="1"
+              AutomationProperties.Name="{Binding ChargesLabel}"
+              MaxLength="3"
+              Text="{Binding ChargesText, Mode=TwoWay}" />
+          <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding ExpiresOnLabel}" />
+          <CalendarDatePicker
+              Grid.Row="1"
+              Grid.Column="2"
+              HorizontalAlignment="Stretch"
+              AutomationProperties.Name="{Binding ExpiresOnLabel}"
+              SelectedDate="{Binding ExpiresOn, Mode=TwoWay}" />
+        </Grid>
+        <TextBlock Text="{Binding DescriptionLabel}" />
+        <TextBox
+            Height="110"
+            AcceptsReturn="True"
+            AutomationProperties.Name="{Binding DescriptionLabel}"
+            MaxLength="4000"
+            Text="{Binding Description, Mode=TwoWay}"
+            TextWrapping="Wrap" />
+        <TextBlock Text="{Binding EffectLabel}" />
+        <TextBox
+            Height="110"
+            AcceptsReturn="True"
+            AutomationProperties.Name="{Binding EffectLabel}"
+            MaxLength="4000"
+            Text="{Binding Effect, Mode=TwoWay}"
+            TextWrapping="Wrap" />
+        <TextBlock FontWeight="SemiBold" Text="{Binding ImageLabel}" />
+        <Border
+            MaxHeight="200"
+            HorizontalAlignment="Left"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1"
+            IsVisible="{Binding HasPreviewImage}">
+          <Image
+              AutomationProperties.Name="{Binding ImageLabel}"
+              Source="{Binding PreviewImage, Converter={x:Static converters:ImageBytesConverter.Instance}}"
+              Stretch="Uniform" />
+        </Border>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Command="{Binding ChooseImageCommand}" Content="{Binding ChooseImageLabel}" />
+          <Button Command="{Binding RemoveImageCommand}" Content="{Binding RemoveImageLabel}" />
+        </StackPanel>
+        <TextBlock FontSize="12" Text="{Binding ImageHelp}" TextWrapping="Wrap" />
+        <StackPanel IsVisible="{Binding EditsComponents}" Spacing="10">
+          <TextBlock FontWeight="SemiBold" Text="{Binding ComponentsLabel}" />
+          <ListBox
+              Height="120"
+              AutomationProperties.Name="{Binding ComponentsLabel}"
+              ItemsSource="{Binding Components}"
+              SelectedItem="{Binding SelectedComponent, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ItemComponentListItem">
+                <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <WrapPanel>
+            <Button Margin="0,0,8,8" Command="{Binding AddComponentCommand}" Content="{Binding AddComponentLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding ChangeQuantityCommand}" Content="{Binding ChangeQuantityLabel}" />
+            <Button Margin="0,0,8,8" Command="{Binding RemoveComponentCommand}" Content="{Binding RemoveComponentLabel}" />
+          </WrapPanel>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

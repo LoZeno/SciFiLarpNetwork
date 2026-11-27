@@ -102,7 +102,7 @@ public sealed class TalentCatalogWindowTests
             new FakePlayerDialogs(),
             new FakeCardTemplateDialogs(),
             new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(), new FakeNewsDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         window.Show();

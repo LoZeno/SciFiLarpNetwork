@@ -13,6 +13,8 @@
   <ItemGroup>
     <EmbeddedResource Include="CharacterCards\character-cards.typ"
                       LogicalName="SciFiLarpNetwork.Backend.Infrastructure.CharacterCards.character-cards.typ" />
+    <EmbeddedResource Include="Items\ItemCards\item-cards.typ"
+                      LogicalName="SciFiLarpNetwork.Backend.Infrastructure.Items.ItemCards.item-cards.typ" />
   </ItemGroup>
 
   <ItemGroup>

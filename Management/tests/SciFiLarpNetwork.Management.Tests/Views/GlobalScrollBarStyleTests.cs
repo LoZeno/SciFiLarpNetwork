@@ -114,7 +114,7 @@ public sealed class GlobalScrollBarStyleTests
     {
         var viewModel = new MainWindowViewModel(new FakeCardTemplateApi(), new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(), new FakeLarpEventDialogs(),
-            new FakeMessageDialogs(), new FakeNewsDialogs(),
+            new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(),
             new ManagementSettings());
         var window = new MainWindow(viewModel) { Height = 480 };
         window.Show();

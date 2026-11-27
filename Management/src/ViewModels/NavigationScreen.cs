@@ -10,5 +10,6 @@ public enum NavigationScreen
     CardTemplates,
     Events,
     Messages,
-    News
+    News,
+    Items
 }

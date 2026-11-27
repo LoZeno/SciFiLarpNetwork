@@ -74,7 +74,9 @@ The test suites must include:
 
 - Aggregate tests proving valid commands emit the expected events and invalid transitions emit none.
 - Optimistic-concurrency tests, per feature, proving that two commands based on one stream version cannot both commit.
-- Projection tests proving a clean rebuild from history yields the same query state as incremental processing, including duplicate delivery and failure/recovery.
+- Projection tests for each projection's own logic: the state it builds from its events.
+
+Rebuild, duplicate delivery and failure recovery of projections are guaranteed by Marten's async daemon ([async daemon](https://martendb.io/events/projections/async-daemon.html), [rebuilding](https://martendb.io/events/projections/rebuilding.html)), so this project does not test Marten itself. Our part is to keep every projection a pure function of its events: no clock, no other documents, no services, so a rebuild gives the same state.
 - Upcaster tests for each registered upcaster, plus replay of stored historical payload fixtures.
 - Tests that corrections append compensating facts and do not mutate prior history.
 

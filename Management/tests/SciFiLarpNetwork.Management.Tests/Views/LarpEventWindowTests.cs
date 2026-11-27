@@ -198,7 +198,7 @@ public sealed class LarpEventWindowTests
 
     private static MainWindowViewModel CreateViewModel(FakeLarpEventApi api, FakeLarpEventDialogs dialogs) =>
         new(api, new NullSettingsStore(), new JsonLocalizer(), new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(),
-            new FakeCardTemplateDialogs(), dialogs, new FakeMessageDialogs(), new FakeNewsDialogs(), new ManagementSettings());
+            new FakeCardTemplateDialogs(), dialogs, new FakeMessageDialogs(), new FakeNewsDialogs(), new SciFiLarpNetwork.Management.Tests.ViewModels.Items.FakeItemDialogs(), new ManagementSettings());
 
     private sealed class NullSettingsStore : IManagementSettingsStore
     {

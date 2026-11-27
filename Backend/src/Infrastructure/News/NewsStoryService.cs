@@ -6,6 +6,7 @@ using Marten.Pagination;
 using SciFiLarpNetwork.Backend.Application.News;
 using SciFiLarpNetwork.Backend.Domain.Events.NewsEvents;
 using SciFiLarpNetwork.Backend.Domain.News;
+using SciFiLarpNetwork.Backend.Infrastructure.Administration;
 using SciFiLarpNetwork.Backend.Infrastructure.Networks.NetworkDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.News.NewsDocuments;
 using SciFiLarpNetwork.Backend.Infrastructure.Persistence.EventStore;
@@ -310,7 +311,7 @@ internal sealed class NewsStoryService(AttributedSessionFactory sessions, TimePr
         var media = story.MediaIds.Length == 0
             ? []
             : (await session.LoadManyAsync<NewsMediaDocument>(cancellationToken, story.MediaIds)).ToDictionary(item => item.Id);
-        var administrators = await NewsAdministrators.LoadAsync(
+        var administrators = await AdministratorNames.LoadAsync(
             session, [story.SavedBy, .. media.Values.Select(item => item.UploadedBy)], cancellationToken);
         return new NewsStoryDetails(
             story.Id,

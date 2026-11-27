@@ -1,7 +1,4 @@
 using System.Security.Claims;
-using JasperFx.Events;
-using JasperFx.Events.Projections;
-using Marten;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -9,7 +6,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using SciFiLarpNetwork.Backend.Tests.Integration.Api.ContractProbes;
-using SciFiLarpNetwork.Backend.Tests.Integration.EventSourcing;
 
 namespace SciFiLarpNetwork.Backend.Tests.Integration.Api.Fixtures;
 
@@ -26,13 +22,6 @@ public sealed class ApiApplicationFactory : WebApplicationFactory<Program>
             "Host=localhost;Port=5432;Database=scifilarnetwork_tests;Username=postgres;Password=postgres");
         builder.ConfigureTestServices(services =>
         {
-            services.ConfigureMarten(options =>
-            {
-                options.Events.AppendMode = EventAppendMode.Rich;
-                options.Events.AddEventType<EventStoreProbeProjection>();
-                options.Events.AddEventType<TestProbeEvent>();
-                options.Projections.Add<EventStoreProbeProjection>(ProjectionLifecycle.Async);
-            });
             services
                 .AddControllers()
                 .PartManager.ApplicationParts.Add(new AssemblyPart(typeof(ApiContractProbeController).Assembly));

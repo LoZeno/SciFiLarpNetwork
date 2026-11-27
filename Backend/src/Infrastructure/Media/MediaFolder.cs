@@ -5,4 +5,5 @@ internal enum MediaFolder
 {
     News,
     NetworkImages,
+    ItemImages,
 }

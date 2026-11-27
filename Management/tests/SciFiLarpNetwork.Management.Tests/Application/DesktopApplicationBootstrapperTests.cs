@@ -33,6 +33,7 @@ public sealed class DesktopApplicationBootstrapperTests
             new WindowLarpEventDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowMessageDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new WindowNewsDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
+            new SciFiLarpNetwork.Management.Views.Items.WindowItemDialogService(() => throw new InvalidOperationException("No dialog is expected.")),
             new ManagementSettings());
         var window = new MainWindow(viewModel);
         var lifetime = new ClassicDesktopStyleApplicationLifetime();

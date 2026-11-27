@@ -8,6 +8,7 @@ using SciFiLarpNetwork.Management.Api;
 using SciFiLarpNetwork.Management.Localization;
 using SciFiLarpNetwork.Management.Settings;
 using SciFiLarpNetwork.Management.Tests.ViewModels.CardTemplates;
+using SciFiLarpNetwork.Management.Tests.ViewModels.Items;
 using SciFiLarpNetwork.Management.Tests.ViewModels.LarpEvents;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Messages;
 using SciFiLarpNetwork.Management.Tests.ViewModels.Networks;
@@ -108,7 +109,8 @@ public sealed class ScreenLayoutTests
     {
         var viewModel = new MainWindowViewModel(api, new NullSettingsStore(), new JsonLocalizer(),
             new FakeCatalogDialogs(), new FakeNetworkDialogs(), new FakePlayerDialogs(), new FakeCardTemplateDialogs(),
-            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new ManagementSettings(Locale: locale));
+            new FakeLarpEventDialogs(), new FakeMessageDialogs(), new FakeNewsDialogs(), new FakeItemDialogs(),
+            new ManagementSettings(Locale: locale));
         var window = new MainWindow(viewModel) { Width = width, Height = height };
         window.Show();
         await viewModel.ConnectCommand.ExecuteAsync();
@@ -128,6 +130,7 @@ public sealed class ScreenLayoutTests
         NavigationScreen.Events => EventsApi(),
         NavigationScreen.Messages => MessagesApi(),
         NavigationScreen.News => NewsApi(),
+        NavigationScreen.Items => ItemsApi(),
         _ => throw new ArgumentOutOfRangeException(nameof(screen), screen, "Add a fake API for this screen.")
     };
 
@@ -181,6 +184,25 @@ public sealed class ScreenLayoutTests
         foreach (var number in Enumerable.Range(1, 30))
         {
             api.AddStory($"Story {number}", FakeNewsApi.CoreId, start.AddMinutes(number), start.AddYears(5));
+        }
+
+        return api;
+    }
+
+    private static FakeItemApi ItemsApi()
+    {
+        var api = new FakeItemApi();
+        var cell = api.AddItem("Power cell");
+        var blaster = api.AddItem($"Blaster {new string('b', 50)}");
+        blaster.Description = string.Join(" ", Enumerable.Range(0, 80).Select(word => $"word{word}"));
+        blaster.Effect = "Deals two wounds at range.";
+        blaster.Cost = 999_999;
+        blaster.Charges = 12;
+        blaster.ExpiresOn = new DateOnly(2027, 5, 1);
+        blaster.Components.Add((cell.Id, 2));
+        foreach (var _ in Enumerable.Range(0, 12))
+        {
+            api.AddCopy(blaster);
         }
 
         return api;

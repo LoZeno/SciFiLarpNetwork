@@ -31,6 +31,12 @@ public static class SirenRelations
     public const string NewsMedia = "urn:scifilarnetwork:rels:news-media";
     public const string MediaContent = "urn:scifilarnetwork:rels:media-content";
     public const string Network = "urn:scifilarnetwork:rels:network";
+    public const string Items = "urn:scifilarnetwork:rels:items";
+    public const string ItemTypes = "urn:scifilarnetwork:rels:item-types";
+    public const string Rarities = "urn:scifilarnetwork:rels:rarities";
+    public const string ItemCopies = "urn:scifilarnetwork:rels:item-copies";
+    public const string ItemImage = "urn:scifilarnetwork:rels:item-image";
+    public const string Component = "urn:scifilarnetwork:rels:component";
     public const string First = "first";
     public const string Previous = "prev";
     public const string Next = "next";
