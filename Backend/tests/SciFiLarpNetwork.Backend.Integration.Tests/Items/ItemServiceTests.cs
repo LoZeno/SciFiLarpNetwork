@@ -544,4 +544,57 @@ public sealed class ItemServiceTests(AdministratorAuthenticationFactory factory)
             Assert.True(results.Count(result => result.Outcome == ItemOutcome.Succeeded) <= 1);
         }
     }
+
+    [Fact]
+    public async Task TypeArchivedBetweenReadAndCommitRejectsTheNewItem()
+    {
+        var definition = await data.DefinitionAsync("Blaster");
+
+        var result = await CreateWhileAsync(definition, () => data.Types.ArchiveItemTypeAsync(definition.ItemTypeId, Token));
+
+        Assert.Equal(ItemOutcome.ConcurrentChange, result.Outcome);
+    }
+
+    [Fact]
+    public async Task RarityArchivedBetweenReadAndCommitRejectsTheNewItem()
+    {
+        var definition = await data.DefinitionAsync("Blaster");
+
+        var result = await CreateWhileAsync(definition, () => data.Rarities.ArchiveRarityAsync(definition.RarityId, Token));
+
+        Assert.Equal(ItemOutcome.ConcurrentChange, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ComponentArchivedBetweenReadAndCommitRejectsTheNewItem()
+    {
+        var cell = await data.ItemAsync("Power cell");
+        var definition = await data.DefinitionAsync("Blaster");
+
+        var result = await CreateWhileAsync(definition, () => Items.ArchiveItemAsync(cell.ItemId, Token),
+            new ItemComponent(cell.ItemId, 1));
+
+        Assert.Equal(ItemOutcome.ConcurrentChange, result.Outcome);
+    }
+
+    /// <summary>
+    /// Holds the creation after its reads, at its first clock read, runs <paramref name="change"/> to completion, then
+    /// lets the creation commit; so the change always commits between the creation's read and its commit.
+    /// </summary>
+    private async Task<ItemResult<ItemSummary>> CreateWhileAsync<T>(ItemDefinition definition, Func<Task<T>> change,
+        params ItemComponent[] components)
+    {
+        using var hold = new Barrier(2);
+        factory.Clock.FirstReadBarrier = hold;
+        var creation = Task.Run(() => data.CreateAsync(definition, components), Token);
+        while (hold.ParticipantsRemaining == 2)
+        {
+            await Task.Delay(10, Token);
+        }
+
+        factory.Clock.FirstReadBarrier = null;
+        await change();
+        hold.SignalAndWait(TimeSpan.FromSeconds(10), Token);
+        return await creation;
+    }
 }
