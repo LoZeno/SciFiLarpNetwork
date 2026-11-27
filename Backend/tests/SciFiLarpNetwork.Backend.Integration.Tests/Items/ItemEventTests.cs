@@ -43,13 +43,29 @@ public sealed class ItemEventTests(AdministratorAuthenticationFactory factory) :
     }
 
     [Fact]
-    public async Task RefusedItemCommandsRecordNoEvents()
+    public async Task StaleEditRecordsNoEvent()
     {
-        var cell = await data.ItemAsync("Power cell");
         var item = await data.ItemAsync("Blaster");
         await data.Items.UpdateItemAsync(item.ItemId, item.Version + 1,
             ItemTestData.Definition("Rifle", item.ItemTypeId, item.RarityId), Token);
+
+        Assert.Equal([typeof(ItemCreated)], await EventTypesAsync(item.ItemId));
+    }
+
+    [Fact]
+    public async Task RefusedSelfComponentRecordsNoEvent()
+    {
+        var item = await data.ItemAsync("Blaster");
         await data.Items.AddComponentAsync(item.ItemId, item.Version, item.ItemId, 1, Token);
+
+        Assert.Equal([typeof(ItemCreated)], await EventTypesAsync(item.ItemId));
+    }
+
+    [Fact]
+    public async Task RefusedZeroQuantityRecordsNoEvent()
+    {
+        var cell = await data.ItemAsync("Power cell");
+        var item = await data.ItemAsync("Blaster");
         await data.Items.AddComponentAsync(item.ItemId, item.Version, cell.ItemId, 0, Token);
 
         Assert.Equal([typeof(ItemCreated)], await EventTypesAsync(item.ItemId));

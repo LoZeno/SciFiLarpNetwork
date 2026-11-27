@@ -587,12 +587,13 @@ public sealed class ItemServiceTests(AdministratorAuthenticationFactory factory)
         using var hold = new Barrier(2);
         factory.Clock.FirstReadBarrier = hold;
         var creation = Task.Run(() => data.CreateAsync(definition, components), Token);
-        while (hold.ParticipantsRemaining == 2)
+        while (hold.ParticipantsRemaining == 2 && !creation.IsCompleted)
         {
             await Task.Delay(10, Token);
         }
 
         factory.Clock.FirstReadBarrier = null;
+        Assert.False(creation.IsCompleted, "The creation finished before reading the clock.");
         await change();
         hold.SignalAndWait(TimeSpan.FromSeconds(10), Token);
         return await creation;
